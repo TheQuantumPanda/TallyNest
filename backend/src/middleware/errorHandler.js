@@ -1,6 +1,7 @@
 import { STATUS_CODES } from 'node:http';
+import { HttpError } from '../utils/httpError.js';
 
-export function errorHandler(err, _req, res, next) {
+export function errorHandler(err, req, res, next) {
   if (res.headersSent) {
     return next(err);
   }
@@ -9,14 +10,19 @@ export function errorHandler(err, _req, res, next) {
   const status = Number.isInteger(requestedStatus)
     && requestedStatus >= 400 && requestedStatus <= 599 ? requestedStatus : 500;
   const production = res.app.get('env') === 'production';
+  // Express routing is case-insensitive by default; protect matching aliases too.
+  const requestPath = req.path.toLowerCase();
+  const authRequest = requestPath === '/api/auth' || requestPath.startsWith('/api/auth/');
+  const safeMessage = err instanceof HttpError ? err.message
+    : (status >= 500 ? 'Internal server error' : STATUS_CODES[status] ?? 'Request failed');
   const body = {
     status: 'error',
-    message: production
-      ? (status >= 500 ? 'Internal server error' : STATUS_CODES[status] ?? 'Request failed')
+    message: production || authRequest
+      ? safeMessage
       : err.message || 'Internal server error',
   };
 
-  if (!production && err.stack) {
+  if (!production && !authRequest && err.stack) {
     body.stack = err.stack;
   }
 

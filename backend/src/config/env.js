@@ -4,10 +4,17 @@ import { z } from 'zod';
 
 const envPath = fileURLToPath(new URL('../../.env', import.meta.url));
 
+// 32 random bytes encoded as hex; length checks alone cannot prove entropy.
+export const jwtSecretSchema = z.string().regex(/^[a-fA-F0-9]{64}$/)
+  .refine((value) => new Set(value.toLowerCase()).size >= 8);
+export const jwtTtlSchema = z.coerce.number().int().min(60).max(1800).default(900);
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(5000),
   MONGO_URI: z.string().trim().regex(/^mongodb(?:\+srv)?:\/\/\S+$/),
+  JWT_SECRET: jwtSecretSchema,
+  JWT_TTL_SECONDS: jwtTtlSchema,
   CLIENT_ORIGIN: z.string().url().refine((value) => {
     if (!URL.canParse(value)) return false;
     const url = new URL(value);
@@ -15,7 +22,8 @@ const envSchema = z.object({
       && url.username === '' && url.password === ''
       && url.pathname === '/' && url.search === '' && url.hash === '';
   }).transform((value) => new URL(value).origin),
-});
+}).refine((value) => value.NODE_ENV !== 'production' || value.CLIENT_ORIGIN.startsWith('https://'),
+  { path: ['CLIENT_ORIGIN'], message: 'Production requires HTTPS' });
 
 export function parseEnv(source) {
   const result = envSchema.safeParse(source);
@@ -31,6 +39,8 @@ export function parseEnv(source) {
     port: result.data.PORT,
     mongoUri: result.data.MONGO_URI,
     clientOrigin: result.data.CLIENT_ORIGIN,
+    jwtSecret: result.data.JWT_SECRET,
+    jwtTtlSeconds: result.data.JWT_TTL_SECONDS,
   });
 }
 

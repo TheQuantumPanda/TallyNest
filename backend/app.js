@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import { createAuthService } from './src/services/auth.service.js';
+import { createAuthRoutes } from './src/routes/auth.routes.js';
 import healthRoutes from './src/routes/health.routes.js';
 import { notFound } from './src/middleware/notFound.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
@@ -10,14 +13,27 @@ import { errorHandler } from './src/middleware/errorHandler.js';
 export function createApp({
   nodeEnv = process.env.NODE_ENV ?? 'development',
   clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
-} = {}) {
+  jwtSecret = process.env.JWT_SECRET,
+  jwtTtlSeconds = 900,
+} = {}, { repository } = {}) {
   const app = express();
   app.set('env', nodeEnv);
   app.disable('x-powered-by');
   app.use(helmet());
-  app.use(cors({ origin: clientOrigin }));
+  app.use(cors({
+    origin: clientOrigin, credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Protection'],
+  }));
   app.use(express.json({ limit: '100kb' }));
+  app.use(cookieParser());
   app.use('/api/health', healthRoutes);
+  const authService = createAuthService({ repository, jwtSecret, jwtTtlSeconds });
+  app.use('/api/auth', createAuthRoutes(authService, {
+    clientOrigin, jwtTtlSeconds,
+    cookieName: nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access',
+    cookieOptions: { httpOnly: true, secure: nodeEnv === 'production', sameSite: 'lax', path: '/' },
+  }));
   app.use(notFound);
   app.use(errorHandler);
   return app;

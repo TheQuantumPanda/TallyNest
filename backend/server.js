@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { createApp } from './app.js';
 import { loadEnv } from './src/config/env.js';
 import { connectDB, disconnectDB } from './src/config/db.js';
+import { ensureUserIndexes } from './src/repositories/user.repository.js';
 
 let server;
 let shuttingDown = false;
@@ -38,6 +39,7 @@ async function start() {
   try {
     const config = loadEnv();
     await connectDB(config.mongoUri);
+    await ensureUserIndexes();
     if (shuttingDown) {
       await disconnectDB();
       return;
@@ -59,7 +61,7 @@ async function start() {
   } catch (error) {
     // Never log raw driver errors: they may contain connection credentials.
     console.error(error.message.startsWith('Invalid environment configuration:')
-      ? error.message : 'Startup failed: unable to connect to MongoDB or start HTTP server');
+      ? error.message : 'Startup failed: unable to connect to MongoDB, initialize indexes, or start HTTP server');
     await shutdown('startup failure', 1);
   }
 }
