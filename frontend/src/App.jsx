@@ -1,0 +1,25 @@
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { AuthLayout } from './layouts/AuthLayout';
+import { AppLayout } from './layouts/AppLayout';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { WelcomePage } from './pages/WelcomePage';
+import { AccountPage } from './pages/AccountPage';
+import { NotFoundPage } from './pages/NotFoundPage';
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/app" replace />} />
+      <Route element={<AuthLayout />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Route>
+      <Route path="/app" element={<AppLayout />}>
+        <Route index element={<WelcomePage />} />
+        <Route path="account" element={<AccountPage />} />
+      </Route>
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+}

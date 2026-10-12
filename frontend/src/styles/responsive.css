@@ -1,0 +1,261 @@
+@media (min-width: 1500px) {
+  .auth-story {
+    padding: 45px 60px 34px;
+  }
+  .auth-main {
+    padding: 31px 50px 12px;
+  }
+  .auth-form-panel {
+    max-width: 410px;
+  }
+  .auth-form-panel h1 {
+    font-size: 40px;
+  }
+  .auth-subtitle {
+    font-size: 14px;
+  }
+  .perspective-art {
+    min-height: 400px;
+  }
+  .orbit-one {
+    width: 400px;
+    height: 400px;
+  }
+  .workspace-main {
+    padding-top: 52px;
+  }
+}
+@media (max-width: 1100px) {
+  .auth-story {
+    padding: 30px;
+  }
+  .auth-main {
+    padding: 20px 25px 8px;
+  }
+  .auth-story h2 {
+    font-size: 43px;
+  }
+  .auth-story > p {
+    font-size: 12px;
+  }
+  .perspective-art {
+    margin-left: -30px;
+    margin-right: -30px;
+  }
+  .desktop-sidebar {
+    width: 218px;
+  }
+  .app-main {
+    margin-left: 218px;
+  }
+  .workspace-main {
+    padding: 32px 28px 20px;
+  }
+  .app-header,
+  .app-footer {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+  .welcome-grid {
+    grid-template-columns: minmax(0, 1.4fr) minmax(215px, 1fr);
+    gap: 17px;
+  }
+  .welcome-hero {
+    padding: 25px;
+  }
+  .hero-art {
+    opacity: 0.25;
+    right: -80px;
+  }
+  .roadmap-card {
+    padding: 18px;
+  }
+  .workspace-pill {
+    display: none;
+  }
+  .sidebar-content {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+}
+@media (max-width: 820px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+    padding: 0;
+  }
+  .auth-story {
+    display: none;
+  }
+  .auth-main {
+    padding: 30px 32px 20px;
+    min-height: 100dvh;
+  }
+  .auth-form-container {
+    padding: 62px 0;
+  }
+  .desktop-sidebar {
+    display: none;
+  }
+  .app-main {
+    margin-left: 0;
+  }
+  .mobile-menu {
+    display: inline-flex;
+  }
+  .workspace-main {
+    padding: 30px 24px 16px;
+  }
+  .app-header {
+    min-height: 70px;
+    padding: 15px 24px;
+  }
+  .app-footer {
+    padding: 18px 24px;
+  }
+  .welcome-grid {
+    grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr);
+  }
+  .page-heading h1 {
+    font-size: 28px;
+  }
+  .hero-art {
+    opacity: 0.45;
+  }
+  .welcome-hero h2 {
+    font-size: 30px;
+  }
+  .welcome-hero > p {
+    max-width: 260px;
+  }
+}
+@media (max-width: 580px) {
+  .auth-main {
+    padding: 24px 24px 16px;
+  }
+  .auth-form-container {
+    padding: 48px 0;
+  }
+  .auth-form-panel h1 {
+    font-size: 33px;
+  }
+  .auth-footer {
+    font-size: 9px;
+  }
+  .auth-subtitle {
+    font-size: 13px;
+  }
+  .privacy-note {
+    margin-top: 32px;
+  }
+  .session-screen {
+    padding: 28px 24px;
+  }
+  .not-found h1 {
+    font-size: 28px;
+  }
+  .app-header {
+    padding: 14px 20px;
+  }
+  .header-heading {
+    font-size: 10px;
+    gap: 11px;
+  }
+  .breadcrumb-slash {
+    margin: 0 8px;
+  }
+  .session-label {
+    display: none;
+  }
+  .workspace-main {
+    padding: 28px 20px 12px;
+  }
+  .page-heading {
+    margin-bottom: 26px;
+  }
+  .page-heading h1 {
+    font-size: 28px;
+    line-height: 1.35;
+    max-width: 330px;
+  }
+  .page-heading p {
+    font-size: 11px;
+  }
+  .welcome-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .welcome-hero {
+    padding: 25px;
+  }
+  .welcome-hero h2 {
+    font-size: 34px;
+  }
+  .hero-art {
+    opacity: 0.55;
+    right: -75px;
+  }
+  .account-summary {
+    padding: 24px;
+  }
+  .summary-monogram {
+    margin-top: 22px;
+  }
+  .subtle-link {
+    margin-top: 25px;
+  }
+  .roadmap-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+  .roadmap-section {
+    margin-top: 30px;
+  }
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .roadmap-card p {
+    min-height: auto;
+  }
+  .roadmap-status {
+    margin-top: 15px;
+  }
+  .workspace-note {
+    align-items: flex-start;
+  }
+  .workspace-note svg {
+    margin-top: 2px;
+  }
+  .app-footer {
+    padding: 18px 20px;
+    font-size: 8px;
+  }
+  .profile-card {
+    padding: 23px;
+  }
+  .profile-details > div {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+  .profile-intro h2 {
+    font-size: 18px;
+  }
+  .profile-security {
+    padding: 16px;
+  }
+  .header-account .account-avatar {
+    width: 32px;
+    height: 32px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

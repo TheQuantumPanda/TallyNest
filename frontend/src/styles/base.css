@@ -1,0 +1,148 @@
+:root {
+  color-scheme: dark;
+  font-family: var(--font-sans);
+  color: #f0f1f5;
+  background: #0f111a;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+}
+button,
+input {
+  font: inherit;
+}
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+a {
+  text-decoration: none;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+button,
+a {
+  transition:
+    background 0.18s,
+    color 0.18s,
+    border-color 0.18s;
+}
+:focus-visible {
+  outline: 2px solid #83e5d5;
+  outline-offset: 5px;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+svg {
+  flex-shrink: 0;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #f0f1f5;
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -0.6px;
+  width: fit-content;
+}
+.brand-mark {
+  width: 41px;
+  height: 41px;
+  color: #83e5d5;
+}
+.brand small {
+  display: block;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  color: #9199ab;
+  margin-top: 4px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  color: #a5adbf;
+}
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #83e5d5;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 750;
+  padding: 12px 20px;
+}
+.button-primary {
+  background: #83e5d5;
+  color: #102b2a;
+}
+.button-primary:hover:not(:disabled) {
+  background: #a4f0e4;
+}
+.button-primary:disabled {
+  opacity: 0.6;
+}
+.button-ghost {
+  color: #b1b8c7;
+  background: transparent;
+  border-color: #2a2e3c;
+}
+.button-ghost:hover:not(:disabled) {
+  background: #232735;
+  color: #f0f1f5;
+}
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #2d3140;
+  border-radius: 8px;
+  background: transparent;
+  color: #c3c8d4;
+  width: 38px;
+  height: 38px;
+}
+.icon-button:hover {
+  color: #83e5d5;
+  background: #202532;
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

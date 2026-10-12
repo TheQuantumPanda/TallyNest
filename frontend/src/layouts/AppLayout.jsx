@@ -1,0 +1,92 @@
+import { useState } from 'react';
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Menu, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { SessionState } from '../components/auth/SessionState';
+import { AccountAvatar } from '../components/AccountAvatar';
+import { Sidebar } from '../components/Sidebar';
+import { MobileNavigation } from '../components/MobileNavigation';
+import { Notice } from '../components/ui/Notice';
+import { authErrorMessage } from '../utils/authErrors';
+
+export function AppLayout() {
+  const { status, user, reason, restore, logout } = useAuth();
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [error, setError] = useState('');
+  if (status === 'loading') return <SessionState />;
+  if (status === 'error') return <SessionState error onRetry={restore} />;
+  if (status !== 'authenticated')
+    return (
+      <Navigate to="/login" replace state={{ from: location.pathname + location.search, reason }} />
+    );
+
+  async function signOut() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    setError('');
+    try {
+      await logout();
+      setMobileOpen(false);
+    } catch (err) {
+      setError(authErrorMessage(err, 'logout'));
+      setMobileOpen(false);
+    } finally {
+      setLoggingOut(false);
+    }
+  }
+
+  return (
+    <div className="app-layout">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
+      <aside className="desktop-sidebar">
+        <Sidebar onLogout={signOut} loggingOut={loggingOut} />
+      </aside>
+      <MobileNavigation
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        onLogout={signOut}
+        loggingOut={loggingOut}
+      />
+      <div className="app-main">
+        <header className="app-header">
+          <div className="header-heading">
+            <button
+              className="icon-button mobile-menu"
+              aria-label="Open navigation"
+              aria-controls="mobile-navigation"
+              aria-haspopup="dialog"
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu size={22} />
+            </button>
+            <span>
+              Workspace <span className="breadcrumb-slash">/</span>
+              <strong>{location.pathname === '/app/account' ? 'My account' : 'Overview'}</strong>
+            </span>
+          </div>
+          <div className="header-account">
+            <span className="session-label">
+              <ShieldCheck size={15} aria-hidden="true" /> Signed in
+            </span>
+            <Link to="/app/account" aria-label="View my account">
+              <AccountAvatar name={user.name} />
+            </Link>
+          </div>
+        </header>
+        <main id="main-content" tabIndex={-1} className="workspace-main">
+          {error && <Notice>{error}</Notice>}
+          <Outlet />
+        </main>
+        <footer className="app-footer">
+          <span>Smart Finance Manager</span>
+          <span>Your pace. Your perspective.</span>
+        </footer>
+      </div>
+    </div>
+  );
+}

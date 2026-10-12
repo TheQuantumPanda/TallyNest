@@ -1,7 +1,8 @@
 # Smart Finance Manager
 
-Phase 1 provides the Node.js 24 / Express backend foundation and JWT authentication.
-Finance features and the React frontend are reserved for later tasks.
+Phase 1 provides the Node.js 24 / Express backend, JWT authentication, and a React 19
+frontend with login, registration, and a protected personal workspace. Finance
+features are reserved for later tasks; the welcome screen contains no financial data.
 
 ## Run locally
 
@@ -17,6 +18,26 @@ npm ci
 npm run setup:env
 npm run dev
 ```
+
+In a second terminal, from the repository root:
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Open **http://localhost:5173**. The backend defaults to **http://localhost:5000**.
+Vite uses strict port 5173 so the browser origin continues to match the backend's
+`CLIENT_ORIGIN`. Use `localhost` consistently in the browser and API URL.
+
+The frontend defaults to `http://localhost:5000/api` during development. To change
+it, copy `frontend/.env.example` to `frontend/.env` only if a local file does not
+already exist, then set `VITE_API_URL` and restart Vite. Only a public API URL belongs
+in this file: all `VITE_*` values are bundled into browser code. Never put JWT
+secrets, MongoDB credentials, or other server-only values there. The browser sets
+the Origin header automatically; Axios sends cookies and `X-CSRF-Protection: 1`
+for state-changing requests.
 
 Edit `backend/.env` for local configuration. Existing shell environment variables
 take precedence. The server validates configuration and connects to MongoDB before
@@ -52,7 +73,23 @@ listener and MongoDB connection, with a 10-second shutdown deadline.
 ```bash
 cd backend
 npm test
+npm run lint
 ```
+
+Frontend checks, from `frontend/`:
+
+```bash
+npm test
+npm run lint
+npm run format:check
+npm run build
+npm audit --omit=dev
+```
+
+ESLint 10 is configured independently for both packages. Backend linting adds no
+runtime changes or changes to the authentication contract. Frontend tests use
+Vitest, Testing Library, and isolated API mocks; they do not require MongoDB.
+Prettier is configured for the frontend (`npm run format` formats its files).
 
 The built-in Node.js test runner exercises HTTP behavior, environment validation,
 authentication, and model safeguards using isolated in-memory repository doubles.
@@ -65,6 +102,47 @@ secret keeps health checks usable but rejects login and registration with 503.
 Routes call controllers; future business features follow
 Controller → Service → Repository → Model. Empty layer directories are preserved
 with `.gitkeep` until those features are implemented.
+
+## Frontend screens and structure
+
+| Route | Screen | Access |
+| --- | --- | --- |
+| `/login` | Sign in | Anonymous users |
+| `/register` | Create account | Anonymous users |
+| `/app` | Welcome / workspace overview | Authenticated users |
+| `/app/account` | Read-only account details | Authenticated users |
+| Other routes | Not found | Public |
+
+`frontend/src` contains `components/` (including `ui/` and `auth/`), `pages/`,
+`layouts/`, `context/`, `hooks/`, `services/`, `utils/`, `styles/`, and `test/`.
+Axios configuration is centralized in `services/api.js`; `services/auth.js` matches
+the backend's `data.user` response and selects only public profile fields.
+
+The auth provider restores the session via `/api/auth/me` before rendering login
+or protected content. Restoration failures distinguish anonymous 401 responses
+from network failures, which offer retry. Protected API 401 responses clear the
+in-memory session; login failures stay local to the form. Sessions are rechecked
+when the authenticated window regains focus. Requests completing out of order
+cannot overwrite a newer session state. No token or profile is persisted in
+localStorage/sessionStorage, and there is no refresh-token flow. Failed logout
+keeps the user signed in and provides a retryable error.
+
+Forms have labels, associated validation messages, visible focus styles,
+password visibility controls, and loading/disabled states. The mobile navigation
+uses a native modal dialog for focus containment and Escape dismissal. Motion
+and CSS respect reduced-motion preferences. Typography is self-hosted through
+Fontsource; there are no third-party font requests. Tailwind v4 uses its Vite plugin.
+Future finance modules appear only as clearly marked roadmap content.
+
+## Frontend production configuration
+
+`npm run build` creates `frontend/dist`; `npm run preview` serves it locally on port
+5173. Set `VITE_API_URL` at build time for an API on another same-site HTTPS origin.
+If omitted in production, the client uses `/api` on the frontend origin, which
+requires the serving infrastructure to route `/api` to Express. Production hosting
+must also serve `index.html` for React routes such as `/app/account` on hard reload.
+Configure the backend's exact HTTPS `CLIENT_ORIGIN`; keep frontend and API same-site
+for SameSite=Lax cookies. This task does not implement deployment or TLS termination.
 
 ## Authentication API
 
@@ -158,7 +236,7 @@ rm "$AUTH_COOKIE_JAR"
 
 The sequence should return 201, 200, 200, 200, then 401. Repeat registration to
 check 409; change the login password to check the generic 401; remove the CSRF
-header to check 403. In a future browser client, inspect cookie attributes in
+header to check 403. In the browser, inspect cookie attributes in
 developer tools without copying or logging the token. JavaScript cannot read
 the HTTP-only access cookie.
 

@@ -1,0 +1,13 @@
+@import '@fontsource-variable/manrope';
+@import 'tailwindcss';
+@import './base.css';
+@import './auth.css';
+@import './workspace.css';
+@import './responsive.css';
+
+@theme {
+  --color-canvas: #0f111a;
+  --color-surface: #181b26;
+  --color-accent: #83e5d5;
+  --font-sans: 'Manrope Variable', 'Segoe UI', sans-serif;
+}
