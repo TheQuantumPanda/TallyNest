@@ -1,3 +1,5 @@
+import { createGroupService } from './src/services/group.service.js';
+import { createGroupRoutes } from './src/routes/group.routes.js';
 import { createRecurringService } from './src/services/recurring.service.js';
 import { createRecurringEngine } from './src/services/recurring-engine.service.js';
 import { createRecurringRoutes } from './src/routes/recurring.routes.js';
@@ -25,7 +27,7 @@ export function createApp({
   clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   jwtSecret = process.env.JWT_SECRET,
   jwtTtlSeconds = 900,
-} = {}, { repository, transactionRepository, dashboardRepository, dashboardNow, budgetRepository, budgetSummaryRepository, recurringRepository, recurringTransactions, recurringNow } = {}) {
+} = {}, { repository, transactionRepository, dashboardRepository, dashboardNow, budgetRepository, budgetSummaryRepository, recurringRepository, recurringTransactions, recurringNow, groupRepository } = {}) {
   const app = express();
   app.set('env', nodeEnv);
   app.disable('x-powered-by');
@@ -58,6 +60,9 @@ export function createApp({
     createRecurringEngine({ repository: recurringRepository, transactions: recurringTransactions, now: recurringNow }), authService, {
       clientOrigin, cookieName: nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access',
     }));
+  app.use('/api/groups', createGroupRoutes(createGroupService({ repository: groupRepository }), authService, {
+    clientOrigin, cookieName: nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access',
+  }));
   app.use(notFound);
   app.use(errorHandler);
   return app;

@@ -11,7 +11,8 @@ Phase 3, Steps 1–5 add independent monthly expense-category budgets, exact
 spending analytics, a responsive budget management frontend, and a recurring
 personal transaction engine with a responsive management frontend. The overview and ledger
 display only the signed-in user’s personal records; net
-cash flow is not presented as a verified bank balance.
+cash flow is not presented as a verified bank balance. Phase 4, Step 1 adds the
+backend group/membership foundation with owner-controlled metadata management.
 
 ## Run locally
 
@@ -50,7 +51,8 @@ for state-changing requests.
 
 Edit `backend/.env` for local configuration. Existing shell environment variables
 take precedence. The server validates configuration and connects to MongoDB before
-listening. It also waits for user, budget, recurring schedule, and transaction indexes to initialize. `.env` is
+listening. It also waits for user, budget, recurring schedule, transaction and group indexes to initialize,
+and installs strict group membership collection validation. `.env` is
 ignored by Git; never commit real credentials.
 
 `npm run setup:env` creates `.env` from the example if absent. It preserves existing
@@ -511,3 +513,27 @@ transaction API client. No backend contracts, schemas or scheduling rules change
 See the [frontend implementation and verification report](docs/phase-3-step-5.md)
 for the updated file tree, tests, Chromium results, screenshots and limitations.
 Existing local development and verification commands above apply.
+
+
+## Groups and membership backend (Phase 4, Step 1)
+
+The authenticated API supports POST/GET `/api/groups` and GET/PATCH/DELETE
+`/api/groups/:id`. Creating a group atomically creates its authenticated creator's
+owner membership in the same document. Memberships are embedded, unique per group/user,
+bounded to 100, and constrained by Mongoose and a strict MongoDB collection validator.
+Currency is INR; no shared financial records or balance fields are introduced.
+
+Reads/listings are member-scoped; metadata updates/deletion require database-enforced
+owner permissions. PATCH requires the current ETag through If-Match, preserving the
+428/412/409 concurrency conventions. Mutations require existing Origin/CSRF protection.
+Missing and unrelated groups share identical 404 behavior. Listing uses bounded
+`limit`/`after` pagination, default 20 and maximum 100. Responses expose only the
+caller's membership role/time, not the complete roster.
+
+Deleting a foundation group removes its embedded memberships only. Personal records
+remain unchanged. This policy must be revisited before shared expenses/settlements
+exist. Invitations, joining, membership removal, splitting and group UI are not
+implemented. See the [group and membership specification](docs/phase-4-step-1.md)
+for schemas, indexes, permissions, API examples, atomic creation/failure semantics,
+future decisions and verification results. Existing development/test commands apply;
+startup requires MongoDB collection-validator/index administration permissions.

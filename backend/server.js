@@ -1,3 +1,4 @@
+import { ensureGroupIndexes } from './src/repositories/group.repository.js';
 import { ensureRecurringIndexes } from './src/repositories/recurring.repository.js';
 import { startRecurringJob } from './src/jobs/recurring.job.js';
 import { createServer } from 'node:http';
@@ -47,6 +48,7 @@ async function start() {
     await ensureUserIndexes();
     await ensureBudgetIndexes();
     await ensureRecurringIndexes();
+    await ensureGroupIndexes();
     if (shuttingDown) {
       await disconnectDB();
       return;
