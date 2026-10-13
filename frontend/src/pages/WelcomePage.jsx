@@ -21,7 +21,8 @@ const roadmap = [
   {
     number: '02',
     title: 'Bring your finances together',
-    description: 'Expense tracking is planned for a future release.',
+    description: 'Your income and expenses, organized in a personal ledger.',
+    active: true,
   },
   {
     number: '03',
@@ -60,9 +61,11 @@ export function WelcomePage() {
             <br />
             starts with <em>clarity.</em>
           </h2>
-          <p>Your account is set up. This space will grow with you as the finance tools arrive.</p>
-          <Link className="text-link" to="/app/account">
-            Explore your account
+          <p>
+            Your account is set up. Start recording the income and expenses that shape your day.
+          </p>
+          <Link className="text-link" to="/app/transactions">
+            Open your transactions
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
           <div className="hero-art" aria-hidden="true">
@@ -125,9 +128,7 @@ export function WelcomePage() {
       </section>
       <div className="workspace-note">
         <LockKeyhole size={16} aria-hidden="true" />
-        <p>
-          Just your account, for now. Financial data will appear when those features are available.
-        </p>
+        <p>Your personal ledger is ready. Insights and shared finances are planned for later.</p>
       </div>
     </PageTransition>
   );

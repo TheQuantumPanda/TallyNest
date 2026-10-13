@@ -188,7 +188,10 @@ describe('authentication screens and protected routes', () => {
     );
     renderApp('/app');
     await welcome();
-    fireEvent(window, new Event('focus'));
+    await waitFor(() => {
+      fireEvent(window, new Event('focus'));
+      expect(resolveStale).toBeTypeOf('function');
+    });
     await userEvent.click(screen.getAllByRole('button', { name: 'Sign out' })[0]);
     await screen.findByRole('heading', { name: 'Welcome back.' });
     await act(async () => resolveStale(user));

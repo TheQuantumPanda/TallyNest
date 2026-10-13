@@ -66,7 +66,13 @@ export function AppLayout() {
             </button>
             <span>
               Workspace <span className="breadcrumb-slash">/</span>
-              <strong>{location.pathname === '/app/account' ? 'My account' : 'Overview'}</strong>
+              <strong>
+                {location.pathname === '/app/account'
+                  ? 'My account'
+                  : location.pathname === '/app/transactions'
+                    ? 'Transactions'
+                    : 'Overview'}
+              </strong>
             </span>
           </div>
           <div className="header-account">

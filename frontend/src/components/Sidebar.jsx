@@ -33,6 +33,11 @@ export function Sidebar({ onClose, onLogout, loggingOut }) {
           Overview
           <span className="nav-indicator" />
         </NavLink>
+        <NavLink to="/app/transactions" onClick={onClose}>
+          <ReceiptText size={19} aria-hidden="true" />
+          Transactions
+          <span className="nav-indicator" />
+        </NavLink>
         <NavLink to="/app/account" onClick={onClose}>
           <UserRound size={19} aria-hidden="true" />
           My account
@@ -41,11 +46,6 @@ export function Sidebar({ onClose, onLogout, loggingOut }) {
       </nav>
       <div className="planned-navigation">
         <span className="workspace-label">ON THE HORIZON</span>
-        <div>
-          <ReceiptText size={18} aria-hidden="true" />
-          <span>Expense tracking</span>
-          <LockKeyhole size={12} aria-hidden="true" />
-        </div>
         <div>
           <Users size={18} aria-hidden="true" />
           <span>Shared finances</span>

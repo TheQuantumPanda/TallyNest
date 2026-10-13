@@ -15,8 +15,8 @@ checks remain in place. No frontend transaction screens or analytics are added.
   client versions return 412, and races during an update still return 409.
 - CORS permits `If-Match` and exposes `ETag` to the configured frontend origin.
 
-The React application has no transaction client yet, so this step changes no
-frontend code. Existing CRUD tests have been updated to send explicit versions.
+Step 3 changed no frontend code. [Step 4](phase-2-step-4.md) now implements the
+React transaction client against this contract. Existing CRUD tests send explicit versions.
 Authentication endpoint contracts and DELETE behavior are unchanged.
 
 ## GET /api/transactions query parameters

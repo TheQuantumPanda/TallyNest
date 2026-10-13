@@ -4,9 +4,10 @@ Your money. In perspective.
 
 Phase 1 provides the Node.js 24 / Express backend, JWT authentication, and a React 19
 frontend with login, registration, and a protected personal workspace. Phase 2,
-Steps 1–3 add the transaction model, exact monetary utilities, authenticated
-personal transaction CRUD APIs, filtered cursor pagination, and client version checks. The welcome screen contains no financial data;
-transaction frontend pages remain future work.
+Steps 1–4 add the transaction model, exact monetary utilities, authenticated
+personal transaction CRUD APIs, filtered cursor pagination, client version checks,
+and a responsive transaction management page. The welcome screen contains no
+financial summaries; the ledger displays only the signed-in user’s actual records.
 
 ## Run locally
 
@@ -270,7 +271,7 @@ also deletes local database data and should only be used when a reset is intende
 
 The [transaction foundation specification](docs/phase-2-step-1.md) documents the
 schema, categories, ownership, index plan, and original JSON contract. Step 2
-implements the API described below; the frontend has no transaction screens yet.
+implements the API described below; Step 4 provides its responsive frontend.
 
 Amounts use `amountMinor`, a positive safe integer in paise, with `currency: "INR"`
 (default). For example, ₹100.50 is `{ "amountMinor": 10050, "currency": "INR" }`.
@@ -338,3 +339,26 @@ owner-bound, and expire after 24 hours. Insertions/deletions/updates between req
 can affect traversal because pages use current data rather than a snapshot. Title
 substring search may scan many owned records; listings use a 1-second MongoDB
 execution budget. See the query specification for precise limitations.
+
+## Transaction management frontend (Phase 2, Step 4)
+
+Choose **Transactions** in the authenticated desktop or mobile navigation, or open
+`/app/transactions`. The page provides a desktop ledger and mobile cards, add/edit
+forms, transaction details, confirmed deletion, server filters and sorting, and
+cursor-based Load More. See the [frontend implementation and verification report](docs/phase-2-step-4.md)
+for component architecture, screenshots, tests, and limitations.
+
+Amounts are entered as decimal text and converted exactly with BigInt; 125050
+paise displays as ₹1,250.50. Shared categories and monetary utilities keep frontend
+and backend behavior aligned. Dates use UTC calendar days, with inclusive UI
+filter dates mapped to the backend’s half-open range.
+
+Edits fetch the current record and send its ETag through If-Match. Version conflicts
+keep the draft visible and offer an explicit reload; changed drafts require discard
+confirmation. The existing Axios client continues to send cookies/CSRF headers and
+redirects expired sessions through the authentication context. No backend authentication
+or transaction response contracts were changed.
+
+Use the normal backend/frontend development commands above. Run frontend tests with
+`npm test --prefix frontend`, build with `npm run build --prefix frontend`, and
+verify MongoDB integration separately with `npm run test:mongo --prefix backend`.

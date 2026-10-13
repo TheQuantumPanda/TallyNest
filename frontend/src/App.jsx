@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthLayout } from './layouts/AuthLayout';
 import { AppLayout } from './layouts/AppLayout';
@@ -6,6 +7,10 @@ import { RegisterPage } from './pages/RegisterPage';
 import { WelcomePage } from './pages/WelcomePage';
 import { AccountPage } from './pages/AccountPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+
+const TransactionsPage = lazy(() =>
+  import('./pages/TransactionsPage').then((module) => ({ default: module.TransactionsPage })),
+);
 
 export default function App() {
   return (
@@ -17,6 +22,14 @@ export default function App() {
       </Route>
       <Route path="/app" element={<AppLayout />}>
         <Route index element={<WelcomePage />} />
+        <Route
+          path="transactions"
+          element={
+            <Suspense fallback={<p role="status">Opening your ledger…</p>}>
+              <TransactionsPage />
+            </Suspense>
+          }
+        />
         <Route path="account" element={<AccountPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

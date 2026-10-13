@@ -4,6 +4,7 @@
 @import './auth.css';
 @import './workspace.css';
 @import './responsive.css';
+@import './transactions.css';
 
 @theme {
   --color-canvas: #0f111a;
