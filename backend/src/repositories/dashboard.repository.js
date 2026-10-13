@@ -1,24 +1,21 @@
 import mongoose from 'mongoose';
 import { Transaction } from '../models/transaction.model.js';
 import { ownerIdSchema } from '../validators/transaction.validator.js';
-import { TRANSACTION_CATEGORIES } from '../constants/transaction.constants.js';
+import { exactMoneyStage, validMoneyExpressions, validCategoryExpression } from '../utils/financial-aggregation.js';
 
 export function createDashboardRepository(model = Transaction) {
   return {
     async summarize(owner, { from, to, grouping }) {
       const ownerId = new mongoose.Types.ObjectId(ownerIdSchema.parse(owner));
-      const categoryRules = ['income', 'expense'].map(type => ({ $and: [
-        { $eq: ['$type', type] }, { $in: ['$category', TRANSACTION_CATEGORIES.filter(category => category.types.includes(type)).map(category => category.id)] },
-      ] }));
+      const categoryRules = ['income', 'expense'].map(validCategoryExpression);
       const bucket = { $dateTrunc: { date: '$transactionDate', unit: grouping, timezone: 'UTC', ...(grouping === 'week' ? { startOfWeek: 'monday' } : {}) } };
       // Exact Int64 conversion before Decimal128 avoids double->decimal precision loss.
       const pipeline = [
         { $match: { owner: ownerId, transactionDate: { $gte: from, $lt: to } } },
-        { $set: { money: { $convert: { input: { $convert: { input: '$amountMinor', to: 'long', onError: null, onNull: null } }, to: 'decimal', onError: null, onNull: null } } } },
+        exactMoneyStage(),
         { $facet: {
           integrity: [{ $group: { _id: null, invalid: { $sum: { $cond: [{ $and: [
-            { $isNumber: '$amountMinor' }, { $gte: ['$amountMinor', 1] }, { $lte: ['$amountMinor', Number.MAX_SAFE_INTEGER] },
-            { $eq: ['$amountMinor', { $convert: { input: '$money', to: 'double', onError: null, onNull: null } }] },
+            ...validMoneyExpressions(),
             { $eq: ['$currency', 'INR'] }, { $or: categoryRules },
           ] }, 0, 1] } } } }],
           totals: [{ $group: { _id: { currency: '$currency', type: '$type' }, amount: { $sum: '$money' }, count: { $sum: 1 } } }],

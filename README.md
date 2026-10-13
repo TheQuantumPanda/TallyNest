@@ -7,8 +7,9 @@ frontend with login, registration, and a protected personal workspace. Phase 2,
 Steps 1–5 add the transaction model, exact monetary utilities, authenticated
 personal transaction CRUD APIs, filtered cursor pagination, client version checks,
 a responsive transaction management page, and a real financial dashboard.
-Phase 3, Step 1 adds independent monthly expense-category budgets through an
-authenticated backend API. The overview and ledger display only the signed-in user’s personal records; net
+Phase 3, Steps 1–2 add independent monthly expense-category budgets and exact
+spending analytics through authenticated backend APIs. The overview and ledger
+display only the signed-in user’s personal records; net
 cash flow is not presented as a verified bank balance.
 
 ## Run locally
@@ -392,7 +393,8 @@ Budgets are independent personal records for a UTC calendar month (`YYYY-MM`),
 expense category and INR currency. Limits use the existing positive safe integer
 `amountMinor` paise representation. A unique owner/month/currency/category index
 prevents duplicates, including concurrent creates. Budget writes never generate
-or modify transactions; no budgeting frontend or spending analytics is added.
+or modify transactions. No budgeting frontend is added; Step 2 provides the
+read-only spending summary below.
 
 The authenticated API supports POST/GET `/api/budgets` and GET/PATCH/DELETE
 `/api/budgets/:id`. Listing requires `month` (for example `?month=2026-10`), with
@@ -405,3 +407,24 @@ request examples, validation rules, limitations and verification results.
 Run the existing commands above: `npm test --prefix backend` for isolated tests,
 then `docker compose up -d --wait mongodb` and `npm run test:mongo --prefix backend`
 for disposable real MongoDB tests. No dependencies or environment settings change.
+
+
+## Budget spending analytics (Phase 3, Step 2)
+
+`GET /api/budgets/summary?month=2026-10` requires the existing authenticated cookie.
+Month is mandatory and currency defaults to INR. The no-store response is
+`{ status: "ok", data: { summary } }`, including every configured budget's exact
+limit/spending/remaining/overspending, uncapped utilization basis points and status,
+unbudgeted category expenses, reconciled monetary totals, and status/count summaries.
+Income never reduces spending, and other owners/currencies/months are excluded.
+
+Reporting uses half-open UTC calendar months. Owner-scoped MongoDB facets sum
+integer paise through Int64 and Decimal128; BigInt calculations reject unsafe
+results rather than round. Two concurrent database reads give an explicit
+best-effort view, not a point-in-time budget/expense snapshot. Remaining allowance
+is not a bank balance. Budget/transaction CRUD contracts and existing UI are intact.
+
+See the [summary API and financial specification](docs/phase-3-step-2.md) for the
+full response, status definitions, reconciliation rules, precision, consistency,
+verification results and limitations. Existing test/development commands apply;
+no dependencies or environment configuration were added.

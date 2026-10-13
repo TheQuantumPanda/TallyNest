@@ -1,5 +1,8 @@
 # TallyNest — Monthly personal budgeting backend
 
+This is the Step 1 implementation snapshot. [Step 2](phase-3-step-2.md) now adds
+read-only spending analytics while preserving the schema and CRUD contracts.
+
 Phase 3, Step 1 adds independent monthly expense-category budget records and
 owner-scoped CRUD. There is no budget UI, rollover, recurring setting, spending
 analytics, or automatic transaction creation. Existing transactions, dashboard,

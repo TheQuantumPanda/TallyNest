@@ -7,6 +7,19 @@ export const DASHBOARD_PERIODS = Object.freeze(
   ].map(Object.freeze),
 );
 
+// BigInt result permits uncapped utilization while callers choose a safe JSON
+// representation. Half-up rounding to integer basis points (10000 = 100%).
+export function ratioBasisPoints(numerator, denominator) {
+  if (
+    !Number.isSafeInteger(numerator) ||
+    numerator < 0 ||
+    !Number.isSafeInteger(denominator) ||
+    denominator <= 0
+  )
+    throw new RangeError('Invalid ratio');
+  return (BigInt(numerator) * 10000n + BigInt(denominator) / 2n) / BigInt(denominator);
+}
+
 // Geometry and approximate shares only. Monetary sums never pass through floats.
 export function plotRatio(value, maximum) {
   if (
@@ -16,9 +29,7 @@ export function plotRatio(value, maximum) {
     maximum < value
   )
     throw new RangeError('Invalid ratio');
-  return maximum === 0
-    ? 0
-    : Number((BigInt(value) * 10000n + BigInt(maximum) / 2n) / BigInt(maximum));
+  return maximum === 0 ? 0 : Number(ratioBasisPoints(value, maximum));
 }
 export function shareText(basisPoints) {
   if (!Number.isSafeInteger(basisPoints) || basisPoints < 0 || basisPoints > 10000)
@@ -36,7 +47,7 @@ export function percentageText(numerator, denominator) {
   )
     throw new RangeError('Invalid ratio');
   if (denominator === 0) return null;
-  const points = (BigInt(numerator) * 10000n + BigInt(denominator) / 2n) / BigInt(denominator);
+  const points = ratioBasisPoints(numerator, denominator);
   return `${points / 100n}.${String(points % 100n).padStart(2, '0')}%`;
 }
 export function allocateShares(rows, total) {

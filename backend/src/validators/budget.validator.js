@@ -21,3 +21,6 @@ export const budgetQuerySchema = z.object({
   month: budgetMonthSchema, currency: currencySchema.default(DEFAULT_CURRENCY),
   category: expenseCategorySchema.optional(),
 }).strict();
+
+// Summary always includes every category; a category filter would hide spending.
+export const budgetSummaryQuerySchema = budgetQuerySchema.omit({ category: true });

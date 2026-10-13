@@ -1,3 +1,4 @@
+import { createBudgetSummaryService } from './src/services/budget-summary.service.js';
 import { createBudgetService } from './src/services/budget.service.js';
 import { createBudgetRoutes } from './src/routes/budget.routes.js';
 import express from 'express';
@@ -21,7 +22,7 @@ export function createApp({
   clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   jwtSecret = process.env.JWT_SECRET,
   jwtTtlSeconds = 900,
-} = {}, { repository, transactionRepository, dashboardRepository, dashboardNow, budgetRepository } = {}) {
+} = {}, { repository, transactionRepository, dashboardRepository, dashboardNow, budgetRepository, budgetSummaryRepository } = {}) {
   const app = express();
   app.set('env', nodeEnv);
   app.disable('x-powered-by');
@@ -49,7 +50,7 @@ export function createApp({
   app.use('/api/dashboard', createDashboardRoutes(createDashboardService({ repository: dashboardRepository, now: dashboardNow }), authService, nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access'));
   app.use('/api/budgets', createBudgetRoutes(createBudgetService({ repository: budgetRepository }), authService, {
     clientOrigin, cookieName: nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access',
-  }));
+  }, createBudgetSummaryService({ repository: budgetSummaryRepository })));
   app.use(notFound);
   app.use(errorHandler);
   return app;
