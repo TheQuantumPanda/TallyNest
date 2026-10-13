@@ -7,7 +7,8 @@ frontend with login, registration, and a protected personal workspace. Phase 2,
 Steps 1–5 add the transaction model, exact monetary utilities, authenticated
 personal transaction CRUD APIs, filtered cursor pagination, client version checks,
 a responsive transaction management page, and a real financial dashboard.
-The overview and ledger display only the signed-in user’s personal records; net
+Phase 3, Step 1 adds independent monthly expense-category budgets through an
+authenticated backend API. The overview and ledger display only the signed-in user’s personal records; net
 cash flow is not presented as a verified bank balance.
 
 ## Run locally
@@ -47,7 +48,7 @@ for state-changing requests.
 
 Edit `backend/.env` for local configuration. Existing shell environment variables
 take precedence. The server validates configuration and connects to MongoDB before
-listening. It also waits for the unique user email index to initialize. `.env` is
+listening. It also waits for the unique user email and monthly budget indexes to initialize. `.env` is
 ignored by Git; never commit real credentials.
 
 `npm run setup:env` creates `.env` from the example if absent. It preserves existing
@@ -383,3 +384,24 @@ response fields, period boundaries, percentage rounding, tests, screenshots, bun
 measurements, and limitations. Existing development commands remain unchanged.
 Run `npm ci --prefix frontend` to install the new Recharts dependency if needed.
 The chart module is lazy loaded; transaction and authentication contracts remain intact.
+
+
+## Monthly budgeting backend (Phase 3, Step 1)
+
+Budgets are independent personal records for a UTC calendar month (`YYYY-MM`),
+expense category and INR currency. Limits use the existing positive safe integer
+`amountMinor` paise representation. A unique owner/month/currency/category index
+prevents duplicates, including concurrent creates. Budget writes never generate
+or modify transactions; no budgeting frontend or spending analytics is added.
+
+The authenticated API supports POST/GET `/api/budgets` and GET/PATCH/DELETE
+`/api/budgets/:id`. Listing requires `month` (for example `?month=2026-10`), with
+optional category and currency filters. Mutations use the existing Origin/CSRF
+protection; PATCH requires the retrieved ETag in If-Match and atomic version checks.
+Missing/foreign-owned records return identical 404 errors. See the
+[budget schema, API and concurrency specification](docs/phase-3-step-1.md) for
+request examples, validation rules, limitations and verification results.
+
+Run the existing commands above: `npm test --prefix backend` for isolated tests,
+then `docker compose up -d --wait mongodb` and `npm run test:mongo --prefix backend`
+for disposable real MongoDB tests. No dependencies or environment settings change.

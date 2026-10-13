@@ -3,6 +3,7 @@ import { createApp } from './app.js';
 import { loadEnv } from './src/config/env.js';
 import { connectDB, disconnectDB } from './src/config/db.js';
 import { ensureUserIndexes } from './src/repositories/user.repository.js';
+import { ensureBudgetIndexes } from './src/repositories/budget.repository.js';
 
 let server;
 let shuttingDown = false;
@@ -40,6 +41,7 @@ async function start() {
     const config = loadEnv();
     await connectDB(config.mongoUri);
     await ensureUserIndexes();
+    await ensureBudgetIndexes();
     if (shuttingDown) {
       await disconnectDB();
       return;

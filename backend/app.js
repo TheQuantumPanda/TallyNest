@@ -1,3 +1,5 @@
+import { createBudgetService } from './src/services/budget.service.js';
+import { createBudgetRoutes } from './src/routes/budget.routes.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -19,7 +21,7 @@ export function createApp({
   clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   jwtSecret = process.env.JWT_SECRET,
   jwtTtlSeconds = 900,
-} = {}, { repository, transactionRepository, dashboardRepository, dashboardNow } = {}) {
+} = {}, { repository, transactionRepository, dashboardRepository, dashboardNow, budgetRepository } = {}) {
   const app = express();
   app.set('env', nodeEnv);
   app.disable('x-powered-by');
@@ -45,6 +47,9 @@ export function createApp({
     },
   ));
   app.use('/api/dashboard', createDashboardRoutes(createDashboardService({ repository: dashboardRepository, now: dashboardNow }), authService, nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access'));
+  app.use('/api/budgets', createBudgetRoutes(createBudgetService({ repository: budgetRepository }), authService, {
+    clientOrigin, cookieName: nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access',
+  }));
   app.use(notFound);
   app.use(errorHandler);
   return app;
