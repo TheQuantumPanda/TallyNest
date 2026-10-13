@@ -4,8 +4,8 @@ Your money. In perspective.
 
 Phase 1 provides the Node.js 24 / Express backend, JWT authentication, and a React 19
 frontend with login, registration, and a protected personal workspace. Phase 2,
-Steps 1–2 add the transaction model, exact monetary utilities, and authenticated
-personal transaction CRUD APIs. The welcome screen contains no financial data;
+Steps 1–3 add the transaction model, exact monetary utilities, authenticated
+personal transaction CRUD APIs, filtered cursor pagination, and client version checks. The welcome screen contains no financial data;
 transaction frontend pages remain future work.
 
 ## Run locally
@@ -280,15 +280,16 @@ rupee value or round overprecise input. Transaction dates use canonical UTC
 explicit reporting timezone. Ownership comes from the authenticated user, never
 from the future request body. Repository reads always include that owner.
 
-## Personal transaction API (Phase 2, Step 2)
+## Personal transaction API (Phase 2, Steps 2–3)
 
-See the [complete endpoint specification](docs/phase-2-step-2.md) for request and
-response examples, validation, error codes, concurrency, and manual curl checks.
+See the [CRUD specification](docs/phase-2-step-2.md) and current
+[query/version specification](docs/phase-2-step-3.md) for endpoint examples,
+validation, pagination, concurrency, and manual requests.
 
 | Method | Endpoint | Success |
 | --- | --- | --- |
 | POST | `/api/transactions` | 201, created transaction |
-| GET | `/api/transactions` | 200, at most 50 owned transactions |
+| GET | `/api/transactions` | 200, owned transactions with pagination (default 20, max 100) |
 | GET | `/api/transactions/:id` | 200, owned transaction |
 | PATCH | `/api/transactions/:id` | 200, updated transaction |
 | DELETE | `/api/transactions/:id` | 200, `Transaction deleted` |
@@ -298,12 +299,17 @@ the configured Origin and `X-CSRF-Protection: 1`; POST/PATCH require JSON. Only
 editable transaction fields are accepted. PATCH merges and fully validates the
 result; `notes: null` clears notes. Owner and internal fields cannot be supplied.
 Missing and foreign-owned IDs receive identical 404 responses. History is ordered
-by date descending then ID descending; query parameters are deferred to Step 3.
+by date descending then ID descending by default; date and amount sorts support
+both directions. Filters include type, category, currency, UTC date range, and
+literal title search. `from` is inclusive and `to` exclusive.
 
 Updates atomically compare and increment the stored version to prevent stale
-writes; concurrent changes return 409. Transaction errors include stable `code`
+writes. Transactions expose `version` and single-record responses include ETag.
+PATCH requires `If-Match`: missing returns 428, stale returns 412, and races during
+the atomic update return 409. CORS permits If-Match and exposes ETag. Transaction errors include stable `code`
 values and never disclose internal details. Amounts remain positive safe integers
-in paise with INR currency. The original schema and compound index are preserved.
+in paise with INR currency. Schema fields and the date index are preserved; an
+owner/amount/ID index supports amount sorting.
 
 Run the separate real-MongoDB integration suite against local Docker MongoDB:
 
@@ -315,3 +321,20 @@ npm run test:mongo --prefix backend
 It uses a uniquely named disposable database and removes it afterward. The default
 backend test command still requires no database. Neither integration command loads
 local `.env` secrets or writes to development user/transaction data.
+
+Listing accepts `type`, `category`, `currency` (INR), `from`, `to`, `search` (literal,
+case insensitive, max 80 characters), `sortBy` (`transactionDate`/`amountMinor`),
+`sortOrder` (`asc`/`desc`), `limit` (1–100), and `cursor`. Unknown or invalid query
+parameters return 400. For example:
+
+```text
+GET /api/transactions?type=expense&sortBy=amountMinor&sortOrder=desc&limit=10
+```
+
+The response retains `status: "ok"` and `data.transactions`, adding
+`pagination: { limit, hasMore, nextCursor }`. Follow `nextCursor` with unchanged
+filters/sorting; it is null on the final page. Cursors are encrypted/authenticated,
+owner-bound, and expire after 24 hours. Insertions/deletions/updates between requests
+can affect traversal because pages use current data rather than a snapshot. Title
+substring search may scan many owned records; listings use a 1-second MongoDB
+execution budget. See the query specification for precise limitations.

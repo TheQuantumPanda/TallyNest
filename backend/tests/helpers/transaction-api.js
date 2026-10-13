@@ -44,7 +44,7 @@ export function transactionApiContract(setup) {
       assert.equal(response.body.data.transaction.currency, 'INR');
       assert.equal(response.headers.get('cache-control'), 'no-store');
       assert.deepEqual(Object.keys(response.body.data.transaction).sort(),
-        ['id', 'type', 'title', 'amountMinor', 'currency', 'category', 'transactionDate', 'createdAt', 'updatedAt'].sort());
+        ['id', 'type', 'title', 'amountMinor', 'currency', 'category', 'transactionDate', 'createdAt', 'updatedAt', 'version'].sort());
       for (const key of ['owner', '_id', '__v', 'passwordHash', 'token']) {
         assert.equal(JSON.stringify(response.body).includes(`"${key}"`), false);
       }
@@ -104,15 +104,15 @@ export function transactionApiContract(setup) {
     for (const patch of [{ type: 'income' }, { category: 'salary' }, { amountMinor: 0 }, {},
       { owner: ownerB }, { _id: ownerB }, { __v: 100 }, { updatedAt: expense.transactionDate },
       { notes: 42 }, { currency: 'USD' }, { amountMinor: 1.5 }, { title: ' ' }, { $inc: { amountMinor: 1 } }]) {
-      assert.equal((await request(`/${id}`, { method: 'PATCH', body: patch })).status, 400);
+      assert.equal((await request(`/${id}`, { method: 'PATCH', headers: { 'If-Match': `"tn-${id}-v0"` }, body: patch })).status, 400);
     }
-    const edited = await request(`/${id}`, { method: 'PATCH', body: { type: 'income', category: 'salary', amountMinor: 20000, notes: null } });
+    const edited = await request(`/${id}`, { method: 'PATCH', headers: { 'If-Match': `"tn-${id}-v0"` }, body: { type: 'income', category: 'salary', amountMinor: 20000, notes: null } });
     assert.equal(edited.status, 200);
     assert.equal(edited.body.data.transaction.type, 'income');
     assert.equal(edited.body.data.transaction.category, 'salary');
     assert.equal(edited.body.data.transaction.amountMinor, 20000);
     assert.equal(Object.hasOwn(edited.body.data.transaction, 'notes'), false);
-    const retained = await request(`/${id}`, { method: 'PATCH', body: { title: 'Edited' } });
+    const retained = await request(`/${id}`, { method: 'PATCH', headers: { 'If-Match': `"tn-${id}-v1"` }, body: { title: 'Edited' } });
     assert.equal(retained.body.data.transaction.currency, 'INR');
     assert.equal(retained.body.data.transaction.amountMinor, 20000);
   });
@@ -186,8 +186,8 @@ export function transactionConcurrencyContract(setup) {
     } });
     const id = (await request('', { method: 'POST', body: { ...expense, category: 'other' } })).body.data.transaction.id;
     const results = await Promise.all([
-      request(`/${id}`, { method: 'PATCH', body: { type: 'income' } }),
-      request(`/${id}`, { method: 'PATCH', body: { category: 'food_dining' } }),
+      request(`/${id}`, { method: 'PATCH', headers: { 'If-Match': `"tn-${id}-v0"` }, body: { type: 'income' } }),
+      request(`/${id}`, { method: 'PATCH', headers: { 'If-Match': `"tn-${id}-v0"` }, body: { category: 'food_dining' } }),
     ]);
     assert.deepEqual(results.map(result => result.status).sort(), [200, 409]);
     assert.equal(results.find(result => result.status === 409).body.code, 'TRANSACTION_CONFLICT');
@@ -210,12 +210,12 @@ export function transactionConcurrencyContract(setup) {
     } });
     const id = (await request('', { method: 'POST', body: expense })).body.data.transaction.id;
     const responses = await Promise.all([
-      request(`/${id}`, { method: 'PATCH', body: { title: 'Edited' } }),
-      request(`/${id}`, { method: 'PATCH', body: { amountMinor: 30000 } }),
+      request(`/${id}`, { method: 'PATCH', headers: { 'If-Match': `"tn-${id}-v0"` }, body: { title: 'Edited' } }),
+      request(`/${id}`, { method: 'PATCH', headers: { 'If-Match': `"tn-${id}-v0"` }, body: { amountMinor: 30000 } }),
     ]);
     assert.deepEqual(responses.map(response => response.status).sort(), [200, 409]);
     const failedTitle = responses[0].status === 409;
-    const retry = await request(`/${id}`, { method: 'PATCH', body: failedTitle ? { title: 'Edited' } : { amountMinor: 30000 } });
+    const retry = await request(`/${id}`, { method: 'PATCH', headers: { 'If-Match': `"tn-${id}-v1"` }, body: failedTitle ? { title: 'Edited' } : { amountMinor: 30000 } });
     assert.equal(retry.status, 200);
     assert.equal(retry.body.data.transaction.title, 'Edited');
     assert.equal(retry.body.data.transaction.amountMinor, 30000);

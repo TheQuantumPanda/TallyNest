@@ -25,7 +25,8 @@ export function createApp({
   app.use(cors({
     origin: clientOrigin, credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-CSRF-Protection'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Protection', 'If-Match'],
+    exposedHeaders: ['ETag'],
   }));
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
@@ -37,7 +38,7 @@ export function createApp({
     cookieOptions: { httpOnly: true, secure: nodeEnv === 'production', sameSite: 'lax', path: '/' },
   }));
   app.use('/api/transactions', createTransactionRoutes(
-    createTransactionService({ repository: transactionRepository }), authService, {
+    createTransactionService({ repository: transactionRepository, cursorSecret: jwtSecret }), authService, {
       clientOrigin, cookieName: nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access',
     },
   ));

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { transactionPageSchema } from '../validators/transaction-query.validator.js';
 import { Transaction } from '../models/transaction.model.js';
 import { ownerIdSchema, transactionDateSchema, transactionInputSchema } from '../validators/transaction.validator.js';
 
@@ -39,6 +40,31 @@ export function createTransactionRepository(model = Transaction) {
     },
     findByIdForOwner(ownerId, transactionId) {
       return model.findOne({ owner: objectId(ownerId), _id: objectId(transactionId) }).exec();
+    },
+    findPageForOwner(ownerId, options) {
+      const query = transactionPageSchema.parse(options);
+      const filter = { owner: objectId(ownerId), currency: query.currency };
+      for (const field of ['type', 'category']) if (query[field]) filter[field] = query[field];
+      if (query.from || query.to) {
+        filter.transactionDate = {
+          ...(query.from ? { $gte: new Date(query.from) } : {}),
+          ...(query.to ? { $lt: new Date(query.to) } : {}),
+        };
+      }
+      if (query.search) {
+        filter.title = { $regex: query.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
+      }
+      const direction = query.sortOrder === 'asc' ? 1 : -1;
+      if (query.after) {
+        const operator = direction === 1 ? '$gt' : '$lt';
+        const value = query.sortBy === 'transactionDate' ? new Date(query.after.value) : query.after.value;
+        filter.$or = [
+          { [query.sortBy]: { [operator]: value } },
+          { [query.sortBy]: value, _id: { [operator]: objectId(query.after.id) } },
+        ];
+      }
+      return model.find(filter).sort({ [query.sortBy]: direction, _id: direction })
+        .limit(query.limit + 1).maxTimeMS(1000).exec();
     },
     findForOwner(ownerId, { from, to, limit = 50 } = {}) {
       const filter = { owner: objectId(ownerId) };

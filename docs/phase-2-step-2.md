@@ -1,5 +1,8 @@
 # TallyNest — Personal transaction API
 
+This document records the Step 2 contract and verification snapshot. Step 3 changes
+listing and requires client update preconditions; see the current [query/version specification](phase-2-step-3.md).
+
 Phase 2, Step 2 implements authenticated personal transaction CRUD using
 Controller → Service → Repository → Model. The existing schema, money utilities,
 category definitions, compound index, JWT cookies, and authentication contracts

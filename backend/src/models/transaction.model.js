@@ -52,4 +52,7 @@ const transactionSchema = new mongoose.Schema({
 // Owner prefix covers owner-only reads; date + _id supports deterministic history ordering.
 transactionSchema.index({ owner: 1, transactionDate: -1, _id: -1 });
 
+// Amount keyset sorting uses this index in either scan direction.
+transactionSchema.index({ owner: 1, amountMinor: -1, _id: -1 });
+
 export const Transaction = mongoose.model('Transaction', transactionSchema);

@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { before, after, beforeEach, test } from 'node:test';
 import mongoose from 'mongoose';
 import { Transaction } from '../src/models/transaction.model.js';
+import { transactionQueryContract } from '../tests/helpers/transaction-query-api.js';
 import { User } from '../src/models/user.model.js';
 import { createTransactionRepository } from '../src/repositories/transaction.repository.js';
 import { userRepository } from '../src/repositories/user.repository.js';
@@ -42,6 +43,7 @@ async function setup(t, { wrapRepository = value => value } = {}) {
 }
 transactionApiContract(setup);
 transactionConcurrencyContract(setup);
+transactionQueryContract(setup);
 
 test('real MongoDB retains exact integer boundaries, ObjectId/date values and declared index', async t => {
   const request = await setup(t);
@@ -54,6 +56,7 @@ test('real MongoDB retains exact integer boundaries, ObjectId/date values and de
   assert.equal(stored.transactionDate.toISOString(), expense.transactionDate);
   const indexes = await Transaction.collection.indexes();
   assert.ok(indexes.some(index => index.key.owner === 1 && index.key.transactionDate === -1 && index.key._id === -1));
+  assert.ok(indexes.some(index => index.key.owner === 1 && index.key.amountMinor === -1 && index.key._id === -1));
 });
 
 test('real atomic update rejects stale versions without changing persisted state', async () => {

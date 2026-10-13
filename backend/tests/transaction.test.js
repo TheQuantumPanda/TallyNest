@@ -121,13 +121,13 @@ test('changing type rechecks category compatibility on full document validation'
   assert.ok(model.validateSync()?.errors.category);
 });
 
-test('schema declares timestamps, immutable ownership and only the scoped history index', () => {
+test('schema declares timestamps, immutable ownership and scoped date and amount indexes', () => {
   assert.equal(Transaction.schema.options.timestamps, true);
   assert.equal(Transaction.schema.path('owner').options.ref, 'User');
   assert.equal(Transaction.schema.path('owner').options.immutable, true);
   assert.ok(Transaction.schema.path('createdAt'));
   assert.ok(Transaction.schema.path('updatedAt'));
-  assert.deepEqual(Transaction.schema.indexes().map(([keys]) => keys), [{ owner: 1, transactionDate: -1, _id: -1 }]);
+  assert.deepEqual(Transaction.schema.indexes().map(([keys]) => keys), [{ owner: 1, transactionDate: -1, _id: -1 }, { owner: 1, amountMinor: -1, _id: -1 }]);
 });
 
 function mockRepository() {
