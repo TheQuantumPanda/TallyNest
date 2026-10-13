@@ -7,9 +7,9 @@ frontend with login, registration, and a protected personal workspace. Phase 2,
 Steps 1–5 add the transaction model, exact monetary utilities, authenticated
 personal transaction CRUD APIs, filtered cursor pagination, client version checks,
 a responsive transaction management page, and a real financial dashboard.
-Phase 3, Steps 1–4 add independent monthly expense-category budgets, exact
-spending analytics, a responsive budget management frontend, and a backend-only
-recurring personal transaction engine. The overview and ledger
+Phase 3, Steps 1–5 add independent monthly expense-category budgets, exact
+spending analytics, a responsive budget management frontend, and a recurring
+personal transaction engine with a responsive management frontend. The overview and ledger
 display only the signed-in user’s personal records; net
 cash flow is not presented as a verified bank balance.
 
@@ -123,6 +123,7 @@ with `.gitkeep` until those features are implemented.
 | `/app` | Financial overview | Authenticated users |
 | `/app/transactions` | Personal transaction ledger | Authenticated users |
 | `/app/budgets` | Monthly budget management | Authenticated users |
+| `/app/recurring` | Recurring personal schedules | Authenticated users |
 | `/app/account` | Read-only account details | Authenticated users |
 | Other routes | Not found | Public |
 
@@ -487,3 +488,26 @@ indexes, crash recovery, concurrency, scheduling limitations and verification re
 Existing local commands apply; no new dependencies, environment settings or frontend
 screens were added. `npm run test:mongo --prefix backend` now also verifies recurring
 behavior against disposable local MongoDB databases.
+
+
+## Recurring management frontend (Phase 3, Step 5)
+
+Choose **Recurring** in desktop/mobile navigation, or open `/app/recurring`.
+Manage scheduled personal income and expenses with exact INR amounts, UTC start/end
+inputs, all four recurrence frequencies, status filtering and server-paginated Load More.
+Active/paused status stays distinct from exhausted schedules. Templates are expected
+entries, not completed spending or bank payments.
+
+Add/edit forms reuse shared categories and exact paise conversion. Edits and confirmed
+pause/resume fetch fresh ETags, send If-Match and preserve drafts on conflicts. Unsaved
+changes require discard confirmation. Paused schedules retain their cursor; resuming
+may catch up missed eligible dates. Deletion preserves historical transactions.
+**Check due entries** runs one bounded batch of 20, displays results and never loops
+when more work remains. A sleeping host cannot execute precisely scheduled work.
+
+The page links to the general transaction ledger because schedule-specific history
+filtering is not supported yet. Existing generated provenance is retained by the
+transaction API client. No backend contracts, schemas or scheduling rules changed.
+See the [frontend implementation and verification report](docs/phase-3-step-5.md)
+for the updated file tree, tests, Chromium results, screenshots and limitations.
+Existing local development and verification commands above apply.

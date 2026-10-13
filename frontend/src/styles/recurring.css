@@ -1,0 +1,355 @@
+.recurring-page {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.recurring-page-heading {
+  align-items: center;
+}
+.recurring-page-heading h1 {
+  margin-top: 9px;
+  font-weight: 600;
+}
+.recurring-page > .notice {
+  margin-bottom: 20px;
+}
+.recurring-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 24px;
+  margin-bottom: 22px;
+}
+.recurring-toolbar .field {
+  width: 200px;
+  min-width: 0;
+}
+.recurring-toolbar p {
+  color: #a4aebe;
+  font-size: 11px;
+  line-height: 1.8;
+  margin-left: auto;
+}
+.recurring-toolbar .icon-button {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+}
+.recurring-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.recurring-card {
+  min-width: 0;
+  padding: 23px 24px 0;
+  display: flex;
+  flex-direction: column;
+}
+.recurring-card-heading {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.recurring-kind {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  color: #c0c8d7;
+  line-height: 1.6;
+}
+.recurring-kind svg {
+  flex-shrink: 0;
+}
+.recurring-income {
+  color: #a2e4d6;
+}
+.recurring-status {
+  font-size: 10px;
+  color: #a2e4d6;
+  border: 1px solid #83e5d533;
+  background: #83e5d50a;
+  padding: 6px 9px;
+  border-radius: 6px;
+}
+.recurring-paused .recurring-status {
+  color: #c9bbf0;
+  border-color: #b3a4e840;
+  background: #b3a4e80a;
+}
+.recurring-status.is-exhausted {
+  color: #c1c8d5;
+  border-color: #414858;
+  background: #ffffff04;
+}
+.recurring-card h2 {
+  font-size: 18px;
+  font-weight: 550;
+  line-height: 1.6;
+  margin: 15px 0;
+  overflow-wrap: anywhere;
+}
+.recurring-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.recurring-amount strong {
+  font-size: clamp(20px, 2.3vw, 28px);
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  letter-spacing: -0.7px;
+}
+.recurring-amount > span {
+  font-size: 11px;
+  color: #a2adbf;
+}
+.recurring-dates {
+  margin: 24px 0 17px;
+  display: grid;
+  gap: 13px;
+}
+.recurring-dates dt {
+  color: #a2adbf;
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.recurring-dates dd {
+  margin: 0;
+  color: #d5dce8;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+.recurring-card-actions {
+  margin-top: auto;
+  display: flex;
+  border-top: 1px solid #2b3140;
+  gap: 10px;
+  justify-content: space-between;
+}
+.recurring-card-actions button {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: #c0cadb;
+  background: none;
+  border: 0;
+  padding: 13px 0;
+  font-size: 11px;
+  min-height: 46px;
+}
+.recurring-card-actions button:hover {
+  color: #83e5d5;
+}
+.recurring-reserved {
+  color: #edbb98;
+  font-size: 11px;
+  margin-bottom: 16px;
+  line-height: 1.8;
+}
+.recurring-empty {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 27px;
+}
+.recurring-empty > svg {
+  color: #83e5d5;
+  flex-shrink: 0;
+}
+.recurring-empty h2 {
+  font-size: 18px;
+  font-weight: 550;
+}
+.recurring-empty p {
+  font-size: 12px;
+  color: #a2adbf;
+  line-height: 1.8;
+  margin-top: 8px;
+}
+.recurring-empty .button {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.recurring-load-more {
+  text-align: center;
+  margin-top: 22px;
+}
+.recurring-error {
+  margin-bottom: 20px;
+}
+.recurring-error .button {
+  margin-top: 12px;
+}
+.recurring-processing {
+  margin-top: 25px;
+  padding: 24px;
+}
+.recurring-processing-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+}
+.recurring-processing h2 {
+  margin: 9px 0;
+  font-size: 18px;
+  font-weight: 550;
+}
+.recurring-processing .eyebrow {
+  font-size: 9px;
+}
+.recurring-processing p {
+  font-size: 11px;
+  line-height: 1.8;
+  color: #a2adbf;
+  max-width: 600px;
+}
+.recurring-processing .button {
+  flex-shrink: 0;
+}
+.recurring-processing .notice {
+  margin-top: 20px;
+}
+.recurring-process-result {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #2b3140;
+}
+.recurring-process-result dl {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 15px;
+  margin: 0 0 17px;
+}
+.recurring-process-result dt {
+  color: #a2adbf;
+  font-size: 10px;
+}
+.recurring-process-result dd {
+  font-size: 22px;
+  margin: 7px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.recurring-history {
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 25px;
+  padding: 0 3px;
+}
+.recurring-history h2 {
+  font-size: 13px;
+  font-weight: 500;
+}
+.recurring-history p {
+  color: #a2adbf;
+  font-size: 11px;
+  line-height: 1.8;
+  margin-top: 7px;
+  max-width: 580px;
+}
+.recurring-history a {
+  flex-shrink: 0;
+  min-height: 44px;
+}
+.recurring-form fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.recurring-form .field {
+  min-width: 0;
+}
+.recurring-form input {
+  min-width: 0;
+  max-width: 100%;
+}
+.recurring-form-wide {
+  grid-column: 1 / -1;
+}
+.recurring-guidance {
+  color: #adb8ca;
+  font-size: 11px;
+  line-height: 1.8;
+  margin-bottom: 17px;
+}
+.recurring-form .recurring-guidance {
+  margin-bottom: 0;
+}
+.recurring-skeleton {
+  height: 280px;
+  padding: 24px;
+  display: grid;
+  align-content: center;
+  gap: 30px;
+}
+@media (max-width: 1100px) {
+  .recurring-empty {
+    flex-wrap: wrap;
+  }
+  .recurring-empty .button {
+    margin-left: 48px;
+  }
+}
+@media (max-width: 700px) {
+  .recurring-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+  .recurring-toolbar {
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 19px;
+  }
+  .recurring-toolbar .field {
+    flex: 1;
+  }
+  .recurring-toolbar p {
+    order: 3;
+    flex-basis: 100%;
+    margin: 0;
+  }
+  .recurring-card {
+    padding: 20px 19px 0;
+  }
+  .recurring-processing {
+    padding: 20px;
+  }
+  .recurring-processing-heading,
+  .recurring-history {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  .recurring-process-result dl {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .recurring-empty {
+    padding: 22px 19px;
+    gap: 15px;
+  }
+  .recurring-empty > div {
+    min-width: 0;
+    flex: 1;
+  }
+  .recurring-empty .button {
+    width: 100%;
+    margin-left: 0;
+  }
+  .recurring-form fieldset {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 580px) {
+  .recurring-page-heading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 17px;
+  }
+}

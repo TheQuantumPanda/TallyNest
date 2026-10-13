@@ -15,6 +15,12 @@ export const transactionSchema = z
     currency: z.literal('INR'),
     category: z.enum(TRANSACTION_CATEGORIES.map((item) => item.id)),
     transactionDate: z.string().datetime(),
+    recurrence: z
+      .object({
+        scheduleId: z.string().regex(/^[a-f0-9]{24}$/i),
+        scheduledDate: z.string().datetime(),
+      })
+      .optional(),
     notes: z.string().max(2000).optional(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),

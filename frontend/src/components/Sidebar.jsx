@@ -5,6 +5,7 @@ import {
   LockKeyhole,
   LogOut,
   ReceiptText,
+  Repeat2,
   Target,
   Users,
   UserRound,
@@ -42,6 +43,11 @@ export function Sidebar({ onClose, onLogout, loggingOut }) {
         <NavLink to="/app/budgets" onClick={onClose}>
           <Target size={19} aria-hidden="true" />
           Budgets
+          <span className="nav-indicator" />
+        </NavLink>
+        <NavLink to="/app/recurring" onClick={onClose}>
+          <Repeat2 size={19} aria-hidden="true" />
+          Recurring
           <span className="nav-indicator" />
         </NavLink>
         <NavLink to="/app/account" onClick={onClose}>

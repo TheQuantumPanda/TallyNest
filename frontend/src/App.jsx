@@ -19,6 +19,10 @@ const BudgetsPage = lazy(() =>
   import('./pages/BudgetsPage').then((module) => ({ default: module.BudgetsPage })),
 );
 
+const RecurringPage = lazy(() =>
+  import('./pages/RecurringPage').then((module) => ({ default: module.RecurringPage })),
+);
+
 export default function App() {
   return (
     <Routes>
@@ -49,6 +53,14 @@ export default function App() {
           element={
             <Suspense fallback={<p role="status">Opening your budgets…</p>}>
               <BudgetsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="recurring"
+          element={
+            <Suspense fallback={<p role="status">Opening your schedules…</p>}>
+              <RecurringPage />
             </Suspense>
           }
         />
