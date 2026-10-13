@@ -3,8 +3,10 @@
 Your money. In perspective.
 
 Phase 1 provides the Node.js 24 / Express backend, JWT authentication, and a React 19
-frontend with login, registration, and a protected personal workspace. Finance
-features are reserved for later tasks; the welcome screen contains no financial data.
+frontend with login, registration, and a protected personal workspace. Phase 2,
+Step 1 adds the transaction data model, financial integrity utilities, and scoped
+repository reads. Transaction endpoints and finance UI remain future work; the
+welcome screen contains no financial data.
 
 ## Run locally
 
@@ -76,6 +78,7 @@ listener and MongoDB connection, with a 10-second shutdown deadline.
 cd backend
 npm test
 npm run lint
+npm audit --omit=dev
 ```
 
 Frontend checks, from `frontend/`:
@@ -94,7 +97,8 @@ Vitest, Testing Library, and isolated API mocks; they do not require MongoDB.
 Prettier is configured for the frontend (`npm run format` formats its files).
 
 The built-in Node.js test runner exercises HTTP behavior, environment validation,
-authentication, and model safeguards using isolated in-memory repository doubles.
+authentication, transaction/model constraints, exact money conversion, and
+ownership-scoped repository queries using isolated in-memory repository doubles.
 Tests do not connect to or modify the development database. `app.js` exports the Express app
 and a `createApp` factory for injecting configuration; neither connects to MongoDB
 or starts an HTTP listener on import. `server.js` owns environment loading and startup.
@@ -261,3 +265,17 @@ docker compose down
 
 Stopping or removing the container preserves the named volume. `docker compose down -v`
 also deletes local database data and should only be used when a reset is intended.
+
+## Transaction foundation (Phase 2, Step 1)
+
+The [transaction foundation specification](docs/phase-2-step-1.md) documents the
+schema, categories, ownership, index plan, and future JSON contract. No transaction
+HTTP routes or frontend screens are implemented in this step.
+
+Amounts use `amountMinor`, a positive safe integer in paise, with `currency: "INR"`
+(default). For example, ₹100.50 is `{ "amountMinor": 10050, "currency": "INR" }`.
+Convert decimal text with the exact money utilities; never multiply a floating-point
+rupee value or round overprecise input. Transaction dates use canonical UTC
+`YYYY-MM-DDTHH:mm:ss.sssZ` timestamps; future monthly reporting must choose an
+explicit reporting timezone. Ownership comes from the authenticated user, never
+from the future request body. Repository reads always include that owner.
