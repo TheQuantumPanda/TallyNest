@@ -4,10 +4,11 @@ Your money. In perspective.
 
 Phase 1 provides the Node.js 24 / Express backend, JWT authentication, and a React 19
 frontend with login, registration, and a protected personal workspace. Phase 2,
-Steps 1–4 add the transaction model, exact monetary utilities, authenticated
+Steps 1–5 add the transaction model, exact monetary utilities, authenticated
 personal transaction CRUD APIs, filtered cursor pagination, client version checks,
-and a responsive transaction management page. The welcome screen contains no
-financial summaries; the ledger displays only the signed-in user’s actual records.
+a responsive transaction management page, and a real financial dashboard.
+The overview and ledger display only the signed-in user’s personal records; net
+cash flow is not presented as a verified bank balance.
 
 ## Run locally
 
@@ -362,3 +363,23 @@ or transaction response contracts were changed.
 Use the normal backend/frontend development commands above. Run frontend tests with
 `npm test --prefix frontend`, build with `npm run build --prefix frontend`, and
 verify MongoDB integration separately with `npm run test:mongo --prefix backend`.
+
+## Real financial dashboard (Phase 2, Step 5)
+
+The authenticated Overview at `/app` reports real income, expenses, net cash flow,
+cash-flow charts, expense categories, and recent entries. It reuses Add Transaction
+and links to the ledger. Reporting uses UTC calendar periods: This month, Last
+month, Last 3 months (current plus previous two), and This year. Empty periods
+show genuine zero values and useful guidance rather than invented analytics.
+
+`GET /api/dashboard/summary?period=this_month&currency=INR` requires the existing
+access cookie. The response is `{ status: "ok", data: { summary } }`. Owner-scoped
+MongoDB aggregation converts safe integer paise through Int64 to Decimal128 before
+summing; the service reconciles categories and time buckets with exact BigInt
+arithmetic and rejects unsafe totals with 422. No currencies are combined.
+
+See the [dashboard API and implementation report](docs/phase-2-step-5.md) for
+response fields, period boundaries, percentage rounding, tests, screenshots, bundle
+measurements, and limitations. Existing development commands remain unchanged.
+Run `npm ci --prefix frontend` to install the new Recharts dependency if needed.
+The chart module is lazy loaded; transaction and authentication contracts remain intact.

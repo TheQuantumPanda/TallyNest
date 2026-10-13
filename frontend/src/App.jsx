@@ -4,9 +4,12 @@ import { AuthLayout } from './layouts/AuthLayout';
 import { AppLayout } from './layouts/AppLayout';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { WelcomePage } from './pages/WelcomePage';
 import { AccountPage } from './pages/AccountPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+
+const DashboardPage = lazy(() =>
+  import('./pages/DashboardPage').then((module) => ({ default: module.DashboardPage })),
+);
 
 const TransactionsPage = lazy(() =>
   import('./pages/TransactionsPage').then((module) => ({ default: module.TransactionsPage })),
@@ -21,7 +24,14 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
       </Route>
       <Route path="/app" element={<AppLayout />}>
-        <Route index element={<WelcomePage />} />
+        <Route
+          index
+          element={
+            <Suspense fallback={<p role="status">Opening your overview…</p>}>
+              <DashboardPage />
+            </Suspense>
+          }
+        />
         <Route
           path="transactions"
           element={

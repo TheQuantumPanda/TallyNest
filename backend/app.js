@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import { createDashboardService } from './src/services/dashboard.service.js';
+import { createDashboardRoutes } from './src/routes/dashboard.routes.js';
 import { createTransactionService } from './src/services/transaction.service.js';
 import { createTransactionRoutes } from './src/routes/transaction.routes.js';
 import { createAuthService } from './src/services/auth.service.js';
@@ -17,7 +19,7 @@ export function createApp({
   clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   jwtSecret = process.env.JWT_SECRET,
   jwtTtlSeconds = 900,
-} = {}, { repository, transactionRepository } = {}) {
+} = {}, { repository, transactionRepository, dashboardRepository, dashboardNow } = {}) {
   const app = express();
   app.set('env', nodeEnv);
   app.disable('x-powered-by');
@@ -42,6 +44,7 @@ export function createApp({
       clientOrigin, cookieName: nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access',
     },
   ));
+  app.use('/api/dashboard', createDashboardRoutes(createDashboardService({ repository: dashboardRepository, now: dashboardNow }), authService, nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access'));
   app.use(notFound);
   app.use(errorHandler);
   return app;

@@ -13,10 +13,11 @@ export const categoryLabel = (id) =>
 export const decimalAmount = minorToMajor;
 
 export function formatINR(minor) {
-  const [whole, fraction] = minorToMajor(minor).split('.');
+  const decimal = minorToMajor(minor);
+  const [whole, fraction] = decimal.replace(/^-/, '').split('.');
   const tail = whole.slice(-3);
   const head = whole.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ',');
-  return `₹${head ? head + ',' : ''}${tail}.${fraction}`;
+  return `${minor < 0 ? '−' : ''}₹${head ? head + ',' : ''}${tail}.${fraction}`;
 }
 export function positiveMinor(text) {
   const result = majorToMinor(text);

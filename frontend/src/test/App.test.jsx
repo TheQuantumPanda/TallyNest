@@ -6,8 +6,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
 import { AuthProvider } from '../context/AuthProvider';
 import { authService } from '../services/auth';
+import { dashboardService } from '../services/dashboard';
+import { dashboardFixture } from './fixtures/dashboard';
 import { api } from '../services/api';
 
+vi.mock('../services/dashboard', () => ({ dashboardService: { summary: vi.fn() } }));
 vi.mock('../services/auth', () => ({
   authService: { me: vi.fn(), login: vi.fn(), register: vi.fn(), logout: vi.fn() },
 }));
@@ -22,6 +25,7 @@ const user = {
 let unauthorized;
 beforeEach(() => {
   vi.resetAllMocks();
+  dashboardService.summary.mockResolvedValue(dashboardFixture(true));
   api.onUnauthorized.mockImplementation((listener) => {
     unauthorized = listener;
     return vi.fn();
@@ -48,7 +52,7 @@ async function fillLogin() {
   await input.type(screen.getByLabelText('Password'), 'correct horse battery');
   return input;
 }
-const welcome = () => screen.findByRole('heading', { name: /Make yourself at home, Alex/ });
+const welcome = () => screen.findByRole('heading', { name: 'Your financial overview.' });
 
 describe('authentication screens and protected routes', () => {
   it('validates forms accessibly and focuses the first invalid field', async () => {
@@ -143,7 +147,9 @@ describe('authentication screens and protected routes', () => {
     );
     renderApp('/app');
     expect(screen.getByRole('heading', { name: 'Opening your workspace…' })).toBeVisible();
-    expect(screen.queryByText(/Make yourself at home/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Your financial overview.' }),
+    ).not.toBeInTheDocument();
     await act(async () => resolve(user));
     expect(await welcome()).toBeVisible();
   });
@@ -196,7 +202,9 @@ describe('authentication screens and protected routes', () => {
     await screen.findByRole('heading', { name: 'Welcome back.' });
     await act(async () => resolveStale(user));
     expect(screen.getByRole('heading', { name: 'Welcome back.' })).toBeVisible();
-    expect(screen.queryByText(/Make yourself at home/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Your financial overview.' }),
+    ).not.toBeInTheDocument();
   });
   it('handles a protected API 401 consistently and explains session expiry', async () => {
     authService.me.mockResolvedValue(user);

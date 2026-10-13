@@ -5,7 +5,7 @@ import {
   isCategoryForType,
 } from '../../../shared/transaction.constants.js';
 
-const transactionSchema = z
+export const transactionSchema = z
   .object({
     id: z.string().regex(/^[a-f0-9]{24}$/i),
     version: z.number().int().nonnegative().safe(),

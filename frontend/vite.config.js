@@ -17,6 +17,19 @@ export default defineConfig({
     },
   },
   preview: { host: 'localhost', port: 5173, strictPort: true },
+  build: {
+    manifest: true,
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'react-runtime', test: /node_modules\/(react|react-dom|scheduler)\// },
+            { name: 'validation', test: /node_modules\/zod\// },
+          ],
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
