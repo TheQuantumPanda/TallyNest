@@ -1,4 +1,6 @@
-# Smart Finance Manager
+# TallyNest
+
+Your money. In perspective.
 
 Phase 1 provides the Node.js 24 / Express backend, JWT authentication, and a React 19
 frontend with login, registration, and a protected personal workspace. Finance
@@ -145,6 +147,10 @@ Configure the backend's exact HTTPS `CLIENT_ORIGIN`; keep frontend and API same-
 for SameSite=Lax cookies. This task does not implement deployment or TLS termination.
 
 ## Authentication API
+
+TallyNest is the product display name. The health-check response documented above,
+JWT issuer/audience, cookie names, and MongoDB database name remain unchanged for
+API and session compatibility. These internal identifiers are not display branding.
 
 Success responses use `{ "status": "ok", "data": { "user": ... } }`, with a
 message on registration and login. Logout returns `{ "status": "ok", "message":

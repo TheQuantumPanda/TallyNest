@@ -23,3 +23,7 @@ npm-debug.log*
 # Temporary files
 tmp/
 temp/
+
+# Local browser verification artifacts (may contain session information)
+.playwright-cli/
+output/playwright/

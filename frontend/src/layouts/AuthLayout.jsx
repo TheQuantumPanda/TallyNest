@@ -27,11 +27,11 @@ export function AuthLayout() {
           <Outlet />
         </PageTransition>
         <footer className="auth-footer">
-          <span>Smart Finance Manager</span>
+          <span>TallyNest</span>
           <span>Clarity starts here.</span>
         </footer>
       </section>
-      <aside className="auth-story" aria-label="About Smart Finance">
+      <aside className="auth-story" aria-label="About TallyNest">
         <div className="story-label">
           <span className="eyebrow">A DIFFERENT KIND OF WORKSPACE</span>
           <ArrowUpRight size={23} aria-hidden="true" />
@@ -51,9 +51,7 @@ export function AuthLayout() {
           <div className="orbit orbit-two" />
           <div className="orbit orbit-three" />
           <div className="art-core">
-            <svg viewBox="0 0 80 80">
-              <path d="m21 49 19-31 19 31-19 14z" fill="currentColor" />
-            </svg>
+            <img src="/brand-mark.svg" alt="" />
           </div>
           <span className="art-spark spark-one" />
           <span className="art-spark spark-two" />

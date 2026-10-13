@@ -1,7 +1,7 @@
 {
-  "name": "smart-finance-manager-backend",
+  "name": "tallynest-backend",
   "version": "1.0.0",
-  "description": "Smart Finance Manager backend foundation",
+  "description": "TallyNest backend foundation",
   "main": "app.js",
   "scripts": {
     "test": "node --test",

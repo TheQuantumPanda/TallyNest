@@ -1,5 +1,8 @@
 # Phase 1, Step 4 — implementation and verification
 
+Product: **TallyNest**. The historical screenshots listed below predate the branding
+finalization; current branding verification is recorded in `branding-finalization.md`.
+
 Verification snapshot: 2026-10-13. Node.js 24.21.0. Changes are uncommitted.
 
 The React 19 frontend provides login, registration, initial session restoration,
@@ -101,6 +104,7 @@ frontend/
 ├── package-lock.json
 ├── package.json
 ├── public/
+│   ├── brand-mark.svg
 │   └── favicon.svg
 ├── src/
 │   ├── App.jsx

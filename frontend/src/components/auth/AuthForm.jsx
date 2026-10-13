@@ -120,7 +120,7 @@ export function AuthForm({ mode }) {
         </Button>
       </form>
       <p className="auth-switch">
-        {register ? 'Already have an account?' : 'New to Smart Finance?'}{' '}
+        {register ? 'Already have an account?' : 'New to TallyNest?'}{' '}
         <Link to={register ? '/login' : '/register'} state={location.state}>
           {register ? 'Sign in' : 'Create an account'}
         </Link>

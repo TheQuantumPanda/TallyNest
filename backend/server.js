@@ -57,7 +57,7 @@ async function start() {
       console.error('HTTP server error');
       void shutdown('HTTP server error', 1);
     });
-    console.info(`Smart Finance Manager API listening on port ${config.port}`);
+    console.info(`TallyNest API listening on port ${config.port}`);
   } catch (error) {
     // Never log raw driver errors: they may contain connection credentials.
     console.error(error.message.startsWith('Invalid environment configuration:')

@@ -83,8 +83,8 @@ export function AppLayout() {
           <Outlet />
         </main>
         <footer className="app-footer">
-          <span>Smart Finance Manager</span>
-          <span>Your pace. Your perspective.</span>
+          <span>TallyNest</span>
+          <span>Your money. In perspective.</span>
         </footer>
       </div>
     </div>
