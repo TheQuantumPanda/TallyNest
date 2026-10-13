@@ -13,3 +13,5 @@
   --color-accent: #83e5d5;
   --font-sans: 'Manrope Variable', 'Segoe UI', sans-serif;
 }
+
+@import './budgets.css';

@@ -1,12 +1,12 @@
 import { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 
-export function Dialog({ title, children, onClose, busy = false }) {
+export function Dialog({ title, children, onClose, busy = false, returnFocus }) {
   const ref = useRef(null);
   const titleId = useId();
   useEffect(() => {
     const element = ref.current;
-    const trigger = document.activeElement;
+    const trigger = returnFocus || document.activeElement;
     element.showModal();
     element.querySelector('input:not([disabled]), select:not([disabled])')?.focus();
     const previous = document.body.style.overflow;
@@ -20,7 +20,7 @@ export function Dialog({ title, children, onClose, busy = false }) {
           document.querySelector('#main-content');
       target?.focus();
     };
-  }, []);
+  }, [returnFocus]);
   return (
     <dialog
       ref={ref}

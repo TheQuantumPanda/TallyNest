@@ -7,8 +7,8 @@ frontend with login, registration, and a protected personal workspace. Phase 2,
 Steps 1–5 add the transaction model, exact monetary utilities, authenticated
 personal transaction CRUD APIs, filtered cursor pagination, client version checks,
 a responsive transaction management page, and a real financial dashboard.
-Phase 3, Steps 1–2 add independent monthly expense-category budgets and exact
-spending analytics through authenticated backend APIs. The overview and ledger
+Phase 3, Steps 1–3 add independent monthly expense-category budgets, exact
+spending analytics, and a responsive budget management frontend. The overview and ledger
 display only the signed-in user’s personal records; net
 cash flow is not presented as a verified bank balance.
 
@@ -119,7 +119,9 @@ with `.gitkeep` until those features are implemented.
 | --- | --- | --- |
 | `/login` | Sign in | Anonymous users |
 | `/register` | Create account | Anonymous users |
-| `/app` | Welcome / workspace overview | Authenticated users |
+| `/app` | Financial overview | Authenticated users |
+| `/app/transactions` | Personal transaction ledger | Authenticated users |
+| `/app/budgets` | Monthly budget management | Authenticated users |
 | `/app/account` | Read-only account details | Authenticated users |
 | Other routes | Not found | Public |
 
@@ -393,8 +395,8 @@ Budgets are independent personal records for a UTC calendar month (`YYYY-MM`),
 expense category and INR currency. Limits use the existing positive safe integer
 `amountMinor` paise representation. A unique owner/month/currency/category index
 prevents duplicates, including concurrent creates. Budget writes never generate
-or modify transactions. No budgeting frontend is added; Step 2 provides the
-read-only spending summary below.
+or modify transactions. Step 2 provides the read-only spending summary below;
+Step 3 integrates the monthly management frontend.
 
 The authenticated API supports POST/GET `/api/budgets` and GET/PATCH/DELETE
 `/api/budgets/:id`. Listing requires `month` (for example `?month=2026-10`), with
@@ -428,3 +430,25 @@ See the [summary API and financial specification](docs/phase-3-step-2.md) for th
 full response, status definitions, reconciliation rules, precision, consistency,
 verification results and limitations. Existing test/development commands apply;
 no dependencies or environment configuration were added.
+
+
+## Budget management frontend (Phase 3, Step 3)
+
+Choose **Budgets** in desktop/mobile navigation, or open `/app/budgets`. Select a
+UTC reporting month, view real category limits/spending/status, create and edit
+monthly budgets, or confirm deletion. Unbudgeted spending stays separate and
+provides category-prefilled limit actions. The default month is the current UTC
+month; historical and future records remain accessible through the month/year input.
+
+Forms reuse shared expense categories, exact decimal-to-paise conversion, existing
+UI/dialog infrastructure and the credentialed Axios client. Edits fetch current
+records and send If-Match. Conflicts preserve drafts and require reload/review;
+unsaved changes require discard confirmation. Deleting a budget never deletes an
+expense. A failed unsafe summary can still expose validated saved limits for repair,
+without fabricated spending. Remaining allowance is not a bank balance, and
+utilization labels retain true values over 100% while bars cap visually.
+
+See the [frontend implementation and verification report](docs/phase-3-step-3.md)
+for architecture, API integration, tests, Chromium results, screenshots and known
+limitations. Existing development/check commands above apply; no dependencies,
+backend contracts, schemas or environment configuration changed.

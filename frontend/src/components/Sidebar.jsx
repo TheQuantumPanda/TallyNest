@@ -5,6 +5,7 @@ import {
   LockKeyhole,
   LogOut,
   ReceiptText,
+  Target,
   Users,
   UserRound,
   X,
@@ -36,6 +37,11 @@ export function Sidebar({ onClose, onLogout, loggingOut }) {
         <NavLink to="/app/transactions" onClick={onClose}>
           <ReceiptText size={19} aria-hidden="true" />
           Transactions
+          <span className="nav-indicator" />
+        </NavLink>
+        <NavLink to="/app/budgets" onClick={onClose}>
+          <Target size={19} aria-hidden="true" />
+          Budgets
           <span className="nav-indicator" />
         </NavLink>
         <NavLink to="/app/account" onClick={onClose}>

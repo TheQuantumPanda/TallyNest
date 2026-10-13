@@ -71,7 +71,9 @@ export function AppLayout() {
                   ? 'My account'
                   : location.pathname === '/app/transactions'
                     ? 'Transactions'
-                    : 'Overview'}
+                    : location.pathname === '/app/budgets'
+                      ? 'Budgets'
+                      : 'Overview'}
               </strong>
             </span>
           </div>
