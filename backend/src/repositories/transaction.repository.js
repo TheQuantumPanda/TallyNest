@@ -1,14 +1,42 @@
 import mongoose from 'mongoose';
 import { Transaction } from '../models/transaction.model.js';
-import { ownerIdSchema, transactionDateSchema } from '../validators/transaction.validator.js';
+import { ownerIdSchema, transactionDateSchema, transactionInputSchema } from '../validators/transaction.validator.js';
 
 function objectId(value) {
   return ownerIdSchema.parse(value instanceof mongoose.Types.ObjectId ? value.toHexString() : value);
 }
 
-// Only scoped reads are exposed at this stage. No arbitrary query filters or writes.
+// Validate a full Mongoose document before any write. Query update validators
+// alone cannot check type/category across fields. The version predicate below
+// ensures this validated snapshot cannot overwrite a concurrent update.
 export function createTransactionRepository(model = Transaction) {
+  async function validatedData(ownerId, data) {
+    const parsed = transactionInputSchema.parse(data);
+    const document = new model({ ...parsed, owner: objectId(ownerId) });
+    await document.validate();
+    return document;
+  }
   return {
+    async createForOwner(ownerId, data) {
+      const document = await validatedData(ownerId, data);
+      return document.save();
+    },
+    async replaceForOwner(ownerId, transactionId, version, data) {
+      if (!Number.isSafeInteger(version) || version < 0) throw new RangeError('Invalid transaction version');
+      const document = await validatedData(ownerId, data);
+      const values = {};
+      for (const key of ['type', 'title', 'amountMinor', 'currency', 'category', 'transactionDate', 'notes']) {
+        if (document[key] !== undefined) values[key] = document[key];
+      }
+      return model.findOneAndUpdate(
+        { owner: objectId(ownerId), _id: objectId(transactionId), __v: version },
+        { $set: values, $inc: { __v: 1 }, ...(document.notes === undefined ? { $unset: { notes: 1 } } : {}) },
+        { returnDocument: 'after', runValidators: false },
+      ).exec();
+    },
+    deleteForOwner(ownerId, transactionId) {
+      return model.findOneAndDelete({ owner: objectId(ownerId), _id: objectId(transactionId) }).exec();
+    },
     findByIdForOwner(ownerId, transactionId) {
       return model.findOne({ owner: objectId(ownerId), _id: objectId(transactionId) }).exec();
     },

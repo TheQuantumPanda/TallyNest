@@ -194,3 +194,32 @@ test('model rejects invalid assignments after an initially valid document', () =
     assert.ok(model.validateSync()?.errors[field]);
   }
 });
+
+test('repository atomic write and deletion filters always include owner, ID and version where needed', async () => {
+  const calls = [];
+  function Model(data) { return new Transaction(data); }
+  Model.findOneAndUpdate = (filter, update, options) => {
+    calls.push({ filter, update, options });
+    return { exec: async () => null };
+  };
+  Model.findOneAndDelete = filter => {
+    calls.push({ filter });
+    return { exec: async () => null };
+  };
+  const repository = createTransactionRepository(Model);
+  const id = '507f1f77bcf86cd799439012';
+  await repository.replaceForOwner(owner, id, 7, input);
+  assert.deepEqual(calls[0].filter, { owner, _id: id, __v: 7 });
+  assert.deepEqual(calls[0].update.$inc, { __v: 1 });
+  assert.deepEqual(calls[0].update.$unset, { notes: 1 });
+  assert.equal(calls[0].update.$set.amountMinor, 10050);
+  assert.equal(Object.hasOwn(calls[0].update.$set, 'owner'), false);
+  await repository.deleteForOwner(owner, id);
+  assert.deepEqual(calls[1].filter, { owner, _id: id });
+  const before = calls.length;
+  await assert.rejects(() => repository.replaceForOwner(owner, id, 7, { ...input, amountMinor: 1.5 }));
+  await assert.rejects(() => repository.replaceForOwner(owner, id, 7, { ...input, owner }));
+  await assert.rejects(() => repository.replaceForOwner(owner, id, -1, input));
+  assert.throws(() => repository.deleteForOwner({ $ne: null }, id));
+  assert.equal(calls.length, before);
+});

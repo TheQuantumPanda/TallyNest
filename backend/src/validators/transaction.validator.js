@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { HttpError } from '../utils/httpError.js';
 import { DEFAULT_CURRENCY, CURRENCIES, TRANSACTION_TYPES, TRANSACTION_CATEGORIES, isCategoryForType } from '../constants/transaction.constants.js';
 
 export const ownerIdSchema = z.string().regex(/^[a-fA-F0-9]{24}$/, 'Invalid owner ObjectId');
@@ -38,3 +39,15 @@ function compatibleCategory(value, context) {
 export const transactionInputSchema = z.object(fields).strict().superRefine(compatibleCategory);
 export const transactionDocumentSchema = z.object({ owner: ownerIdSchema, ...fields })
   .strict().superRefine(compatibleCategory);
+
+// No defaults in a patch: omitting currency must preserve the stored value.
+export const transactionPatchSchema = z.object({
+  ...Object.fromEntries(Object.entries(fields).map(([key, schema]) => [key, schema.optional()])),
+  currency: currencySchema.optional(),
+  notes: notesSchema.nullable().optional(),
+}).strict().refine(value => Object.keys(value).length > 0, 'Patch must contain a field');
+
+export function requireTransactionJson(req, _res, next) {
+  if (!req.is('application/json')) return next(new HttpError(415, 'JSON content type required', 'JSON_REQUIRED'));
+  next();
+}

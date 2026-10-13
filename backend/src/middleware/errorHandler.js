@@ -13,18 +13,25 @@ export function errorHandler(err, req, res, next) {
   // Express routing is case-insensitive by default; protect matching aliases too.
   const requestPath = req.path.toLowerCase();
   const authRequest = requestPath === '/api/auth' || requestPath.startsWith('/api/auth/');
+  const transactionRequest = requestPath === '/api/transactions' || requestPath.startsWith('/api/transactions/');
+  const privateRequest = authRequest || transactionRequest;
   const safeMessage = err instanceof HttpError ? err.message
     : (status >= 500 ? 'Internal server error' : STATUS_CODES[status] ?? 'Request failed');
   const body = {
     status: 'error',
-    message: production || authRequest
+    message: production || privateRequest
       ? safeMessage
       : err.message || 'Internal server error',
   };
 
-  if (!production && !authRequest && err.stack) {
+  if (!production && !privateRequest && err.stack) {
     body.stack = err.stack;
   }
 
+  if (transactionRequest) {
+    body.code = err instanceof HttpError && err.code ? err.code
+      : ({ 400: 'INVALID_REQUEST', 401: 'AUTH_REQUIRED', 403: 'CSRF_REJECTED',
+        404: 'NOT_FOUND', 413: 'BODY_TOO_LARGE', 415: 'JSON_REQUIRED', 429: 'RATE_LIMITED' }[status] ?? 'INTERNAL_ERROR');
+  }
   res.status(status).json(body);
 }

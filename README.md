@@ -4,9 +4,9 @@ Your money. In perspective.
 
 Phase 1 provides the Node.js 24 / Express backend, JWT authentication, and a React 19
 frontend with login, registration, and a protected personal workspace. Phase 2,
-Step 1 adds the transaction data model, financial integrity utilities, and scoped
-repository reads. Transaction endpoints and finance UI remain future work; the
-welcome screen contains no financial data.
+Steps 1–2 add the transaction model, exact monetary utilities, and authenticated
+personal transaction CRUD APIs. The welcome screen contains no financial data;
+transaction frontend pages remain future work.
 
 ## Run locally
 
@@ -194,7 +194,7 @@ not trimmed. The byte limit prevents bcrypt's silent input truncation.
   phase. Frontend and backend must be same-site. In development use `localhost`
   consistently on both sides rather than mixing it with `127.0.0.1`.
 - CORS allows credentials only for the configured frontend origin. Browser clients
-  must use `credentials: 'include'` and the CSRF header for POST requests. Exact
+  must use `credentials: 'include'` and the CSRF header for POST, PATCH, and DELETE requests. Exact
   origin checks plus a required custom header provide CSRF protection in addition
   to SameSite, following the [OWASP API guidance](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#employing-custom-request-headers-for-ajaxapi).
   Trusted-origin script compromise remains outside this protection.
@@ -269,8 +269,8 @@ also deletes local database data and should only be used when a reset is intende
 ## Transaction foundation (Phase 2, Step 1)
 
 The [transaction foundation specification](docs/phase-2-step-1.md) documents the
-schema, categories, ownership, index plan, and future JSON contract. No transaction
-HTTP routes or frontend screens are implemented in this step.
+schema, categories, ownership, index plan, and original JSON contract. Step 2
+implements the API described below; the frontend has no transaction screens yet.
 
 Amounts use `amountMinor`, a positive safe integer in paise, with `currency: "INR"`
 (default). For example, ₹100.50 is `{ "amountMinor": 10050, "currency": "INR" }`.
@@ -279,3 +279,39 @@ rupee value or round overprecise input. Transaction dates use canonical UTC
 `YYYY-MM-DDTHH:mm:ss.sssZ` timestamps; future monthly reporting must choose an
 explicit reporting timezone. Ownership comes from the authenticated user, never
 from the future request body. Repository reads always include that owner.
+
+## Personal transaction API (Phase 2, Step 2)
+
+See the [complete endpoint specification](docs/phase-2-step-2.md) for request and
+response examples, validation, error codes, concurrency, and manual curl checks.
+
+| Method | Endpoint | Success |
+| --- | --- | --- |
+| POST | `/api/transactions` | 201, created transaction |
+| GET | `/api/transactions` | 200, at most 50 owned transactions |
+| GET | `/api/transactions/:id` | 200, owned transaction |
+| PATCH | `/api/transactions/:id` | 200, updated transaction |
+| DELETE | `/api/transactions/:id` | 200, `Transaction deleted` |
+
+All endpoints require the existing JWT cookie. POST, PATCH, and DELETE require
+the configured Origin and `X-CSRF-Protection: 1`; POST/PATCH require JSON. Only
+editable transaction fields are accepted. PATCH merges and fully validates the
+result; `notes: null` clears notes. Owner and internal fields cannot be supplied.
+Missing and foreign-owned IDs receive identical 404 responses. History is ordered
+by date descending then ID descending; query parameters are deferred to Step 3.
+
+Updates atomically compare and increment the stored version to prevent stale
+writes; concurrent changes return 409. Transaction errors include stable `code`
+values and never disclose internal details. Amounts remain positive safe integers
+in paise with INR currency. The original schema and compound index are preserved.
+
+Run the separate real-MongoDB integration suite against local Docker MongoDB:
+
+```bash
+docker compose up -d --wait mongodb
+npm run test:mongo --prefix backend
+```
+
+It uses a uniquely named disposable database and removes it afterward. The default
+backend test command still requires no database. Neither integration command loads
+local `.env` secrets or writes to development user/transaction data.

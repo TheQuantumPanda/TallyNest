@@ -1,5 +1,8 @@
 # TallyNest — Transaction foundation
 
+This document records the Step 1 implementation snapshot. Current CRUD behavior
+and subsequent live integration verification are documented in [Step 2](phase-2-step-2.md).
+
 Phase 2, Step 1 implements a personal transaction schema, Zod 4 validation, exact
 money utilities, central categories, and ownership-scoped read primitives. There
 are no transaction endpoints, controllers, services, frontend changes, or scheduled
