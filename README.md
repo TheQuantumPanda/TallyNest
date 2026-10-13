@@ -7,8 +7,9 @@ frontend with login, registration, and a protected personal workspace. Phase 2,
 Steps 1–5 add the transaction model, exact monetary utilities, authenticated
 personal transaction CRUD APIs, filtered cursor pagination, client version checks,
 a responsive transaction management page, and a real financial dashboard.
-Phase 3, Steps 1–3 add independent monthly expense-category budgets, exact
-spending analytics, and a responsive budget management frontend. The overview and ledger
+Phase 3, Steps 1–4 add independent monthly expense-category budgets, exact
+spending analytics, a responsive budget management frontend, and a backend-only
+recurring personal transaction engine. The overview and ledger
 display only the signed-in user’s personal records; net
 cash flow is not presented as a verified bank balance.
 
@@ -49,7 +50,7 @@ for state-changing requests.
 
 Edit `backend/.env` for local configuration. Existing shell environment variables
 take precedence. The server validates configuration and connects to MongoDB before
-listening. It also waits for the unique user email and monthly budget indexes to initialize. `.env` is
+listening. It also waits for user, budget, recurring schedule, and transaction indexes to initialize. `.env` is
 ignored by Git; never commit real credentials.
 
 `npm run setup:env` creates `.env` from the example if absent. It preserves existing
@@ -452,3 +453,37 @@ See the [frontend implementation and verification report](docs/phase-3-step-3.md
 for architecture, API integration, tests, Chromium results, screenshots and known
 limitations. Existing development/check commands above apply; no dependencies,
 backend contracts, schemas or environment configuration changed.
+
+
+## Recurring transaction backend (Phase 3, Step 4)
+
+Recurring schedules describe expected income or expenses; they are not ledger entries.
+Daily, weekly, monthly and yearly schedules generate ordinary personal transactions
+using exact integer paise, existing categories and UTC dates. Monthly dates retain the
+original intended day: January 31 → February 28/29 → March 31. Yearly February 29
+uses February 28 in non-leap years and returns to February 29 in leap years.
+
+The authenticated API supports POST/GET `/api/recurring`, GET/PATCH/DELETE
+`/api/recurring/:id`, and POST `/:id/pause` / `/:id/resume`. Mutations require existing
+Origin/CSRF protection. Updates and lifecycle changes require the current ETag through
+If-Match. POST `/api/recurring/process` accepts `{ "limit": 20 }` (maximum 100) and
+processes only the signed-in owner's due schedules with additional rate limiting.
+
+After startup, the server runs a bounded batch immediately, then 60 seconds after
+completion while awake. Persistent cursors catch up missed occurrences across repeated
+batches; a sleeping host cannot execute at precise scheduled times. Pausing retains
+the cursor; resuming catches up missed eligible dates. Edits affect uncompleted future
+occurrences and never rewrite historical entries. Deleting a schedule preserves history.
+
+A durable pending occurrence and unique schedule/date transaction index prevent
+duplicate generation. Reserved work temporarily blocks schedule changes with 409.
+Deleted generated entries retain hidden receipts, preventing resurrection on retry;
+manual transaction deletion remains hard deletion. Ledger, dashboard and budget reads
+exclude these receipts. Generated transaction responses add optional `recurrence`
+provenance; existing fields and authentication contracts remain unchanged.
+
+See the [recurring engine specification](docs/phase-3-step-4.md) for schemas, examples,
+indexes, crash recovery, concurrency, scheduling limitations and verification results.
+Existing local commands apply; no new dependencies, environment settings or frontend
+screens were added. `npm run test:mongo --prefix backend` now also verifies recurring
+behavior against disposable local MongoDB databases.

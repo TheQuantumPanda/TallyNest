@@ -57,7 +57,7 @@ export function transactionApiContract(setup) {
       { amountMinor: '100' }, { amountMinor: null }, { amountMinor: Number.MAX_SAFE_INTEGER + 1 },
       { currency: 'USD' }, { category: 'salary' }, { category: 'bad' },
       { transactionDate: '2026-02-30T00:00:00.000Z' }, { owner: ownerB }, { _id: ownerB },
-      { createdAt: expense.transactionDate }, { updatedAt: expense.transactionDate }, { __v: 9 }, { $set: {} }]) {
+      { createdAt: expense.transactionDate }, { updatedAt: expense.transactionDate }, { __v: 9 }, { recurringSchedule: ownerB }, { scheduledDate: expense.transactionDate }, { deletedAt: expense.transactionDate }, { recurrence: {} }, { $set: {} }]) {
       const response = await request('', { method: 'POST', body: { ...expense, ...changes } });
       assert.equal(response.status, 400, JSON.stringify(changes));
       assert.equal(response.body.code, 'INVALID_TRANSACTION');

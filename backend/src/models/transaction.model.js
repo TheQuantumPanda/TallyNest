@@ -46,6 +46,10 @@ const transactionSchema = new mongoose.Schema({
       message: 'Invalid transaction date',
     },
   },
+  recurringSchedule: { type: mongoose.Schema.Types.ObjectId, ref: 'RecurringSchedule', immutable: true },
+  scheduledDate: { type: Date, immutable: true },
+  // Retained generation receipt; absent on visible/manual transactions.
+  deletedAt: { type: Date },
   notes: constrainedField(String, notesSchema),
 }, { timestamps: true, strict: 'throw' });
 
@@ -54,5 +58,13 @@ transactionSchema.index({ owner: 1, transactionDate: -1, _id: -1 });
 
 // Amount keyset sorting uses this index in either scan direction.
 transactionSchema.index({ owner: 1, amountMinor: -1, _id: -1 });
+
+transactionSchema.pre('validate', function () {
+  if (!!this.recurringSchedule !== !!this.scheduledDate ||
+    (this.scheduledDate && !transactionDateSchema.safeParse(this.scheduledDate.toISOString()).success) ||
+    (this.deletedAt && !this.recurringSchedule)) this.invalidate('recurringSchedule', 'Invalid recurrence provenance');
+});
+transactionSchema.index({ recurringSchedule: 1, scheduledDate: 1 }, { unique: true,
+  partialFilterExpression: { recurringSchedule: { $type: 'objectId' }, scheduledDate: { $type: 'date' } } });
 
 export const Transaction = mongoose.model('Transaction', transactionSchema);

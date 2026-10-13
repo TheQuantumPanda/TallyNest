@@ -38,7 +38,7 @@ test('repository builds bounded owner-scoped keyset comparisons and escapes lite
     search: '.*', after: { id: ownerA, value: 10050 },
   });
   assert.deepEqual(calls, [
-    ['filter', { owner: ownerA, currency: 'INR', title: { $regex: '\\.\\*', $options: 'i' },
+    ['filter', { owner: ownerA, currency: 'INR', deletedAt: { $exists: false }, title: { $regex: '\\.\\*', $options: 'i' },
       $or: [{ amountMinor: { $gt: 10050 } }, { amountMinor: 10050, _id: { $gt: ownerA } }] }],
     ['sort', { amountMinor: 1, _id: 1 }], ['limit', 101], ['timeout', 1000],
   ]);

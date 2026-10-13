@@ -11,7 +11,7 @@ export function createDashboardRepository(model = Transaction) {
       const bucket = { $dateTrunc: { date: '$transactionDate', unit: grouping, timezone: 'UTC', ...(grouping === 'week' ? { startOfWeek: 'monday' } : {}) } };
       // Exact Int64 conversion before Decimal128 avoids double->decimal precision loss.
       const pipeline = [
-        { $match: { owner: ownerId, transactionDate: { $gte: from, $lt: to } } },
+        { $match: { owner: ownerId, deletedAt: { $exists: false }, transactionDate: { $gte: from, $lt: to } } },
         exactMoneyStage(),
         { $facet: {
           integrity: [{ $group: { _id: null, invalid: { $sum: { $cond: [{ $and: [

@@ -127,7 +127,7 @@ test('schema declares timestamps, immutable ownership and scoped date and amount
   assert.equal(Transaction.schema.path('owner').options.immutable, true);
   assert.ok(Transaction.schema.path('createdAt'));
   assert.ok(Transaction.schema.path('updatedAt'));
-  assert.deepEqual(Transaction.schema.indexes().map(([keys]) => keys), [{ owner: 1, transactionDate: -1, _id: -1 }, { owner: 1, amountMinor: -1, _id: -1 }]);
+  assert.deepEqual(Transaction.schema.indexes().map(([keys]) => keys), [{ owner: 1, transactionDate: -1, _id: -1 }, { owner: 1, amountMinor: -1, _id: -1 }, { recurringSchedule: 1, scheduledDate: 1 }]);
 });
 
 function mockRepository() {
@@ -147,7 +147,7 @@ test('repository single lookup is scoped to owner and transaction ID', async () 
   const { repository, calls } = mockRepository();
   const id = '507f1f77bcf86cd799439012';
   assert.equal(await repository.findByIdForOwner(owner, id), null);
-  assert.deepEqual(calls, [['findOne', { owner, _id: id }]]);
+  assert.deepEqual(calls, [['findOne', { owner, _id: id, deletedAt: { $exists: false } }]]);
 });
 
 test('repository history scope, half-open dates, stable ordering and limit', async () => {
@@ -155,14 +155,14 @@ test('repository history scope, half-open dates, stable ordering and limit', asy
   const from = '2024-02-01T00:00:00.000Z';
   const to = '2024-03-01T00:00:00.000Z';
   assert.deepEqual(await repository.findForOwner(new mongoose.Types.ObjectId(owner), { from, to, limit: 20 }), []);
-  assert.deepEqual(calls, [['find', { owner, transactionDate: { $gte: new Date(from), $lt: new Date(to) } }],
+  assert.deepEqual(calls, [['find', { owner, deletedAt: { $exists: false }, transactionDate: { $gte: new Date(from), $lt: new Date(to) } }],
     ['sort', { transactionDate: -1, _id: -1 }], ['limit', 20]]);
 });
 
 test('repository owner-only read remains bounded', async () => {
   const { repository, calls } = mockRepository();
   await repository.findForOwner(owner);
-  assert.deepEqual(calls, [['find', { owner }], ['sort', { transactionDate: -1, _id: -1 }], ['limit', 50]]);
+  assert.deepEqual(calls, [['find', { owner, deletedAt: { $exists: false } }], ['sort', { transactionDate: -1, _id: -1 }], ['limit', 50]]);
 });
 
 test('repository rejects missing ownership, operator injection, invalid IDs and bad ranges before queries', () => {
@@ -209,17 +209,18 @@ test('repository atomic write and deletion filters always include owner, ID and 
   const repository = createTransactionRepository(Model);
   const id = '507f1f77bcf86cd799439012';
   await repository.replaceForOwner(owner, id, 7, input);
-  assert.deepEqual(calls[0].filter, { owner, _id: id, __v: 7 });
+  assert.deepEqual(calls[0].filter, { owner, _id: id, __v: 7, deletedAt: { $exists: false } });
   assert.deepEqual(calls[0].update.$inc, { __v: 1 });
   assert.deepEqual(calls[0].update.$unset, { notes: 1 });
   assert.equal(calls[0].update.$set.amountMinor, 10050);
   assert.equal(Object.hasOwn(calls[0].update.$set, 'owner'), false);
   await repository.deleteForOwner(owner, id);
-  assert.deepEqual(calls[1].filter, { owner, _id: id });
+  assert.deepEqual(calls[1].filter, { owner, _id: id, deletedAt: { $exists: false }, recurringSchedule: { $exists: true } });
+  assert.deepEqual(calls[2].filter, { owner, _id: id, deletedAt: { $exists: false }, recurringSchedule: { $exists: false } });
   const before = calls.length;
   await assert.rejects(() => repository.replaceForOwner(owner, id, 7, { ...input, amountMinor: 1.5 }));
   await assert.rejects(() => repository.replaceForOwner(owner, id, 7, { ...input, owner }));
   await assert.rejects(() => repository.replaceForOwner(owner, id, -1, input));
-  assert.throws(() => repository.deleteForOwner({ $ne: null }, id));
+  await assert.rejects(() => repository.deleteForOwner({ $ne: null }, id));
   assert.equal(calls.length, before);
 });

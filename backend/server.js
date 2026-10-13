@@ -1,3 +1,5 @@
+import { ensureRecurringIndexes } from './src/repositories/recurring.repository.js';
+import { startRecurringJob } from './src/jobs/recurring.job.js';
 import { createServer } from 'node:http';
 import { createApp } from './app.js';
 import { loadEnv } from './src/config/env.js';
@@ -6,6 +8,7 @@ import { ensureUserIndexes } from './src/repositories/user.repository.js';
 import { ensureBudgetIndexes } from './src/repositories/budget.repository.js';
 
 let server;
+let stopRecurringJob;
 let shuttingDown = false;
 
 async function shutdown(signal, exitCode = 0) {
@@ -26,6 +29,7 @@ async function shutdown(signal, exitCode = 0) {
         server.close((error) => error ? reject(error) : resolve());
       });
     }
+    await stopRecurringJob?.();
     await disconnectDB();
     process.exitCode = exitCode;
   } catch {
@@ -42,6 +46,7 @@ async function start() {
     await connectDB(config.mongoUri);
     await ensureUserIndexes();
     await ensureBudgetIndexes();
+    await ensureRecurringIndexes();
     if (shuttingDown) {
       await disconnectDB();
       return;
@@ -59,6 +64,7 @@ async function start() {
       console.error('HTTP server error');
       void shutdown('HTTP server error', 1);
     });
+    stopRecurringJob = startRecurringJob();
     console.info(`TallyNest API listening on port ${config.port}`);
   } catch (error) {
     // Never log raw driver errors: they may contain connection credentials.

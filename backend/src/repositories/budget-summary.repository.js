@@ -22,7 +22,7 @@ export function createBudgetSummaryRepository({ budgetModel = Budget, transactio
       const options = budgetSummaryQuerySchema.parse(query);
       const { from, to } = budgetMonthRange(options.month);
       const pipeline = [
-        { $match: { owner: ownerId, type: 'expense', currency: options.currency,
+        { $match: { owner: ownerId, deletedAt: { $exists: false }, type: 'expense', currency: options.currency,
           transactionDate: { $gte: from, $lt: to } } },
         exactMoneyStage(),
         { $facet: {

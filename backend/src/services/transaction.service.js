@@ -33,6 +33,7 @@ function editableValues(document) {
 export function toPublicTransaction(document) {
   return {
     id: String(document._id), version: document.__v, ...editableValues(document),
+    ...(document.recurringSchedule ? { recurrence: { scheduleId: String(document.recurringSchedule), scheduledDate: document.scheduledDate.toISOString() } } : {}),
     createdAt: document.createdAt.toISOString(), updatedAt: document.updatedAt.toISOString(),
   };
 }

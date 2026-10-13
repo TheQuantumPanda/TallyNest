@@ -1,3 +1,4 @@
+import { durableWriteOptions } from '../utils/durable-write.js';
 import mongoose from 'mongoose';
 import { transactionPageSchema } from '../validators/transaction-query.validator.js';
 import { Transaction } from '../models/transaction.model.js';
@@ -30,20 +31,38 @@ export function createTransactionRepository(model = Transaction) {
         if (document[key] !== undefined) values[key] = document[key];
       }
       return model.findOneAndUpdate(
-        { owner: objectId(ownerId), _id: objectId(transactionId), __v: version },
+        { owner: objectId(ownerId), _id: objectId(transactionId), __v: version, deletedAt: { $exists: false } },
         { $set: values, $inc: { __v: 1 }, ...(document.notes === undefined ? { $unset: { notes: 1 } } : {}) },
         { returnDocument: 'after', runValidators: false },
       ).exec();
     },
-    deleteForOwner(ownerId, transactionId) {
-      return model.findOneAndDelete({ owner: objectId(ownerId), _id: objectId(transactionId) }).exec();
+    async deleteForOwner(ownerId, transactionId) {
+      const filter = { owner: objectId(ownerId), _id: objectId(transactionId), deletedAt: { $exists: false } };
+      const generated = await model.findOneAndUpdate({ ...filter, recurringSchedule: { $exists: true } },
+        { $set: { deletedAt: new Date() }, $inc: { __v: 1 } }, { returnDocument: 'after', ...durableWriteOptions(), maxTimeMS: 2000 }).exec();
+      return generated ?? model.findOneAndDelete({ ...filter, recurringSchedule: { $exists: false } }).exec();
+    },
+    async createGeneratedForOwner(ownerId, transactionId, scheduleId, date, input) {
+      const document = await validatedData(ownerId, input);
+      document._id = objectId(transactionId);
+      document.recurringSchedule = objectId(scheduleId);
+      document.scheduledDate = new Date(transactionDateSchema.parse(date.toISOString()));
+      await document.validate();
+      try { return { document: await document.save(durableWriteOptions()), created: true }; }
+      catch (error) {
+        if (error.code !== 11000) throw error;
+        // Includes hidden tombstones and manually edited history. Never replace it.
+        const receipt = await model.findOne({ owner: objectId(ownerId), recurringSchedule: objectId(scheduleId), scheduledDate: date }).readConcern('majority').exec();
+        if (!receipt) throw error;
+        return { document: receipt, created: false };
+      }
     },
     findByIdForOwner(ownerId, transactionId) {
-      return model.findOne({ owner: objectId(ownerId), _id: objectId(transactionId) }).exec();
+      return model.findOne({ owner: objectId(ownerId), _id: objectId(transactionId), deletedAt: { $exists: false } }).exec();
     },
     findPageForOwner(ownerId, options) {
       const query = transactionPageSchema.parse(options);
-      const filter = { owner: objectId(ownerId), currency: query.currency };
+      const filter = { owner: objectId(ownerId), currency: query.currency, deletedAt: { $exists: false } };
       for (const field of ['type', 'category']) if (query[field]) filter[field] = query[field];
       if (query.from || query.to) {
         filter.transactionDate = {
@@ -67,7 +86,7 @@ export function createTransactionRepository(model = Transaction) {
         .limit(query.limit + 1).maxTimeMS(1000).exec();
     },
     findForOwner(ownerId, { from, to, limit = 50 } = {}) {
-      const filter = { owner: objectId(ownerId) };
+      const filter = { owner: objectId(ownerId), deletedAt: { $exists: false } };
       if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) throw new RangeError('Limit must be 1–100');
       if (from !== undefined || to !== undefined) {
         filter.transactionDate = {};
