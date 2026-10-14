@@ -1,5 +1,13 @@
 # Phase 4, Step 1 — Groups and membership backend
 
+> Current policy update (Phase 4, Step 3): groups permanently marked with financial
+> history cannot be hard deleted, and their members cannot leave or be removed.
+> These restrictions are enforced in database write predicates before the first
+> shared expense insertion. Deleting every visible expense never clears the lock.
+> See [the shared expense specification](phase-4-step-3.md) for concurrency, conservative
+> failed-creation locks and updated deletion behavior. Earlier policies below describe
+> this document's implementation snapshot and apply only to unmarked groups.
+
 Implemented on 2026-10-13. This foundation adds authenticated group metadata CRUD
 and initial creator membership only. It adds no invitations, joining, member removal,
 shared expenses, splits, balances, settlements, payments or frontend pages. Personal

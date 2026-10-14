@@ -1,5 +1,13 @@
 # Phase 4, Step 2 — Invitations and membership management
 
+> Current policy update (Phase 4, Step 3): groups permanently marked with financial
+> history cannot be hard deleted, and their members cannot leave or be removed.
+> These restrictions are enforced in database write predicates before the first
+> shared expense insertion. Deleting every visible expense never clears the lock.
+> See [the shared expense specification](phase-4-step-3.md) for concurrency, conservative
+> failed-creation locks and updated deletion behavior. Earlier policies below describe
+> this document's implementation snapshot and apply only to unmarked groups.
+
 Implemented on 2026-10-13. Backend-only: invitation links for registered accounts,
 member listing, owner removal and voluntary member leaving. No shared expenses,
 balances, splits, settlements, email delivery or frontend pages are added. Existing

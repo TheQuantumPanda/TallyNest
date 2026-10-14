@@ -2,7 +2,7 @@ import { groupRepository } from '../repositories/group.repository.js';
 import { groupInputSchema, groupPatchSchema, groupQuerySchema } from '../validators/group.validator.js';
 import { ownerIdSchema } from '../validators/transaction.validator.js';
 import { HttpError } from '../utils/httpError.js';
-import { groupNotFound, membershipFor, requireGroupMember, requireGroupOwner, requireGroupVersion } from './group-authorization.js';
+import { groupNotFound, membershipFor, requireGroupMember, requireGroupOwner, requireGroupVersion, requireNoFinancialHistory } from './group-authorization.js';
 function parse(schema, input, code = 'INVALID_GROUP') {
   const result = schema.safeParse(input);
   if (!result.success) throw new HttpError(400, 'Invalid group request', code);
@@ -14,7 +14,7 @@ export function toPublicGroup(document, user) {
   if (!membership) throw groupNotFound();
   return { id: String(document._id), name: document.name, currency: document.currency,
     ...(document.description !== undefined ? { description: document.description } : {}),
-    version: document.__v, membership: { role: membership.role, createdAt: membership.createdAt.toISOString() },
+    version: document.__v, ...(document.financialHistoryAt ? { financialHistoryLocked: true } : {}), membership: { role: membership.role, createdAt: membership.createdAt.toISOString() },
     createdAt: document.createdAt.toISOString(), updatedAt: document.updatedAt.toISOString() };
 }
 export function createGroupService({ repository = groupRepository } = {}) {
@@ -43,9 +43,9 @@ export function createGroupService({ repository = groupRepository } = {}) {
     },
     async remove(user, id) {
       groupId(id);
-      requireGroupOwner(await requireGroupMember(repository, user, id), user);
+      requireNoFinancialHistory(requireGroupOwner(await requireGroupMember(repository, user, id), user));
       if (!await repository.deleteForOwner(user, id)) {
-        requireGroupOwner(await requireGroupMember(repository, user, id), user);
+        requireNoFinancialHistory(requireGroupOwner(await requireGroupMember(repository, user, id), user));
         throw new HttpError(409, 'Group changed; reload and retry', 'GROUP_CONFLICT');
       }
     },

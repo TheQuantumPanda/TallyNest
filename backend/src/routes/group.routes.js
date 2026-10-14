@@ -1,3 +1,4 @@
+import { createGroupExpenseController } from '../controllers/group-expense.controller.js';
 import { createInvitationController } from '../controllers/invitation.controller.js';
 import { createMembershipController } from '../controllers/membership.controller.js';
 import { Router } from 'express';
@@ -6,12 +7,18 @@ import { createGroupController } from '../controllers/group.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { protectCsrf } from '../middleware/csrf.middleware.js';
 import { requireTransactionJson as requireJson } from '../validators/transaction.validator.js';
-export function createGroupRoutes(service, authService, { cookieName, clientOrigin }, invitationService, membershipService) {
+export function createGroupRoutes(service, authService, { cookieName, clientOrigin }, invitationService, membershipService, expenseService) {
   const router = Router(), controller = createGroupController(service), csrf = protectCsrf(clientOrigin);
   router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   router.use(requireAuth(authService, cookieName));
   router.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, keyGenerator: req => req.user.id,
     standardHeaders: 'draft-8', legacyHeaders: false, message: { status: 'error', code: 'RATE_LIMITED', message: 'Too many requests; try again later' } }));
+  const expenses = createGroupExpenseController(expenseService);
+  router.post('/:id/expenses', csrf, requireJson, expenses.create);
+  router.get('/:id/expenses', expenses.list);
+  router.get('/:id/expenses/:expenseId', expenses.get);
+  router.patch('/:id/expenses/:expenseId', csrf, requireJson, expenses.update);
+  router.delete('/:id/expenses/:expenseId', csrf, expenses.remove);
   const invitations = createInvitationController(invitationService), memberships = createMembershipController(membershipService);
   router.post('/:id/invitations', csrf, requireJson, invitations.create);
   router.get('/:id/invitations', invitations.list);

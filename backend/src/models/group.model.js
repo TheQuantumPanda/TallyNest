@@ -20,6 +20,7 @@ const schema = new mongoose.Schema({
   name: field(String, groupNameSchema, { required: true }), description: field(String, groupDescriptionSchema),
   currency: field(String, currencySchema, { required: true, default: 'INR' }),
   creator: { ...reference(), immutable: true },
+  financialHistoryAt: { type: Date, immutable: true },
   invitations: { type: [invitationSchema], default: undefined },
   members: { type: [membershipSchema], required: true, default: undefined },
 }, { timestamps: true, strict: 'throw', optimisticConcurrency: true });
@@ -44,7 +45,7 @@ export const groupCollectionValidator = {
   $and: [
     { $jsonSchema: { bsonType: 'object', required: ['name', 'currency', 'creator', 'members', 'createdAt', 'updatedAt', '__v'], additionalProperties: false,
       properties: {
-        _id: { bsonType: 'objectId' }, invitations: invitationArrayBson,
+        _id: { bsonType: 'objectId' }, financialHistoryAt: { bsonType: 'date' }, invitations: invitationArrayBson,
         name: { bsonType: 'string', minLength: 1, maxLength: 100, pattern: '\\S' },
         description: { bsonType: 'string', maxLength: 2000 }, currency: { enum: ['INR'] }, creator: { bsonType: 'objectId' },
         createdAt: { bsonType: 'date' }, updatedAt: { bsonType: 'date' }, __v: { bsonType: ['int', 'long', 'double'], minimum: 0, maximum: Number.MAX_SAFE_INTEGER },

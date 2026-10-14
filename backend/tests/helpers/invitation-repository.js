@@ -33,7 +33,7 @@ export function isolatedInvitations() {
       async publicProfiles(ids) { return ids.map(user => ({ _id: String(user), name: `Public ${String(user).slice(-2)}`, email: 'private@example.test', passwordHash: 'private hash' })); },
       async remove(user, groupId, target, expected, leaving = false) {
         const old = groups.records.get(groupId);
-        if (!old || (leaving ? user !== target : String(old.creator) !== user) || !old.members.some(row => String(row.user) === target && row.role === 'member')) return null;
+        if (!old || old.financialHistoryAt || (leaving ? user !== target : String(old.creator) !== user) || !old.members.some(row => String(row.user) === target && row.role === 'member')) return null;
         return write(groupId, expected, next => { next.members = next.members.filter(row => String(row.user) !== target); });
       },
     },

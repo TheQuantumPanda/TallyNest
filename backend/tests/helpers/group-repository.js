@@ -22,7 +22,11 @@ export function isolatedGroups() {
       await updated.validate(); if (records.get(id)?.__v !== version) return null;
       records.set(id, updated); return copy(updated);
     },
-    async deleteForOwner(user, id) { const row = records.get(id); if (!owner(row, user)) return null; records.delete(id); return copy(row); },
+    async lockHistoryForMember(user, id, expected, identities) {
+      const old = records.get(id); if (!member(old, user) || old.__v !== expected || old.financialHistoryAt || identities.some(id => !member(old, id))) return null;
+      old.financialHistoryAt = new Date(); old.__v++; return copy(old);
+    },
+    async deleteForOwner(user, id) { const row = records.get(id); if (!owner(row, user) || row.financialHistoryAt) return null; records.delete(id); return copy(row); },
     async seedMember(id, user) { const row = records.get(id); row.members.push({ user, role: 'member', createdAt: new Date() }); await row.validate(); },
   };
 }

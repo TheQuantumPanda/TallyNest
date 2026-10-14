@@ -20,3 +20,8 @@ export function requireGroupVersion(group, id, ifMatch) {
   if (group.__v >= Number.MAX_SAFE_INTEGER) throw new HttpError(409, 'Group version exhausted', 'GROUP_CONFLICT');
   return group.__v;
 }
+
+export function requireNoFinancialHistory(group) {
+  if (group.financialHistoryAt) throw new HttpError(409, 'Group financial history permanently protects deletion and membership departure', 'FINANCIAL_HISTORY_LOCKED');
+  return group;
+}

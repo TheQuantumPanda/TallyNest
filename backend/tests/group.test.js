@@ -61,7 +61,7 @@ test('repository predicates enforce membership and authoritative ownership in da
   };
   const repository = createGroupRepository(model);
   await repository.findByIdForMember(ownerA, ownerB); await repository.replaceForOwner(ownerA, ownerB, 0, group); await repository.deleteForOwner(ownerA, ownerB);
-  assert.deepEqual(calls, [{ _id: ownerB, 'members.user': ownerA }, { _id: ownerB, creator: ownerA, members: { $elemMatch: { user: ownerA, role: 'owner' } }, __v: 0 }, { _id: ownerB, creator: ownerA, members: { $elemMatch: { user: ownerA, role: 'owner' } } }]);
+  assert.deepEqual(calls, [{ _id: ownerB, 'members.user': ownerA }, { _id: ownerB, creator: ownerA, members: { $elemMatch: { user: ownerA, role: 'owner' } }, __v: 0 }, { _id: ownerB, creator: ownerA, members: { $elemMatch: { user: ownerA, role: 'owner' } }, financialHistoryAt: { $exists: false } }]);
   await assert.rejects(repository.replaceForOwner(ownerA, ownerB, Number.MAX_SAFE_INTEGER, group));
   assert.throws(() => repository.findByIdForMember({ $ne: null }, ownerB));
 });

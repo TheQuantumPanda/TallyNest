@@ -14,6 +14,7 @@ display only the signed-in user’s personal records; net
 cash flow is not presented as a verified bank balance. Phase 4, Step 1 adds the
 backend group/membership foundation with owner-controlled metadata management;
 Step 2 adds secure invitations, joining, member listing, removal and leaving.
+Step 3 adds separate shared expenses, exact splitting and permanent group history protection.
 
 ## Run locally
 
@@ -531,8 +532,9 @@ Missing and unrelated groups share identical 404 behavior. Listing uses bounded
 `limit`/`after` pagination, default 20 and maximum 100. Responses expose only the
 caller's membership role/time, not the complete roster.
 
-Deleting a foundation group removes its embedded memberships only. Personal records
-remain unchanged. This policy must be revisited before shared expenses/settlements
+Deleting an unmarked foundation group removes its embedded memberships only. Groups
+with the Step 3 financial-history marker reject hard deletion and member departure.
+Personal records remain unchanged. This policy must be revisited before shared expenses/settlements
 exist. This section describes the Step 1 foundation; Step 2 adds invitations and
 membership management below. Splitting and group UI remain unimplemented. See the [group and membership specification](docs/phase-4-step-1.md)
 for schemas, indexes, permissions, API examples, atomic creation/failure semantics,
@@ -569,3 +571,33 @@ settlements. See the [invitation and membership specification](docs/phase-4-step
 for endpoint responses, privacy, token handling, concurrency/recovery, indexes, limits
 and real MongoDB verification. Existing development/test commands apply; never log
 invitation URL secrets or creation response bodies in future proxy/telemetry systems.
+
+
+## Shared expenses and splitting (Phase 4, Step 3)
+
+Members can POST/GET `/api/groups/:groupId/expenses` and GET/PATCH/DELETE
+`/api/groups/:groupId/expenses/:expenseId`. Creator or group owner may edit/delete;
+PATCH and DELETE require the current expense ETag via If-Match. POST requires a UUID
+Idempotency-Key, preventing duplicate retries; deleting an expense retains a hidden
+receipt so its original creation request cannot resurrect it.
+
+Amounts/shares remain positive safe integer paise. Equal splits allocate indivisible
+paise by stable user-ID order; exact splits must total the expense; percentage splits
+use integer basis points totaling 10000 and BigInt largest-remainder allocation.
+Selected participants may exclude other members, and every payer/participant must be
+a registered current member. Listing uses bounded date/ID keyset pagination (20 default,
+100 maximum). Groups and creators are immutable attribution fields.
+
+**Current group deletion/departure policy:** before first expense persistence, the
+backend atomically establishes a permanent financial-history marker. Group DELETE
+and member removal/leave writes require its absence, preventing concurrent destructive
+races. Marked groups cannot be deleted or lose members, even after all visible expenses
+are deleted or an initial insert fails. Such conservative false-positive locks are
+intentional until financial archival/departure policies exist. Unmarked groups retain
+the earlier foundation policy; invitations may still add members to marked groups.
+
+Group expenses stay separate from personal transactions, dashboard totals, budgets and
+recurring records. There are no balances, settlements or frontend changes. See the
+[shared expense specification](docs/phase-4-step-3.md) for schemas, algorithms, requests,
+indexes, authorization, idempotency/recovery and real MongoDB concurrency results.
+Existing development/check commands apply; no new dependencies or environment settings.

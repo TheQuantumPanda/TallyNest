@@ -15,7 +15,7 @@ export function createMembershipRepository(model = Group, users = User) {
       if (leaving && String(user) !== String(target)) throw new TypeError('Invalid leaving identity');
       const actor = leaving ? { members: { $elemMatch: { user: id(user), role: 'member' } } }
         : { creator: id(user), members: { $elemMatch: { user: id(user), role: 'owner' } } };
-      return model.findOneAndUpdate({ _id: id(groupId), ...actor, __v: expected,
+      return model.findOneAndUpdate({ _id: id(groupId), ...actor, __v: expected, financialHistoryAt: { $exists: false },
         'members.user': id(target), creator: leaving ? { $ne: id(user) } : id(user),
         $and: [{ members: { $elemMatch: { user: id(target), role: 'member' } } }],
       }, { $pull: { members: { user: id(target), role: 'member' } }, $inc: { __v: 1 } },

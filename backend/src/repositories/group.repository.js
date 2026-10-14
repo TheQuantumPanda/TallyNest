@@ -30,7 +30,14 @@ export function createGroupRepository(model = Group) {
           ...(data.description === undefined ? { $unset: { description: 1 } } : {}), $inc: { __v: 1 } },
         { returnDocument: 'after', runValidators: true, ...durableWriteOptions(), maxTimeMS: 2000 }).exec();
     },
-    deleteForOwner(user, id) { return model.findOneAndDelete({ _id: objectId(id), ...ownerFilter(user) }, { ...durableWriteOptions(), maxTimeMS: 2000 }).exec(); },
+    lockHistoryForMember(user, id, expected, identities) {
+      if (!Number.isSafeInteger(expected) || expected < 0 || expected >= Number.MAX_SAFE_INTEGER || !Array.isArray(identities) || identities.length > 102) throw new RangeError('Invalid history lock');
+      return model.findOneAndUpdate({ _id: objectId(id), ...memberFilter(user), __v: expected, currency: 'INR',
+        financialHistoryAt: { $exists: false }, $and: identities.map(value => ({ 'members.user': objectId(value) })) },
+        { $set: { financialHistoryAt: new Date() }, $inc: { __v: 1 } },
+        { returnDocument: 'after', overwriteImmutable: true, ...durableWriteOptions(), maxTimeMS: 2000 }).exec();
+    },
+    deleteForOwner(user, id) { return model.findOneAndDelete({ _id: objectId(id), ...ownerFilter(user), financialHistoryAt: { $exists: false } }, { ...durableWriteOptions(), maxTimeMS: 2000 }).exec(); },
   };
 }
 export const groupRepository = createGroupRepository();
