@@ -37,6 +37,20 @@ export function createGroupRepository(model = Group) {
         { $set: { financialHistoryAt: new Date() }, $inc: { __v: 1 } },
         { returnDocument: 'after', overwriteImmutable: true, ...durableWriteOptions(), maxTimeMS: 2000 }).exec();
     },
+    reserveFinancial(user, id, expected, op) {
+      if (!Number.isSafeInteger(expected) || expected >= Number.MAX_SAFE_INTEGER - 4 || expected < 0) throw new RangeError('Invalid financial reservation version');
+      return model.findOneAndUpdate({ _id: objectId(id), ...memberFilter(user), __v: expected, financialHistoryAt: { $exists: true }, financialOperation: { $exists: false },
+        ...(op.kind.startsWith('expense_') ? { settlementStartedAt: { $exists: false } } : {}) },
+        { $set: { financialOperation: op }, $inc: { __v: 1 } }, { returnDocument: 'after', ...durableWriteOptions(), maxTimeMS: 2000 }).exec();
+    },
+    beginSettlementMode(id, opId) {
+      return model.findOneAndUpdate({ _id: objectId(id), 'financialOperation._id': objectId(opId), settlementStartedAt: { $exists: false } },
+        { $set: { settlementStartedAt: new Date() } }, { returnDocument: 'after', overwriteImmutable: true, ...durableWriteOptions(), maxTimeMS: 2000 }).exec();
+    },
+    finishFinancial(id, opId) {
+      return model.findOneAndUpdate({ _id: objectId(id), 'financialOperation._id': objectId(opId) }, { $unset: { financialOperation: 1 }, $inc: { __v: 1 } },
+        { returnDocument: 'after', ...durableWriteOptions(), maxTimeMS: 2000 }).exec();
+    },
     deleteForOwner(user, id) { return model.findOneAndDelete({ _id: objectId(id), ...ownerFilter(user), financialHistoryAt: { $exists: false } }, { ...durableWriteOptions(), maxTimeMS: 2000 }).exec(); },
   };
 }

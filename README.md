@@ -15,6 +15,8 @@ cash flow is not presented as a verified bank balance. Phase 4, Step 1 adds the
 backend group/membership foundation with owner-controlled metadata management;
 Step 2 adds secure invitations, joining, member listing, removal and leaving.
 Step 3 adds separate shared expenses, exact splitting and permanent group history protection.
+Step 4 adds exact group balances, deterministic debt suggestions and member-confirmed
+settlements, with durable financial-write serialization and immutable settlement history.
 
 ## Run locally
 
@@ -601,3 +603,28 @@ recurring records. There are no balances, settlements or frontend changes. See t
 [shared expense specification](docs/phase-4-step-3.md) for schemas, algorithms, requests,
 indexes, authorization, idempotency/recovery and real MongoDB concurrency results.
 Existing development/check commands apply; no new dependencies or environment settings.
+
+## Group balances and settlements (Phase 4, Step 4)
+
+Backend-only; [full specification](docs/phase-4-step-4.md).
+
+- `GET /api/groups/:id/balances` returns exact per-member paid, assigned, confirmed
+  sent/received, signed net positions, pending reservations and deterministic suggestions.
+- `POST/GET /api/groups/:id/settlements`, record GET, and recipient-only POST
+  `/:settlementId/confirm` or `/reject` implement pending → confirmed/rejected.
+- Creation requires a UUID `Idempotency-Key`; decisions require the record's
+  `If-Match: "tn-<id>-v<version>"`. Cookie authentication, membership, configured
+  Origin and mutation `X-CSRF-Protection: 1` are preserved.
+- **The first valid proposal permanently freezes all expense create/edit/delete.**
+  Existing deleted-expense receipts remain. Confirmed settlements have no correction
+  or deletion endpoint. Recipient confirmation is acknowledgement, not bank proof.
+- A non-expiring group reservation serializes all expense and settlement writes on
+  standalone MongoDB. Unknown write failures require actor/owner POST
+  `/api/groups/:id/financial-recovery` with `{}`; no forced unlock or silent retry.
+- Net = paid − assigned + confirmed sent − confirmed received; all positions
+  reconcile to zero using exact integer paise. Group records never affect personal
+  transactions, budgets, dashboard or recurring records.
+
+Run `npm test --prefix backend`, `npm run test:mongo --prefix backend` (local Docker
+MongoDB required), and the existing frontend regression/lint/format commands above.
+The MongoDB tests use disposable databases and verify cleanup.

@@ -14,7 +14,7 @@ export function toPublicGroup(document, user) {
   if (!membership) throw groupNotFound();
   return { id: String(document._id), name: document.name, currency: document.currency,
     ...(document.description !== undefined ? { description: document.description } : {}),
-    version: document.__v, ...(document.financialHistoryAt ? { financialHistoryLocked: true } : {}), membership: { role: membership.role, createdAt: membership.createdAt.toISOString() },
+    version: document.__v, ...(document.settlementStartedAt ? { settlementMode: true } : {}), ...(document.financialOperation ? { financialBusy: true } : {}), ...(document.financialHistoryAt ? { financialHistoryLocked: true } : {}), membership: { role: membership.role, createdAt: membership.createdAt.toISOString() },
     createdAt: document.createdAt.toISOString(), updatedAt: document.updatedAt.toISOString() };
 }
 export function createGroupService({ repository = groupRepository } = {}) {

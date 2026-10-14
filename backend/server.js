@@ -1,3 +1,4 @@
+import { ensureSettlementIndexes } from './src/repositories/settlement.repository.js';
 import { ensureGroupExpenseIndexes } from './src/repositories/group-expense.repository.js';
 import { ensureGroupIndexes } from './src/repositories/group.repository.js';
 import { ensureRecurringIndexes } from './src/repositories/recurring.repository.js';
@@ -51,6 +52,7 @@ async function start() {
     await ensureRecurringIndexes();
     await ensureGroupIndexes();
     await ensureGroupExpenseIndexes();
+    await ensureSettlementIndexes();
     if (shuttingDown) {
       await disconnectDB();
       return;

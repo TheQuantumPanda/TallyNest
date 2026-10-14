@@ -1,3 +1,5 @@
+import { createGroupFinancialService } from './src/services/group-financial.service.js';
+import { createSettlementService } from './src/services/settlement.service.js';
 import { createGroupExpenseService } from './src/services/group-expense.service.js';
 import { createInvitationService } from './src/services/invitation.service.js';
 import { createMembershipService } from './src/services/membership.service.js';
@@ -31,7 +33,7 @@ export function createApp({
   clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   jwtSecret = process.env.JWT_SECRET,
   jwtTtlSeconds = 900,
-} = {}, { repository, transactionRepository, dashboardRepository, dashboardNow, budgetRepository, budgetSummaryRepository, recurringRepository, recurringTransactions, recurringNow, groupRepository, invitationRepository, membershipRepository, invitationNow, groupExpenseRepository } = {}) {
+} = {}, { repository, transactionRepository, dashboardRepository, dashboardNow, budgetRepository, budgetSummaryRepository, recurringRepository, recurringTransactions, recurringNow, groupRepository, invitationRepository, membershipRepository, invitationNow, groupExpenseRepository, settlementRepository, groupBalanceRepository } = {}) {
   const app = express();
   app.set('env', nodeEnv);
   app.disable('x-powered-by');
@@ -64,12 +66,15 @@ export function createApp({
     createRecurringEngine({ repository: recurringRepository, transactions: recurringTransactions, now: recurringNow }), authService, {
       clientOrigin, cookieName: nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access',
     }));
-  const invitationService = createInvitationService({ repository: invitationRepository, groups: groupRepository, now: invitationNow, groupExpenseRepository });
+  const invitationService = createInvitationService({ repository: invitationRepository, groups: groupRepository, now: invitationNow });
   const membershipService = createMembershipService({ repository: membershipRepository, groups: groupRepository });
+  const financial = createGroupFinancialService({ groups: groupRepository, expenses: groupExpenseRepository, settlements: settlementRepository, balances: groupBalanceRepository });
+  const expenseService = createGroupExpenseService({ repository: groupExpenseRepository, groups: groupRepository, profiles: membershipRepository, financial });
+  const settlementService = createSettlementService({ groups: groupRepository, repository: settlementRepository, balances: groupBalanceRepository, profiles: membershipRepository, financial });
   app.use('/api/invitations', createInvitationRoutes(invitationService, authService, { clientOrigin, cookieName: nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access' }));
   app.use('/api/groups', createGroupRoutes(createGroupService({ repository: groupRepository }), authService, {
     clientOrigin, cookieName: nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access',
-  }, invitationService, membershipService, createGroupExpenseService({ repository: groupExpenseRepository, groups: groupRepository, profiles: membershipRepository })));
+  }, invitationService, membershipService, expenseService, settlementService));
   app.use(notFound);
   app.use(errorHandler);
   return app;

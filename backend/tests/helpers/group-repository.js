@@ -26,6 +26,16 @@ export function isolatedGroups() {
       const old = records.get(id); if (!member(old, user) || old.__v !== expected || old.financialHistoryAt || identities.some(id => !member(old, id))) return null;
       old.financialHistoryAt = new Date(); old.__v++; return copy(old);
     },
+    async reserveFinancial(user, id, expected, op) {
+      const row = records.get(id); if (!member(row, user) || row.__v !== expected || !row.financialHistoryAt || row.financialOperation || (op.kind.startsWith('expense_') && row.settlementStartedAt)) return null;
+      row.financialOperation = op; row.__v++; return copy(row);
+    },
+    async beginSettlementMode(id, opId) {
+      const row = records.get(id); if (!row || String(row.financialOperation?._id) !== opId || row.settlementStartedAt) return null;
+      // Immutable setter rejects ordinary mutations; emulate the repository's guarded override.
+      const next = Group.hydrate({ ...row.toObject(), settlementStartedAt: new Date() }); records.set(id, next); return copy(next);
+    },
+    async finishFinancial(id, opId) { const row = records.get(id); if (!row || String(row.financialOperation?._id) !== opId) return null; row.financialOperation = undefined; row.__v++; return copy(row); },
     async deleteForOwner(user, id) { const row = records.get(id); if (!owner(row, user) || row.financialHistoryAt) return null; records.delete(id); return copy(row); },
     async seedMember(id, user) { const row = records.get(id); row.members.push({ user, role: 'member', createdAt: new Date() }); await row.validate(); },
   };

@@ -15,6 +15,7 @@ const schema = new mongoose.Schema({
   expenseDate: { type: Date, required: true, set(value) { return value === undefined ? value : new Date(transactionDateSchema.parse(value instanceof Date ? value.toISOString() : value)); } },
   notes: field(String, fields.notes), split: { type: splitSchema, required: true }, shares: { type: [participantSchema], required: true },
   creationKey: { type: String, required: true, match: /^[a-f0-9]{64}$/, immutable: true }, creationHash: { type: String, required: true, match: /^[a-f0-9]{64}$/, immutable: true },
+  lastFinancialOperation: { type: mongoose.Schema.Types.ObjectId },
   deletedAt: { type: Date },
 }, { timestamps: true, strict: 'throw', optimisticConcurrency: true });
 export function expenseInput(document) {
@@ -42,7 +43,7 @@ const user = { bsonType: 'objectId' };
 export const groupExpenseCollectionValidator = { $and: [
   { $jsonSchema: { bsonType: 'object', additionalProperties: false,
     required: ['_id', 'group', 'creator', 'payer', 'title', 'amountMinor', 'currency', 'category', 'expenseDate', 'split', 'shares', 'creationKey', 'creationHash', 'createdAt', 'updatedAt', '__v'],
-    properties: { _id: user, group: user, creator: user, payer: user, title: { bsonType: 'string', minLength: 1, maxLength: 200, pattern: '\\S' }, amountMinor: integer,
+    properties: { lastFinancialOperation: user, _id: user, group: user, creator: user, payer: user, title: { bsonType: 'string', minLength: 1, maxLength: 200, pattern: '\\S' }, amountMinor: integer,
       currency: { enum: ['INR'] }, category: { enum: TRANSACTION_CATEGORIES.filter(row => row.types.includes('expense')).map(row => row.id) },
       expenseDate: { bsonType: 'date' }, notes: { bsonType: 'string', maxLength: 2000 }, creationKey: { bsonType: 'string', pattern: '^[a-f0-9]{64}$' }, creationHash: { bsonType: 'string', pattern: '^[a-f0-9]{64}$' },
       createdAt: { bsonType: 'date' }, updatedAt: { bsonType: 'date' }, deletedAt: { bsonType: 'date' }, __v: { ...integer, minimum: 0 },

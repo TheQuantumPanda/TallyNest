@@ -58,5 +58,6 @@ test('failure after history protection retains a conservative lock and safe idem
   assert.equal(first.status, 500); assert.equal(first.body.message, 'Internal server error'); assert.equal(expenses.records.size, 0);
   assert.equal((await request(`/groups/${groupId}`)).body.data.group.financialHistoryLocked, true);
   assert.equal((await request(`/groups/${groupId}`, { method: 'DELETE' })).status, 409);
-  assert.equal((await request(path, { method: 'POST', body: expenseInput, headers: { 'Idempotency-Key': key } })).status, 201);
+  assert.equal((await request(`/groups/${groupId}/financial-recovery`, { method: 'POST', body: {} })).status, 200);
+  assert.equal((await request(path, { method: 'POST', body: expenseInput, headers: { 'Idempotency-Key': key } })).status, 200);
 });

@@ -9,7 +9,7 @@
     "start": "node server.js",
     "setup:env": "node scripts/setup-env.js",
     "lint": "eslint . --max-warnings 0",
-    "test:mongo": "node --test integration/transactions.mongo.js integration/dashboard.mongo.js integration/budgets.mongo.js integration/budget-summary.mongo.js integration/recurring.mongo.js integration/groups.mongo.js integration/invitations.mongo.js integration/group-expenses.mongo.js"
+    "test:mongo": "node --test integration/transactions.mongo.js integration/dashboard.mongo.js integration/budgets.mongo.js integration/budget-summary.mongo.js integration/recurring.mongo.js integration/groups.mongo.js integration/invitations.mongo.js integration/group-expenses.mongo.js integration/settlements.mongo.js"
   },
   "keywords": [],
   "author": "",

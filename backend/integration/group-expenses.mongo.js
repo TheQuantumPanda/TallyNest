@@ -92,8 +92,10 @@ test('failed creation after lock and unknown insertion outcomes recover without 
     assert.ok((await Group.findById(groupId)).financialHistoryAt);
     assert.equal(await GroupExpense.countDocuments({ group: groupId }), stage === 'after' ? 1 : 0);
     const fresh = await invitationApiSetup(t, dependencies(), userRepository);
+    const recovery = await fresh(`/groups/${groupId}/financial-recovery`, { method: 'POST', body: {} });
+    assert.equal(recovery.status, 200);
     const recovered = await fresh(base, { method: 'POST', body: expenseInput, headers: { 'Idempotency-Key': key } });
-    assert.equal(recovered.status, stage === 'after' ? 200 : 201); assert.equal(await GroupExpense.countDocuments({ group: groupId }), 1);
+    assert.equal(recovered.status, 200); assert.equal(await GroupExpense.countDocuments({ group: groupId }), 1);
   }
 });
 test('concurrent idempotent creates on a locked group have one persisted expense and replay safely', async t => {
@@ -101,8 +103,9 @@ test('concurrent idempotent creates on a locked group have one persisted expense
   await deps.groupRepository.lockHistoryForMember(ownerA, groupId, group.__v, [ownerA, ownerB]);
   const key = randomUUID(), base = `/groups/${groupId}/expenses`;
   const results = await Promise.all(Array.from({ length: 4 }, () => request(base, { method: 'POST', body: expenseInput, headers: { 'Idempotency-Key': key } })));
-  assert.deepEqual(results.map(row => row.status).sort(), [200, 200, 200, 201]);
-  assert.equal(new Set(results.map(row => row.body.data.expense.id)).size, 1); assert.equal(await GroupExpense.countDocuments({ group: groupId }), 1);
+  assert.equal(results.filter(row => row.status === 201).length, 1); assert.ok(results.every(row => [200, 201, 409].includes(row.status)));
+  for (let i = 0; i < 3; i++) assert.equal((await request(base, { method: 'POST', body: expenseInput, headers: { 'Idempotency-Key': key } })).status, 200);
+  assert.equal(new Set(results.filter(row => row.status !== 409).map(row => row.body.data.expense.id)).size, 1); assert.equal(await GroupExpense.countDocuments({ group: groupId }), 1);
 });
 test('real MongoDB financial constraints/indexes reject invalid raw writes and preserve exact maximum amounts', async t => {
   const { request, groupId } = await setup(t), base = `/groups/${groupId}/expenses`;

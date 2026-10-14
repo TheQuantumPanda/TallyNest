@@ -20,6 +20,8 @@ const schema = new mongoose.Schema({
   name: field(String, groupNameSchema, { required: true }), description: field(String, groupDescriptionSchema),
   currency: field(String, currencySchema, { required: true, default: 'INR' }),
   creator: { ...reference(), immutable: true },
+  settlementStartedAt: { type: Date, immutable: true },
+  financialOperation: { type: new mongoose.Schema({ actor: reference(), kind: { type: String, required: true, enum: ['expense_create', 'expense_update', 'expense_delete', 'settlement_create', 'settlement_confirm', 'settlement_reject'] }, payload: { type: mongoose.Schema.Types.Mixed, required: true }, createdAt: { type: Date, required: true } }, { strict: 'throw' }), default: undefined },
   financialHistoryAt: { type: Date, immutable: true },
   invitations: { type: [invitationSchema], default: undefined },
   members: { type: [membershipSchema], required: true, default: undefined },
@@ -45,7 +47,8 @@ export const groupCollectionValidator = {
   $and: [
     { $jsonSchema: { bsonType: 'object', required: ['name', 'currency', 'creator', 'members', 'createdAt', 'updatedAt', '__v'], additionalProperties: false,
       properties: {
-        _id: { bsonType: 'objectId' }, financialHistoryAt: { bsonType: 'date' }, invitations: invitationArrayBson,
+        _id: { bsonType: 'objectId' }, financialHistoryAt: { bsonType: 'date' }, settlementStartedAt: { bsonType: 'date' },
+        financialOperation: { bsonType: 'object', additionalProperties: false, required: ['_id', 'actor', 'kind', 'payload', 'createdAt'], properties: { _id: { bsonType: 'objectId' }, actor: { bsonType: 'objectId' }, kind: { enum: ['expense_create', 'expense_update', 'expense_delete', 'settlement_create', 'settlement_confirm', 'settlement_reject'] }, payload: { bsonType: 'object' }, createdAt: { bsonType: 'date' } } }, invitations: invitationArrayBson,
         name: { bsonType: 'string', minLength: 1, maxLength: 100, pattern: '\\S' },
         description: { bsonType: 'string', maxLength: 2000 }, currency: { enum: ['INR'] }, creator: { bsonType: 'objectId' },
         createdAt: { bsonType: 'date' }, updatedAt: { bsonType: 'date' }, __v: { bsonType: ['int', 'long', 'double'], minimum: 0, maximum: Number.MAX_SAFE_INTEGER },
@@ -53,6 +56,10 @@ export const groupCollectionValidator = {
           properties: { user: { bsonType: 'objectId' }, role: { enum: ['owner', 'member'] }, createdAt: { bsonType: 'date' } } } },
       } } },
     { $expr: invitationIntegrityExpression },
+    { $expr: { $and: [
+      { $cond: [{ $eq: [{ $type: '$settlementStartedAt' }, 'missing'] }, true, { $eq: [{ $type: '$financialHistoryAt' }, 'date'] }] },
+      { $cond: [{ $eq: [{ $type: '$financialOperation' }, 'missing'] }, true, { $and: [{ $eq: [{ $type: '$financialHistoryAt' }, 'date'] }, { $in: ['$financialOperation.actor', '$members.user'] }] }] },
+    ] } },
     { $expr: { $let: { vars: { rows: { $cond: [{ $isArray: '$members' }, '$members', []] } }, in: {
       $and: [
         { $eq: [{ $size: '$$rows' }, { $size: { $setUnion: [{ $map: { input: '$$rows', as: 'm', in: '$$m.user' } }, []] } }] },

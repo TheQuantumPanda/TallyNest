@@ -1,5 +1,11 @@
 # Phase 4, Step 3 — Shared expenses and exact splitting
 
+> Current policy: [Phase 4, Step 4](phase-4-step-4.md) supersedes pre-settlement
+> expense mutation semantics. Financial history permanently blocks group deletion
+> and member departure. The first valid settlement proposal freezes expense creation,
+> editing and deletion, with durable serialization and explicit crash recovery.
+> Historical verification counts below describe that step's original execution.
+
 Implemented on 2026-10-14. Backend-only group expense CRUD, exact split allocation
 and permanent financial-history protection. No balances, debt simplification,
 settlements, payments, group frontend or personal transaction synchronization.

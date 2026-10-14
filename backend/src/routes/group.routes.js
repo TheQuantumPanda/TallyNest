@@ -1,3 +1,4 @@
+import { createSettlementController } from '../controllers/settlement.controller.js';
 import { createGroupExpenseController } from '../controllers/group-expense.controller.js';
 import { createInvitationController } from '../controllers/invitation.controller.js';
 import { createMembershipController } from '../controllers/membership.controller.js';
@@ -7,12 +8,20 @@ import { createGroupController } from '../controllers/group.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { protectCsrf } from '../middleware/csrf.middleware.js';
 import { requireTransactionJson as requireJson } from '../validators/transaction.validator.js';
-export function createGroupRoutes(service, authService, { cookieName, clientOrigin }, invitationService, membershipService, expenseService) {
+export function createGroupRoutes(service, authService, { cookieName, clientOrigin }, invitationService, membershipService, expenseService, settlementService) {
   const router = Router(), controller = createGroupController(service), csrf = protectCsrf(clientOrigin);
   router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   router.use(requireAuth(authService, cookieName));
   router.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, keyGenerator: req => req.user.id,
     standardHeaders: 'draft-8', legacyHeaders: false, message: { status: 'error', code: 'RATE_LIMITED', message: 'Too many requests; try again later' } }));
+  const settlements = createSettlementController(settlementService);
+  router.get('/:id/balances', settlements.balances);
+  router.get('/:id/settlements', settlements.list);
+  router.post('/:id/settlements', csrf, requireJson, settlements.create);
+  router.get('/:id/settlements/:settlementId', settlements.get);
+  router.post('/:id/settlements/:settlementId/confirm', csrf, requireJson, settlements.confirm);
+  router.post('/:id/settlements/:settlementId/reject', csrf, requireJson, settlements.reject);
+  router.post('/:id/financial-recovery', csrf, requireJson, settlements.recover);
   const expenses = createGroupExpenseController(expenseService);
   router.post('/:id/expenses', csrf, requireJson, expenses.create);
   router.get('/:id/expenses', expenses.list);

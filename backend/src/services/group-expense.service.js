@@ -1,3 +1,5 @@
+import mongoose from 'mongoose';
+import { createGroupFinancialService } from './group-financial.service.js';
 import { createHash } from 'node:crypto';
 import { groupExpenseRepository } from '../repositories/group-expense.repository.js';
 import { groupRepository } from '../repositories/group.repository.js';
@@ -36,7 +38,8 @@ function precondition(row, expenseId, value) {
   if (expected.version !== row.__v) throw new HttpError(412, 'Expense version is stale; reload before updating', 'VERSION_MISMATCH');
   if (row.__v >= Number.MAX_SAFE_INTEGER) throw new HttpError(409, 'Expense version exhausted', 'GROUP_EXPENSE_CONFLICT');
 }
-export function createGroupExpenseService({ repository = groupExpenseRepository, groups = groupRepository, profiles = membershipRepository } = {}) {
+export function createGroupExpenseService({ repository = groupExpenseRepository, groups = groupRepository, profiles = membershipRepository, financial } = {}) {
+  financial ??= createGroupFinancialService({ groups, expenses: repository });
   async function groupFor(user, groupId) { parse(ownerIdSchema, groupId, 'INVALID_GROUP_ID'); return requireGroupMember(groups, user, groupId); }
   async function identities(group, user, data) {
     const ids = [...new Set([user, data.payer, ...data.split.participants.map(row => typeof row === 'string' ? row : row.user)])];
@@ -63,7 +66,8 @@ export function createGroupExpenseService({ repository = groupExpenseRepository,
         if (!locked) { await groupFor(user, groupId); throw new HttpError(409, 'Group changed before history protection; reload and retry explicitly', 'GROUP_CONFLICT'); }
         if (!locked.financialHistoryAt) throw new Error('Financial history lock failed');
       }
-      try { return { expense: publicExpense(await repository.create(groupId, user, data, key, hash)), replayed: false }; }
+      const targetId = String(new mongoose.Types.ObjectId());
+      try { const row = await financial.run(user, groupId, 'expense_create', { data, key, hash, targetId }); return { expense: publicExpense(row), replayed: String(row._id) !== targetId }; }
       catch (error) {
         if (error.code !== 11000) throw error;
         const previous = await receipt(user, groupId, key, hash); if (!previous) throw error;
@@ -96,7 +100,7 @@ export function createGroupExpenseService({ repository = groupExpenseRepository,
       const merged = { ...expenseInput(row), ...patch }; if (merged.notes === null) delete merged.notes;
       const data = complete(merged); await identities(group, user, data);
       if (!group.financialHistoryAt) throw new Error('Financial history is not protected');
-      const updated = await repository.replace(groupId, expenseId, user, owner, row.__v, data, String(row.creator));
+      const updated = await financial.run(user, groupId, 'expense_update', { targetId: expenseId, owner, version: row.__v, data, creator: String(row.creator) });
       if (!updated) { if (!await repository.find(groupId, expenseId)) throw missing(); throw new HttpError(409, 'Expense changed; reload and review', 'GROUP_EXPENSE_CONFLICT'); }
       return publicExpense(updated);
     },
@@ -105,7 +109,7 @@ export function createGroupExpenseService({ repository = groupExpenseRepository,
       const row = await repository.find(groupId, expenseId); if (!row) throw missing();
       const owner = editable(group, row, user); precondition(row, expenseId, ifMatch);
       if (!group.financialHistoryAt) throw new Error('Financial history is not protected');
-      if (!await repository.remove(groupId, expenseId, user, owner, row.__v)) { if (!await repository.find(groupId, expenseId)) throw missing(); throw new HttpError(409, 'Expense changed; reload and review', 'GROUP_EXPENSE_CONFLICT'); }
+      if (!await financial.run(user, groupId, 'expense_delete', { targetId: expenseId, owner, version: row.__v })) { if (!await repository.find(groupId, expenseId)) throw missing(); throw new HttpError(409, 'Expense changed; reload and review', 'GROUP_EXPENSE_CONFLICT'); }
     },
   };
 }

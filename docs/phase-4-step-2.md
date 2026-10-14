@@ -1,5 +1,11 @@
 # Phase 4, Step 2 — Invitations and membership management
 
+> Current policy: [Phase 4, Step 4](phase-4-step-4.md) supersedes pre-settlement
+> expense mutation semantics. Financial history permanently blocks group deletion
+> and member departure. The first valid settlement proposal freezes expense creation,
+> editing and deletion, with durable serialization and explicit crash recovery.
+> Historical verification counts below describe that step's original execution.
+
 > Current policy update (Phase 4, Step 3): groups permanently marked with financial
 > history cannot be hard deleted, and their members cannot leave or be removed.
 > These restrictions are enforced in database write predicates before the first
