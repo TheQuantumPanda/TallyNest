@@ -14,7 +14,7 @@ test('group model validates owner consistency, membership uniqueness, roles and 
   for (const members of [[], [member(ownerB)], [member(), member()], [member(), member(ownerB, 'owner')], [member(ownerA, 'member')], [member(), member(ownerB, 'admin')], [member(), { user: ownerB, role: 'member' }], Array(101).fill(member())]) await assert.rejects(new Group({ ...group, creator: ownerA, members }).validate());
   for (const change of [{ creator: undefined }, { creator: 'bad' }, { name: '' }, { currency: 'USD' }, { description: 'x'.repeat(2001) }, { __v: 0.5 }]) await assert.rejects(new Group({ ...group, creator: ownerA, members: [member()], ...change }).validate());
   assert.throws(() => new Group({ ...group, creator: ownerA, members: [member()], owner: ownerB }));
-  assert.deepEqual(Group.schema.indexes(), [[{ 'members.user': 1, _id: -1 }, {}]]);
+  assert.deepEqual(Group.schema.indexes(), [[{ 'members.user': 1, _id: -1 }, {}], [{ 'invitations.tokenHash': 1 }, { unique: true, sparse: true }]]);
 });
 test('membership helpers and API enforce member-read versus owner-write without exposing roster', async t => {
   const repository = isolatedGroups(), row = await repository.createForOwner(ownerA, group);

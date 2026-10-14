@@ -1,9 +1,8 @@
 import { groupRepository } from '../repositories/group.repository.js';
 import { groupInputSchema, groupPatchSchema, groupQuerySchema } from '../validators/group.validator.js';
 import { ownerIdSchema } from '../validators/transaction.validator.js';
-import { ifMatchSchema } from '../validators/transaction-query.validator.js';
 import { HttpError } from '../utils/httpError.js';
-import { groupNotFound, membershipFor, requireGroupMember, requireGroupOwner } from './group-authorization.js';
+import { groupNotFound, membershipFor, requireGroupMember, requireGroupOwner, requireGroupVersion } from './group-authorization.js';
 function parse(schema, input, code = 'INVALID_GROUP') {
   const result = schema.safeParse(input);
   if (!result.success) throw new HttpError(400, 'Invalid group request', code);
@@ -32,11 +31,7 @@ export function createGroupService({ repository = groupRepository } = {}) {
       groupId(id);
       const patch = parse(groupPatchSchema, input);
       const existing = requireGroupOwner(await requireGroupMember(repository, user, id), user);
-      if (ifMatch === undefined) throw new HttpError(428, 'If-Match is required', 'PRECONDITION_REQUIRED');
-      const expected = parse(ifMatchSchema, ifMatch, 'INVALID_VERSION');
-      if (expected.id !== id.toLowerCase()) throw new HttpError(400, 'Invalid If-Match group version', 'INVALID_VERSION');
-      if (expected.version !== existing.__v) throw new HttpError(412, 'Group version is stale; reload before updating', 'VERSION_MISMATCH');
-      if (existing.__v >= Number.MAX_SAFE_INTEGER) throw new HttpError(409, 'Group version exhausted', 'GROUP_CONFLICT');
+      requireGroupVersion(existing, id, ifMatch);
       const merged = { name: existing.name, currency: existing.currency, ...(existing.description !== undefined ? { description: existing.description } : {}), ...patch };
       if (merged.description === null) delete merged.description;
       const updated = await repository.replaceForOwner(user, id, existing.__v, parse(groupInputSchema, merged));

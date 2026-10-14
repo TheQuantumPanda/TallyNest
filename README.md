@@ -12,7 +12,8 @@ spending analytics, a responsive budget management frontend, and a recurring
 personal transaction engine with a responsive management frontend. The overview and ledger
 display only the signed-in user’s personal records; net
 cash flow is not presented as a verified bank balance. Phase 4, Step 1 adds the
-backend group/membership foundation with owner-controlled metadata management.
+backend group/membership foundation with owner-controlled metadata management;
+Step 2 adds secure invitations, joining, member listing, removal and leaving.
 
 ## Run locally
 
@@ -532,8 +533,39 @@ caller's membership role/time, not the complete roster.
 
 Deleting a foundation group removes its embedded memberships only. Personal records
 remain unchanged. This policy must be revisited before shared expenses/settlements
-exist. Invitations, joining, membership removal, splitting and group UI are not
-implemented. See the [group and membership specification](docs/phase-4-step-1.md)
+exist. This section describes the Step 1 foundation; Step 2 adds invitations and
+membership management below. Splitting and group UI remain unimplemented. See the [group and membership specification](docs/phase-4-step-1.md)
 for schemas, indexes, permissions, API examples, atomic creation/failure semantics,
 future decisions and verification results. Existing development/test commands apply;
 startup requires MongoDB collection-validator/index administration permissions.
+
+
+## Invitations and membership management (Phase 4, Step 2)
+
+Owners can create/list/revoke invitations through `/api/groups/:id/invitations`.
+Registered users inspect `/api/invitations/:token` and POST JSON `{}` to
+`/api/invitations/:token/accept`. Tokens use 32 cryptographically random bytes;
+only SHA-256 hashes are stored. The secret and manual-share paths are revealed once
+on creation. Default expiry is 24 hours, maximum seven days; default uses is one,
+maximum 20. Sensitive responses are no-store and token routes are strictly rate-limited.
+
+Invitations are embedded and bounded to 50 per group. Acceptance atomically appends
+both a normal member and a use receipt, preserving the creator-owner, the 100-member
+limit and idempotent retry safety on standalone MongoDB. Expiry/revocation/remaining
+uses are rechecked in the database write. Removed members cannot rejoin through the
+same accepted link; a new invitation is needed. Expired/revoked metadata is reclaimed
+on later invitation creation. Group deletion atomically invalidates all its links.
+
+Members can GET `/api/groups/:id/members`, exposing ID, name, role and joining date,
+with emails/private fields hidden. Owners DELETE `/api/groups/:id/members/:memberId`;
+ordinary members POST `{}` to `/api/groups/:id/leave`. The sole owner cannot leave
+or be removed. Invitation creation/revocation and removal/leave require the current
+**group** ETag through If-Match, plus existing Origin/CSRF protection. Acceptance
+requires authentication and CSRF, with an internal atomic version check.
+
+No shared financial records, frontend pages, email delivery or personal-schema changes
+are introduced. Deletion/removal rules must be revisited before shared expenses and
+settlements. See the [invitation and membership specification](docs/phase-4-step-2.md)
+for endpoint responses, privacy, token handling, concurrency/recovery, indexes, limits
+and real MongoDB verification. Existing development/test commands apply; never log
+invitation URL secrets or creation response bodies in future proxy/telemetry systems.

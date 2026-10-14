@@ -18,7 +18,8 @@ export function errorHandler(err, req, res, next) {
   const budgetRequest = requestPath === '/api/budgets' || requestPath.startsWith('/api/budgets/');
   const recurringRequest = requestPath === '/api/recurring' || requestPath.startsWith('/api/recurring/');
   const groupRequest = requestPath === '/api/groups' || requestPath.startsWith('/api/groups/');
-  const privateRequest = authRequest || transactionRequest || dashboardRequest || budgetRequest || recurringRequest || groupRequest;
+  const invitationRequest = requestPath === '/api/invitations' || requestPath.startsWith('/api/invitations/');
+  const privateRequest = authRequest || transactionRequest || dashboardRequest || budgetRequest || recurringRequest || groupRequest || invitationRequest;
   const safeMessage = err instanceof HttpError ? err.message
     : (status >= 500 ? 'Internal server error' : STATUS_CODES[status] ?? 'Request failed');
   const body = {
@@ -32,7 +33,7 @@ export function errorHandler(err, req, res, next) {
     body.stack = err.stack;
   }
 
-  if (transactionRequest || dashboardRequest || budgetRequest || recurringRequest || groupRequest) {
+  if (transactionRequest || dashboardRequest || budgetRequest || recurringRequest || groupRequest || invitationRequest) {
     body.code = err instanceof HttpError && err.code ? err.code
       : ({ 400: 'INVALID_REQUEST', 401: 'AUTH_REQUIRED', 403: 'CSRF_REJECTED',
         404: 'NOT_FOUND', 413: 'BODY_TOO_LARGE', 415: 'JSON_REQUIRED', 429: 'RATE_LIMITED' }[status] ?? 'INTERNAL_ERROR');

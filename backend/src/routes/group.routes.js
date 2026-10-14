@@ -1,15 +1,24 @@
+import { createInvitationController } from '../controllers/invitation.controller.js';
+import { createMembershipController } from '../controllers/membership.controller.js';
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { createGroupController } from '../controllers/group.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { protectCsrf } from '../middleware/csrf.middleware.js';
 import { requireTransactionJson as requireJson } from '../validators/transaction.validator.js';
-export function createGroupRoutes(service, authService, { cookieName, clientOrigin }) {
+export function createGroupRoutes(service, authService, { cookieName, clientOrigin }, invitationService, membershipService) {
   const router = Router(), controller = createGroupController(service), csrf = protectCsrf(clientOrigin);
   router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   router.use(requireAuth(authService, cookieName));
   router.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, keyGenerator: req => req.user.id,
     standardHeaders: 'draft-8', legacyHeaders: false, message: { status: 'error', code: 'RATE_LIMITED', message: 'Too many requests; try again later' } }));
+  const invitations = createInvitationController(invitationService), memberships = createMembershipController(membershipService);
+  router.post('/:id/invitations', csrf, requireJson, invitations.create);
+  router.get('/:id/invitations', invitations.list);
+  router.delete('/:id/invitations/:invitationId', csrf, invitations.revoke);
+  router.get('/:id/members', memberships.list);
+  router.delete('/:id/members/:memberId', csrf, memberships.remove);
+  router.post('/:id/leave', csrf, requireJson, memberships.leave);
   router.post('/', csrf, requireJson, controller.create);
   router.get('/', controller.list); router.get('/:id', controller.get);
   router.patch('/:id', csrf, requireJson, controller.update);
