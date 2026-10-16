@@ -1,3 +1,4 @@
+import { invitationReturn } from '../../utils/invitations';
 import { useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowRight, LockKeyhole } from 'lucide-react';
@@ -121,7 +122,14 @@ export function AuthForm({ mode }) {
       </form>
       <p className="auth-switch">
         {register ? 'Already have an account?' : 'New to TallyNest?'}{' '}
-        <Link to={register ? '/login' : '/register'} state={location.state}>
+        <Link
+          to={
+            (register ? '/login' : '/register') +
+            (invitationReturn(location.hash) ? location.hash : '')
+          }
+          replace={Boolean(invitationReturn(location.hash))}
+          state={location.state}
+        >
           {register ? 'Sign in' : 'Create an account'}
         </Link>
       </p>

@@ -1,7 +1,14 @@
 import { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 
-export function Dialog({ title, children, onClose, busy = false, returnFocus }) {
+export function Dialog({
+  title,
+  children,
+  onClose,
+  busy = false,
+  returnFocus,
+  eyebrow = 'TALLYNEST · PERSONAL',
+}) {
   const ref = useRef(null);
   const titleId = useId();
   useEffect(() => {
@@ -45,7 +52,7 @@ export function Dialog({ title, children, onClose, busy = false, returnFocus }) 
     >
       <header className="dialog-heading">
         <div>
-          <span className="eyebrow">TALLYNEST · PERSONAL</span>
+          <span className="eyebrow">{eyebrow}</span>
           <h2 id={titleId}>{title}</h2>
         </div>
         <button

@@ -23,6 +23,16 @@ const RecurringPage = lazy(() =>
   import('./pages/RecurringPage').then((module) => ({ default: module.RecurringPage })),
 );
 
+const GroupsPage = lazy(() =>
+  import('./pages/GroupsPage').then((module) => ({ default: module.GroupsPage })),
+);
+const GroupWorkspace = lazy(() =>
+  import('./pages/GroupWorkspace').then((module) => ({ default: module.GroupWorkspace })),
+);
+const InvitationLanding = lazy(() =>
+  import('./pages/InvitationLanding').then((module) => ({ default: module.InvitationLanding })),
+);
+
 export default function App() {
   return (
     <Routes>
@@ -61,6 +71,30 @@ export default function App() {
           element={
             <Suspense fallback={<p role="status">Opening your schedules…</p>}>
               <RecurringPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="groups"
+          element={
+            <Suspense fallback={<p role="status">Opening groups…</p>}>
+              <GroupsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="groups/:groupId"
+          element={
+            <Suspense fallback={<p role="status">Opening group…</p>}>
+              <GroupWorkspace />
+            </Suspense>
+          }
+        />
+        <Route
+          path="join/:token?"
+          element={
+            <Suspense fallback={<p role="status">Reviewing invitation…</p>}>
+              <InvitationLanding />
             </Suspense>
           }
         />

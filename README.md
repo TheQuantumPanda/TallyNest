@@ -17,6 +17,8 @@ Step 2 adds secure invitations, joining, member listing, removal and leaving.
 Step 3 adds separate shared expenses, exact splitting and permanent group history protection.
 Step 4 adds exact group balances, deterministic debt suggestions and member-confirmed
 settlements, with durable financial-write serialization and immutable settlement history.
+Step 5 adds the responsive collaborative frontend for groups, invitations, shared
+expenses, balances, settlement acknowledgement and explicit financial recovery.
 
 ## Run locally
 
@@ -130,6 +132,9 @@ with `.gitkeep` until those features are implemented.
 | `/app/transactions` | Personal transaction ledger | Authenticated users |
 | `/app/budgets` | Monthly budget management | Authenticated users |
 | `/app/recurring` | Recurring personal schedules | Authenticated users |
+| `/app/groups` | Collaborative groups | Authenticated users |
+| `/app/groups/:groupId` | Group workspace | Group members |
+| `/app/join/:token` | Inspect and explicitly accept an invitation | Authentication required |
 | `/app/account` | Read-only account details | Authenticated users |
 | Other routes | Not found | Public |
 
@@ -628,3 +633,22 @@ Backend-only; [full specification](docs/phase-4-step-4.md).
 Run `npm test --prefix backend`, `npm run test:mongo --prefix backend` (local Docker
 MongoDB required), and the existing frontend regression/lint/format commands above.
 The MongoDB tests use disposable databases and verify cleanup.
+
+## Collaborative finance frontend (Phase 4, Step 5)
+
+Choose **Groups** in desktop or mobile navigation. Create a group, share an
+owner-generated invitation, and manage shared expenses independently of personal
+finances. Equal, exact and percentage previews reuse the backend pure split
+algorithm; all amounts remain exact integer paise. Balances, pending reservations
+and deterministic suggestions come from the server.
+
+Financial history permanently blocks group deletion and member departure/removal.
+The first valid settlement proposal permanently freezes expense modifications,
+even if rejected. Confirmation records recipient acknowledgement, not payment
+verification. There is no reversal or forced unlock. Interrupted operations offer
+one explicit recovery attempt.
+
+See [the frontend integration specification](docs/phase-4-step-5.md) for API bindings,
+ETags, idempotency, invitation security, accessibility and limitations. Existing
+local backend/frontend commands above apply; no new environment variables or
+dependencies are required.

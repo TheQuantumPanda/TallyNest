@@ -2,7 +2,6 @@ import { NavLink } from 'react-router-dom';
 import {
   ArrowUpRight,
   LayoutGrid,
-  LockKeyhole,
   LogOut,
   ReceiptText,
   Repeat2,
@@ -28,7 +27,7 @@ export function Sidebar({ onClose, onLogout, loggingOut }) {
           </button>
         )}
       </div>
-      <span className="workspace-label">PERSONAL WORKSPACE</span>
+      <span className="workspace-label">YOUR WORKSPACE</span>
       <nav aria-label="Main navigation" className="nav-list">
         <NavLink to="/app" end onClick={onClose}>
           <LayoutGrid size={19} aria-hidden="true" />
@@ -50,21 +49,17 @@ export function Sidebar({ onClose, onLogout, loggingOut }) {
           Recurring
           <span className="nav-indicator" />
         </NavLink>
+        <NavLink to="/app/groups" onClick={onClose}>
+          <Users size={19} aria-hidden="true" />
+          Groups
+          <span className="nav-indicator" />
+        </NavLink>
         <NavLink to="/app/account" onClick={onClose}>
           <UserRound size={19} aria-hidden="true" />
           My account
           <span className="nav-indicator" />
         </NavLink>
       </nav>
-      <div className="planned-navigation">
-        <span className="workspace-label">ON THE HORIZON</span>
-        <div>
-          <Users size={18} aria-hidden="true" />
-          <span>Shared finances</span>
-          <LockKeyhole size={12} aria-hidden="true" />
-        </div>
-        <p>Planned for a future release.</p>
-      </div>
       <div className="sidebar-bottom">
         <div className="sidebar-note">
           <ArrowUpRight size={19} aria-hidden="true" />

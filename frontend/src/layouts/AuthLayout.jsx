@@ -1,3 +1,4 @@
+import { invitationReturn } from '../utils/invitations';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ArrowUpRight, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -11,7 +12,7 @@ export function AuthLayout() {
   if (status === 'loading') return <SessionState />;
   if (status === 'error') return <SessionState error onRetry={restore} />;
   if (status === 'authenticated') {
-    const from = location.state?.from;
+    const from = invitationReturn(location.hash) || location.state?.from;
     return (
       <Navigate
         to={typeof from === 'string' && /^\/app(?:\/|\?|$)/.test(from) ? from : '/app'}

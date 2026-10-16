@@ -19,7 +19,20 @@ export function AppLayout() {
   if (status === 'error') return <SessionState error onRetry={restore} />;
   if (status !== 'authenticated')
     return (
-      <Navigate to="/login" replace state={{ from: location.pathname + location.search, reason }} />
+      <Navigate
+        to={
+          /^\/app\/join\/[A-Za-z0-9_-]{43}$/.test(location.pathname)
+            ? '/login#join=' + location.pathname.split('/').at(-1)
+            : '/login'
+        }
+        replace
+        state={{
+          ...(!location.pathname.startsWith('/app/join/')
+            ? { from: location.pathname + location.search }
+            : {}),
+          reason,
+        }}
+      />
     );
 
   async function signOut() {
@@ -75,7 +88,11 @@ export function AppLayout() {
                       ? 'Budgets'
                       : location.pathname === '/app/recurring'
                         ? 'Recurring'
-                        : 'Overview'}
+                        : location.pathname.startsWith('/app/groups')
+                          ? 'Groups'
+                          : location.pathname.startsWith('/app/join')
+                            ? 'Join group'
+                            : 'Overview'}
               </strong>
             </span>
           </div>
