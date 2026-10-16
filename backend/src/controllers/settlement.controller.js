@@ -20,27 +20,16 @@ export function createSettlementController(service) {
       res.json({
         status: 'ok',
         data: {
-          balances: await service.balances(
-            req.user.id,
-            req.params.id,
-            req.query,
-          ),
+          balances: await service.balances(req.user.id, req.params.id, req.query),
         },
       });
     },
     async list(req, res) {
-      const { settlements, pagination } = await service.list(
-        req.user.id,
-        req.params.id,
-        req.query,
-      );
+      const { settlements, pagination } = await service.list(req.user.id, req.params.id, req.query);
       res.json({ status: 'ok', data: { settlements }, pagination });
     },
     async get(req, res) {
-      single(
-        res,
-        await service.get(req.user.id, req.params.id, req.params.settlementId),
-      );
+      single(res, await service.get(req.user.id, req.params.id, req.params.settlementId));
     },
     async create(req, res) {
       const data = await service.create(

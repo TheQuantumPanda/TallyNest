@@ -13,7 +13,8 @@ if (!current.JWT_SECRET) {
     ? content.replace(/^[\t ]*(?:export[\t ]+)?JWT_SECRET[\t ]*=.*$/m, line)
     : `${content.trimEnd()}\n${line}\n`;
 }
-if (!Object.hasOwn(current, 'JWT_TTL_SECONDS')) content = `${content.trimEnd()}\nJWT_TTL_SECONDS=900\n`;
+if (!Object.hasOwn(current, 'JWT_TTL_SECONDS'))
+  content = `${content.trimEnd()}\nJWT_TTL_SECONDS=900\n`;
 
 writeFileSync(target, content, { mode: 0o600 });
 chmodSync(target, 0o600);

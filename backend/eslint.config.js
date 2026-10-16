@@ -7,6 +7,11 @@ export default [
   {
     files: ['**/*.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.node },
-    rules: { 'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true }] },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
+    },
   },
 ];

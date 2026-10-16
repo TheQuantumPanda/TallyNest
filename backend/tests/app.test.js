@@ -7,9 +7,12 @@ import { errorHandler } from '../src/middleware/errorHandler.js';
 
 async function serve(t, application) {
   const server = application.listen(0, '127.0.0.1');
-  t.after(() => new Promise((resolve, reject) => {
-    server.close((error) => error ? reject(error) : resolve());
-  }));
+  t.after(
+    () =>
+      new Promise((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      }),
+  );
   await once(server, 'listening');
   return `http://127.0.0.1:${server.address().port}`;
 }
@@ -59,7 +62,9 @@ test('centralized error handler hides internal messages and stacks in production
 test('malformed JSON reaches the centralized error handler', async (t) => {
   const baseUrl = await serve(t, createApp({ nodeEnv: 'production' }));
   const response = await fetch(`${baseUrl}/api/health`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"secret":',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{"secret":',
   });
   assert.equal(response.status, 400);
   assert.deepEqual(await response.json(), { status: 'error', message: 'Bad Request' });
@@ -68,7 +73,8 @@ test('malformed JSON reaches the centralized error handler', async (t) => {
 test('JSON body-size limit rejects oversized input', async (t) => {
   const baseUrl = await serve(t, createApp({ nodeEnv: 'production' }));
   const response = await fetch(`${baseUrl}/api/health`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ value: 'x'.repeat(101 * 1024) }),
   });
   assert.equal(response.status, 413);

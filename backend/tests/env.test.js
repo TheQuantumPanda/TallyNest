@@ -12,18 +12,25 @@ const validEnv = {
 
 test('environment parsing validates and normalizes configuration', () => {
   assert.deepEqual(parseEnv(validEnv), {
-    nodeEnv: 'development', port: 5000,
-    mongoUri: validEnv.MONGO_URI, clientOrigin: validEnv.CLIENT_ORIGIN,
-    jwtSecret: validEnv.JWT_SECRET, jwtTtlSeconds: 900,
+    nodeEnv: 'development',
+    port: 5000,
+    mongoUri: validEnv.MONGO_URI,
+    clientOrigin: validEnv.CLIENT_ORIGIN,
+    jwtSecret: validEnv.JWT_SECRET,
+    jwtTtlSeconds: 900,
   });
-  assert.equal(parseEnv({ ...validEnv, CLIENT_ORIGIN: 'http://localhost:5173/' }).clientOrigin,
-    'http://localhost:5173');
+  assert.equal(
+    parseEnv({ ...validEnv, CLIENT_ORIGIN: 'http://localhost:5173/' }).clientOrigin,
+    'http://localhost:5173',
+  );
 });
 
 test('JWT secret is required, strong-format, and never included in errors', () => {
   for (const secret of [undefined, '', 'change-me', 'a'.repeat(64)]) {
-    assert.throws(() => parseEnv({ ...validEnv, JWT_SECRET: secret }),
-      /^Error: Invalid environment configuration: JWT_SECRET$/);
+    assert.throws(
+      () => parseEnv({ ...validEnv, JWT_SECRET: secret }),
+      /^Error: Invalid environment configuration: JWT_SECRET$/,
+    );
   }
 });
 
@@ -33,8 +40,10 @@ test('JWT lifetime is bounded and production frontend requires HTTPS', () => {
   }
   assert.equal(parseEnv({ ...validEnv, JWT_TTL_SECONDS: '600' }).jwtTtlSeconds, 600);
   assert.throws(() => parseEnv({ ...validEnv, NODE_ENV: 'production' }), /CLIENT_ORIGIN/);
-  assert.equal(parseEnv({ ...validEnv, NODE_ENV: 'production', CLIENT_ORIGIN: 'https://app.example' }).nodeEnv,
-    'production');
+  assert.equal(
+    parseEnv({ ...validEnv, NODE_ENV: 'production', CLIENT_ORIGIN: 'https://app.example' }).nodeEnv,
+    'production',
+  );
 });
 
 test('MongoDB URI and frontend origin are required', () => {
@@ -44,16 +53,23 @@ test('MongoDB URI and frontend origin are required', () => {
 
 test('invalid environment settings are rejected without exposing input values', () => {
   for (const invalidEnv of [
-    { PORT: '0' }, { PORT: '65536' }, { PORT: 'abc' }, { NODE_ENV: 'invalid' },
+    { PORT: '0' },
+    { PORT: '65536' },
+    { PORT: 'abc' },
+    { NODE_ENV: 'invalid' },
     { MONGO_URI: 'https://user:secret@example.com' },
     { CLIENT_ORIGIN: 'not-a-url' },
-    { CLIENT_ORIGIN: 'ftp://localhost' }, { CLIENT_ORIGIN: 'http://localhost/path' },
+    { CLIENT_ORIGIN: 'ftp://localhost' },
+    { CLIENT_ORIGIN: 'http://localhost/path' },
     { CLIENT_ORIGIN: 'http://user:secret@localhost' },
   ]) {
-    assert.throws(() => parseEnv({ ...validEnv, ...invalidEnv }), (error) => {
-      assert.match(error.message, /^Invalid environment configuration:/);
-      assert.equal(error.message.includes('secret'), false);
-      return true;
-    });
+    assert.throws(
+      () => parseEnv({ ...validEnv, ...invalidEnv }),
+      (error) => {
+        assert.match(error.message, /^Invalid environment configuration:/);
+        assert.equal(error.message.includes('secret'), false);
+        return true;
+      },
+    );
   }
 });

@@ -14,21 +14,15 @@ import { ownerIdSchema } from '../validators/transaction.validator.js';
 import { idempotencyKeySchema } from '../validators/group-expense.validator.js';
 import { ifMatchSchema } from '../validators/transaction-query.validator.js';
 import { emptyInputSchema } from '../validators/invitation.validator.js';
-import {
-  calculateBalances,
-  simplifyDebts,
-  safeBalanceNumber,
-} from '../utils/group-balances.js';
+import { calculateBalances, simplifyDebts, safeBalanceNumber } from '../utils/group-balances.js';
 import { HttpError } from '../utils/httpError.js';
 const parse = (schema, input, code = 'INVALID_SETTLEMENT') => {
   const result = schema.safeParse(input);
-  if (!result.success)
-    throw new HttpError(400, 'Invalid settlement request', code);
+  if (!result.success) throw new HttpError(400, 'Invalid settlement request', code);
   return result.data;
 };
 const hash = (value) => createHash('sha256').update(value).digest('hex');
-const missing = () =>
-  new HttpError(404, 'Settlement not found', 'SETTLEMENT_NOT_FOUND');
+const missing = () => new HttpError(404, 'Settlement not found', 'SETTLEMENT_NOT_FOUND');
 export function publicSettlement(row) {
   return {
     id: String(row._id),
@@ -132,11 +126,7 @@ export function createSettlementService({
         data.recipient === user ||
         !group.members.some((row) => String(row.user) === data.recipient)
       )
-        throw new HttpError(
-          400,
-          'Recipient must be a different group member',
-          'INVALID_RECIPIENT',
-        );
+        throw new HttpError(400, 'Recipient must be a different group member', 'INVALID_RECIPIENT');
       const registered = await profiles.publicProfiles([user, data.recipient]);
       if (registered.length !== 2)
         throw new HttpError(
@@ -145,11 +135,7 @@ export function createSettlementService({
           'INVALID_RECIPIENT',
         );
       const key = hash(
-          parse(
-            idempotencyKeySchema,
-            keyValue,
-            'IDEMPOTENCY_KEY_REQUIRED',
-          ).toLowerCase(),
+          parse(idempotencyKeySchema, keyValue, 'IDEMPOTENCY_KEY_REQUIRED').toLowerCase(),
         ),
         digest = hash(JSON.stringify(data));
       const previous = await repository.receipt(groupId, user, key);
@@ -163,11 +149,7 @@ export function createSettlementService({
         return { settlement: publicSettlement(previous), replayed: true };
       }
       if (!group.financialHistoryAt)
-        throw new HttpError(
-          409,
-          'No outstanding group financial history',
-          'SETTLEMENT_EXCESS',
-        );
+        throw new HttpError(409, 'No outstanding group financial history', 'SETTLEMENT_EXCESS');
       const targetId = String(new mongoose.Types.ObjectId());
       const row = await financial.run(user, groupId, 'settlement_create', {
         ...data,
@@ -199,30 +181,14 @@ export function createSettlementService({
           'SETTLEMENT_DECIDED',
         );
       if (ifMatch === undefined)
-        throw new HttpError(
-          428,
-          'If-Match is required',
-          'PRECONDITION_REQUIRED',
-        );
+        throw new HttpError(428, 'If-Match is required', 'PRECONDITION_REQUIRED');
       const expected = parse(ifMatchSchema, ifMatch, 'INVALID_VERSION');
       if (expected.id !== target.toLowerCase())
-        throw new HttpError(
-          400,
-          'Wrong settlement version resource',
-          'INVALID_VERSION',
-        );
+        throw new HttpError(400, 'Wrong settlement version resource', 'INVALID_VERSION');
       if (expected.version !== row.__v)
-        throw new HttpError(
-          412,
-          'Settlement version is stale',
-          'VERSION_MISMATCH',
-        );
+        throw new HttpError(412, 'Settlement version is stale', 'VERSION_MISMATCH');
       if (!['confirm', 'reject'].includes(action))
-        throw new HttpError(
-          400,
-          'Invalid settlement decision',
-          'INVALID_SETTLEMENT',
-        );
+        throw new HttpError(400, 'Invalid settlement decision', 'INVALID_SETTLEMENT');
       return publicSettlement(
         await financial.run(user, groupId, `settlement_${action}`, {
           targetId: target,

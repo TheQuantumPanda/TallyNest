@@ -12,9 +12,7 @@ const reference = (ref) => ({
   set(value) {
     return value === undefined
       ? value
-      : ownerIdSchema.parse(
-          value instanceof mongoose.Types.ObjectId ? String(value) : value,
-        );
+      : ownerIdSchema.parse(value instanceof mongoose.Types.ObjectId ? String(value) : value);
   },
 });
 const schema = new mongoose.Schema(
@@ -67,16 +65,13 @@ const schema = new mongoose.Schema(
 schema.pre('validate', function () {
   if (
     String(this.sender) === String(this.recipient) ||
-    (this.status === 'pending' &&
-      (this.confirmedAt || this.rejectedAt || this.decisionBy)) ||
+    (this.status === 'pending' && (this.confirmedAt || this.rejectedAt || this.decisionBy)) ||
     (this.status === 'confirmed' &&
       (!this.confirmedAt ||
         this.rejectedAt ||
         String(this.decisionBy) !== String(this.recipient))) ||
     (this.status === 'rejected' &&
-      (!this.rejectedAt ||
-        this.confirmedAt ||
-        String(this.decisionBy) !== String(this.recipient)))
+      (!this.rejectedAt || this.confirmedAt || String(this.decisionBy) !== String(this.recipient)))
   )
     this.invalidate('status', 'Invalid settlement audit state');
 });
@@ -105,14 +100,9 @@ export const settlementCollectionValidator = {
         ],
         properties: {
           ...Object.fromEntries(
-            [
-              '_id',
-              'group',
-              'sender',
-              'recipient',
-              'lastFinancialOperation',
-              'decisionBy',
-            ].map((key) => [key, { bsonType: 'objectId' }]),
+            ['_id', 'group', 'sender', 'recipient', 'lastFinancialOperation', 'decisionBy'].map(
+              (key) => [key, { bsonType: 'objectId' }],
+            ),
           ),
           amountMinor: {
             bsonType: ['int', 'long', 'double'],
@@ -122,10 +112,7 @@ export const settlementCollectionValidator = {
           currency: { enum: ['INR'] },
           status: { enum: ['pending', 'confirmed', 'rejected'] },
           ...Object.fromEntries(
-            ['createdAt', 'confirmedAt', 'rejectedAt'].map((key) => [
-              key,
-              { bsonType: 'date' },
-            ]),
+            ['createdAt', 'confirmedAt', 'rejectedAt'].map((key) => [key, { bsonType: 'date' }]),
           ),
           creationKey: { bsonType: 'string', pattern: '^[a-f0-9]{64}$' },
           creationHash: { bsonType: 'string', pattern: '^[a-f0-9]{64}$' },
@@ -145,9 +132,9 @@ export const settlementCollectionValidator = {
                 {
                   case: { $eq: ['$status', 'pending'] },
                   then: {
-                    $and: ['confirmedAt', 'rejectedAt', 'decisionBy'].map(
-                      (key) => ({ $eq: [{ $type: '$' + key }, 'missing'] }),
-                    ),
+                    $and: ['confirmedAt', 'rejectedAt', 'decisionBy'].map((key) => ({
+                      $eq: [{ $type: '$' + key }, 'missing'],
+                    })),
                   },
                 },
                 {

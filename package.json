@@ -1,0 +1,21 @@
+{
+  "name": "tallynest",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "install:ci": "npm ci --prefix backend && npm ci --prefix frontend",
+    "test": "npm test --prefix backend && npm test --prefix frontend",
+    "lint": "npm run lint --prefix backend && npm run lint --prefix frontend && npm exec --prefix backend -- eslint --config backend/eslint.config.js shared --max-warnings 0",
+    "format:check": "npm run format:check --prefix frontend && npm exec --prefix frontend -- prettier --config frontend/.prettierrc.json --check backend shared README.md docs/phase-5-step-2a.md docs/phase-5-step-2b.md .github/workflows/verify.yml package.json",
+    "build": "npm run build --prefix frontend",
+    "audit:prod": "npm audit --omit=dev --prefix backend && npm audit --omit=dev --prefix frontend",
+    "verify:fast": "npm run test && npm run lint && npm run format:check && npm run build && npm run audit:prod",
+    "verify:mongo": "npm run test:mongo --prefix backend",
+    "verify": "npm run verify:fast && npm run verify:mongo",
+    "verify:clean": "npm run install:ci && npm run verify"
+  }
+}

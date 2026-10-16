@@ -1,16 +1,12 @@
 import mongoose from 'mongoose';
-import {
-  GroupExpense,
-  groupExpenseCollectionValidator,
-} from '../models/group-expense.model.js';
+import { GroupExpense, groupExpenseCollectionValidator } from '../models/group-expense.model.js';
 import {
   GroupSettlement,
   settlementCollectionValidator,
 } from '../models/group-settlement.model.js';
 import { exactMoneyStage } from '../utils/financial-aggregation.js';
 import { ownerIdSchema } from '../validators/transaction.validator.js';
-const objectId = (value) =>
-  new mongoose.Types.ObjectId(ownerIdSchema.parse(String(value)));
+const objectId = (value) => new mongoose.Types.ObjectId(ownerIdSchema.parse(String(value)));
 export function createGroupBalanceRepository(
   expenses = GroupExpense,
   settlements = GroupSettlement,

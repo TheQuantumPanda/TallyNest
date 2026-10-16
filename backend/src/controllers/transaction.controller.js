@@ -5,7 +5,11 @@ function setVersion(res, transaction) {
 export function createTransactionController(service) {
   return {
     async create(req, res) {
-      const { transaction, replayed } = await service.create(req.user.id, req.body, req.get('idempotency-key'));
+      const { transaction, replayed } = await service.create(
+        req.user.id,
+        req.body,
+        req.get('idempotency-key'),
+      );
       setVersion(res, transaction);
       res.status(replayed ? 200 : 201).json({ status: 'ok', data: { transaction, replayed } });
     },
@@ -19,7 +23,12 @@ export function createTransactionController(service) {
       res.status(200).json({ status: 'ok', data: { transaction } });
     },
     async update(req, res) {
-      const transaction = await service.update(req.user.id, req.params.id, req.body, req.get('if-match'));
+      const transaction = await service.update(
+        req.user.id,
+        req.params.id,
+        req.body,
+        req.get('if-match'),
+      );
       setVersion(res, transaction);
       res.status(200).json({ status: 'ok', data: { transaction } });
     },

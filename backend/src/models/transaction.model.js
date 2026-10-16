@@ -1,59 +1,91 @@
 import { creationReceiptFields, validCreationReceipt } from '../utils/creation-intent.js';
 import mongoose from 'mongoose';
 import { DEFAULT_CURRENCY, isCategoryForType } from '../constants/transaction.constants.js';
-import { ownerIdSchema, transactionTypeSchema, amountMinorSchema, currencySchema, categorySchema,
-  titleSchema, notesSchema, transactionDateSchema } from '../validators/transaction.validator.js';
+import {
+  ownerIdSchema,
+  transactionTypeSchema,
+  amountMinorSchema,
+  currencySchema,
+  categorySchema,
+  titleSchema,
+  notesSchema,
+  transactionDateSchema,
+} from '../validators/transaction.validator.js';
 
 // Parse BEFORE Mongoose casts: strings/booleans must not become monetary numbers.
 function constrainedField(type, schema, options = {}) {
   return {
     type,
-    set(value) { return value === undefined ? value : schema.parse(value); },
-    validate: { validator: value => schema.safeParse(value).success, message: 'Invalid transaction field' },
+    set(value) {
+      return value === undefined ? value : schema.parse(value);
+    },
+    validate: {
+      validator: (value) => schema.safeParse(value).success,
+      message: 'Invalid transaction field',
+    },
     ...options,
   };
 }
 
-const transactionSchema = new mongoose.Schema({
-  ...creationReceiptFields,
-  owner: {
-    type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, immutable: true,
-    set(value) {
-      if (value === undefined) return value;
-      const id = value instanceof mongoose.Types.ObjectId ? value.toHexString() : value;
-      return ownerIdSchema.parse(id);
+const transactionSchema = new mongoose.Schema(
+  {
+    ...creationReceiptFields,
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      immutable: true,
+      set(value) {
+        if (value === undefined) return value;
+        const id = value instanceof mongoose.Types.ObjectId ? value.toHexString() : value;
+        return ownerIdSchema.parse(id);
+      },
     },
+    type: constrainedField(String, transactionTypeSchema, { required: true }),
+    title: constrainedField(String, titleSchema, { required: true }),
+    amountMinor: constrainedField(Number, amountMinorSchema, { required: true }),
+    currency: constrainedField(String, currencySchema, {
+      required: true,
+      default: DEFAULT_CURRENCY,
+    }),
+    category: constrainedField(String, categorySchema, {
+      required: true,
+      validate: {
+        validator(value) {
+          return categorySchema.safeParse(value).success && isCategoryForType(value, this.type);
+        },
+        message: 'Category is incompatible with transaction type',
+      },
+    }),
+    transactionDate: {
+      type: Date,
+      required: true,
+      set(value) {
+        if (value === undefined) return value;
+        const timestamp =
+          value instanceof Date && Number.isFinite(value.getTime()) ? value.toISOString() : value;
+        return new Date(transactionDateSchema.parse(timestamp));
+      },
+      validate: {
+        validator: (value) =>
+          value instanceof Date &&
+          Number.isFinite(value.getTime()) &&
+          transactionDateSchema.safeParse(value.toISOString()).success,
+        message: 'Invalid transaction date',
+      },
+    },
+    recurringSchedule: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'RecurringSchedule',
+      immutable: true,
+    },
+    scheduledDate: { type: Date, immutable: true },
+    // Retained generation receipt; absent on visible/manual transactions.
+    deletedAt: { type: Date },
+    notes: constrainedField(String, notesSchema),
   },
-  type: constrainedField(String, transactionTypeSchema, { required: true }),
-  title: constrainedField(String, titleSchema, { required: true }),
-  amountMinor: constrainedField(Number, amountMinorSchema, { required: true }),
-  currency: constrainedField(String, currencySchema, { required: true, default: DEFAULT_CURRENCY }),
-  category: constrainedField(String, categorySchema, {
-    required: true,
-    validate: {
-      validator(value) { return categorySchema.safeParse(value).success && isCategoryForType(value, this.type); },
-      message: 'Category is incompatible with transaction type',
-    },
-  }),
-  transactionDate: {
-    type: Date, required: true,
-    set(value) {
-      if (value === undefined) return value;
-      const timestamp = value instanceof Date && Number.isFinite(value.getTime()) ? value.toISOString() : value;
-      return new Date(transactionDateSchema.parse(timestamp));
-    },
-    validate: {
-      validator: value => value instanceof Date && Number.isFinite(value.getTime()) &&
-        transactionDateSchema.safeParse(value.toISOString()).success,
-      message: 'Invalid transaction date',
-    },
-  },
-  recurringSchedule: { type: mongoose.Schema.Types.ObjectId, ref: 'RecurringSchedule', immutable: true },
-  scheduledDate: { type: Date, immutable: true },
-  // Retained generation receipt; absent on visible/manual transactions.
-  deletedAt: { type: Date },
-  notes: constrainedField(String, notesSchema),
-}, { timestamps: true, strict: 'throw' });
+  { timestamps: true, strict: 'throw' },
+);
 
 // Owner prefix covers owner-only reads; date + _id supports deterministic history ordering.
 transactionSchema.index({ owner: 1, transactionDate: -1, _id: -1 });
@@ -63,12 +95,27 @@ transactionSchema.index({ owner: 1, amountMinor: -1, _id: -1 });
 
 transactionSchema.pre('validate', function () {
   if (!validCreationReceipt(this)) this.invalidate('creationKey', 'Incomplete creation receipt');
-  if (!!this.recurringSchedule !== !!this.scheduledDate ||
-    (this.scheduledDate && !transactionDateSchema.safeParse(this.scheduledDate.toISOString()).success) ||
-    (this.deletedAt && !this.recurringSchedule && !this.creationKey)) this.invalidate('recurringSchedule', 'Invalid recurrence provenance');
+  if (
+    !!this.recurringSchedule !== !!this.scheduledDate ||
+    (this.scheduledDate &&
+      !transactionDateSchema.safeParse(this.scheduledDate.toISOString()).success) ||
+    (this.deletedAt && !this.recurringSchedule && !this.creationKey)
+  )
+    this.invalidate('recurringSchedule', 'Invalid recurrence provenance');
 });
-transactionSchema.index({ recurringSchedule: 1, scheduledDate: 1 }, { unique: true,
-  partialFilterExpression: { recurringSchedule: { $type: 'objectId' }, scheduledDate: { $type: 'date' } } });
+transactionSchema.index(
+  { recurringSchedule: 1, scheduledDate: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      recurringSchedule: { $type: 'objectId' },
+      scheduledDate: { $type: 'date' },
+    },
+  },
+);
 
-transactionSchema.index({ owner: 1, creationKey: 1 }, { unique: true, partialFilterExpression: { creationKey: { $type: 'string' } } });
+transactionSchema.index(
+  { owner: 1, creationKey: 1 },
+  { unique: true, partialFilterExpression: { creationKey: { $type: 'string' } } },
+);
 export const Transaction = mongoose.model('Transaction', transactionSchema);

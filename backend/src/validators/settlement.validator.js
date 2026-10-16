@@ -1,9 +1,5 @@
 import { z } from 'zod';
-import {
-  ownerIdSchema,
-  amountMinorSchema,
-  currencySchema,
-} from './transaction.validator.js';
+import { ownerIdSchema, amountMinorSchema, currencySchema } from './transaction.validator.js';
 export const settlementInputSchema = z
   .object({
     recipient: ownerIdSchema.transform((value) => value.toLowerCase()),

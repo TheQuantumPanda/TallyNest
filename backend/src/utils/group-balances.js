@@ -44,8 +44,7 @@ export function calculateBalances(memberIds, result) {
     [result.settlements, 'reservedReceived', 'reservedReceived'],
   ]) {
     const seen = new Set();
-    if (!Array.isArray(source[key]) || source[key].length > 100)
-      throw unsafeBalances();
+    if (!Array.isArray(source[key]) || source[key].length > 100) throw unsafeBalances();
     for (const item of source[key]) {
       const id = String(item._id);
       if (!rows.has(id) || seen.has(id)) throw unsafeBalances();
@@ -82,9 +81,7 @@ export function calculateBalances(memberIds, result) {
     sums.net !== 0n
   )
     throw unsafeBalances();
-  return [...rows.values()].sort((a, b) =>
-    a.user < b.user ? -1 : a.user > b.user ? 1 : 0,
-  );
+  return [...rows.values()].sort((a, b) => (a.user < b.user ? -1 : a.user > b.user ? 1 : 0));
 }
 export function simplifyDebts(input) {
   if (!Array.isArray(input) || input.length > 100) throw unsafeBalances();
@@ -107,8 +104,7 @@ export function simplifyDebts(input) {
   let d = 0,
     c = 0;
   while (d < debtors.length && c < creditors.length) {
-    const amount =
-      -debtors[d].net < creditors[c].net ? -debtors[d].net : creditors[c].net;
+    const amount = -debtors[d].net < creditors[c].net ? -debtors[d].net : creditors[c].net;
     transfers.push({
       sender: debtors[d].user,
       recipient: creditors[c].user,
@@ -122,19 +118,11 @@ export function simplifyDebts(input) {
   }
   return transfers;
 }
-export function assertSettlementCapacity(
-  rows,
-  sender,
-  recipient,
-  amountMinor,
-  reservePending,
-) {
+export function assertSettlementCapacity(rows, sender, recipient, amountMinor, reservePending) {
   const from = rows.find((row) => row.user === sender),
     to = rows.find((row) => row.user === recipient),
     amount = BigInt(amountMinor);
-  const debt = from
-    ? -from.net - (reservePending ? from.reservedSent : 0n)
-    : 0n;
+  const debt = from ? -from.net - (reservePending ? from.reservedSent : 0n) : 0n;
   const credit = to ? to.net - (reservePending ? to.reservedReceived : 0n) : 0n;
   if (sender === recipient || amount <= 0n || amount > debt || amount > credit)
     throw new HttpError(

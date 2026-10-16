@@ -79,13 +79,33 @@ curl -i http://localhost:5000/api/health
 The endpoint returns HTTP 200 and:
 
 ```json
-{"status":"ok","message":"Smart Finance Manager API is running"}
+{ "status": "ok", "message": "Smart Finance Manager API is running" }
 ```
 
-`npm start` runs the server without nodemon. SIGINT and SIGTERM close the HTTP
+`npm start` runs the server without watch mode. SIGINT and SIGTERM close the HTTP
 listener and MongoDB connection, with a 10-second shutdown deadline.
 
 ## Tests
+
+From the repository root, with Node.js 24 and the local MongoDB service available:
+
+```bash
+docker compose up -d --wait mongodb
+npm run verify:clean
+```
+
+`verify:clean` runs `npm ci` in both packages, then unit/HTTP tests, ESLint
+for backend/frontend/shared JavaScript, Prettier checks for both packages,
+shared code and current verification documentation, the frontend production
+build, both production dependency audits, and the real MongoDB integration
+suite. The latter uses uniquely named disposable databases and fails when
+MongoDB is unavailable. For an already installed checkout, use `npm run verify`;
+`npm run verify:fast` runs all checks except MongoDB integration. The GitHub
+Actions workflow runs the clean command on pushes to `main` and pull requests
+targeting `main`. It does not run a browser suite.
+
+See [Phase 5 Step 2B](docs/phase-5-step-2b.md) for CI design, full audit
+results, manual browser verification and remaining release gates.
 
 ```bash
 cd backend
@@ -107,7 +127,9 @@ npm audit --omit=dev
 ESLint 10 is configured independently for both packages. Backend linting adds no
 runtime changes or changes to the authentication contract. Frontend tests use
 Vitest, Testing Library, and isolated API mocks; they do not require MongoDB.
-Prettier is configured for the frontend (`npm run format` formats its files).
+The root Prettier check reuses the frontend configuration for backend, shared
+code and current verification documents. `npm run format --prefix frontend`
+formats frontend files.
 
 The built-in Node.js test runner exercises HTTP behavior, environment validation,
 authentication, transaction/model constraints, exact money conversion, and
@@ -124,19 +146,19 @@ with `.gitkeep` until those features are implemented.
 
 ## Frontend screens and structure
 
-| Route | Screen | Access |
-| --- | --- | --- |
-| `/login` | Sign in | Anonymous users |
-| `/register` | Create account | Anonymous users |
-| `/app` | Financial overview | Authenticated users |
-| `/app/transactions` | Personal transaction ledger | Authenticated users |
-| `/app/budgets` | Monthly budget management | Authenticated users |
-| `/app/recurring` | Recurring personal schedules | Authenticated users |
-| `/app/groups` | Collaborative groups | Authenticated users |
-| `/app/groups/:groupId` | Group workspace | Group members |
-| `/app/join/:token` | Inspect and explicitly accept an invitation | Authentication required |
-| `/app/account` | Read-only account details | Authenticated users |
-| Other routes | Not found | Public |
+| Route                  | Screen                                      | Access                  |
+| ---------------------- | ------------------------------------------- | ----------------------- |
+| `/login`               | Sign in                                     | Anonymous users         |
+| `/register`            | Create account                              | Anonymous users         |
+| `/app`                 | Financial overview                          | Authenticated users     |
+| `/app/transactions`    | Personal transaction ledger                 | Authenticated users     |
+| `/app/budgets`         | Monthly budget management                   | Authenticated users     |
+| `/app/recurring`       | Recurring personal schedules                | Authenticated users     |
+| `/app/groups`          | Collaborative groups                        | Authenticated users     |
+| `/app/groups/:groupId` | Group workspace                             | Group members           |
+| `/app/join/:token`     | Inspect and explicitly accept an invitation | Authentication required |
+| `/app/account`         | Read-only account details                   | Authenticated users     |
+| Other routes           | Not found                                   | Public                  |
 
 `frontend/src` contains `components/` (including `ui/` and `auth/`), `pages/`,
 `layouts/`, `context/`, `hooks/`, `services/`, `utils/`, `styles/`, and `test/`.
@@ -161,8 +183,7 @@ Future finance modules appear only as clearly marked roadmap content.
 
 ## Frontend production configuration
 
-`npm run build` creates `frontend/dist`; `npm run preview` serves it locally on port
-5173. Set `VITE_API_URL` at build time for an API on another same-site HTTPS origin.
+`npm run build` creates `frontend/dist`; `npm run preview` serves it locally on port 5173. Set `VITE_API_URL` at build time for an API on another same-site HTTPS origin.
 If omitted in production, the client uses `/api` on the frontend origin, which
 requires the serving infrastructure to route `/api` to Express. Production hosting
 must also serve `index.html` for React routes such as `/app/account` on hard reload.
@@ -181,12 +202,12 @@ message on registration and login. Logout returns `{ "status": "ok", "message":
 Public users contain only `id`, `name`, `email`, `createdAt`, and `updatedAt`.
 Tokens and password hashes never appear in response JSON.
 
-| Method | Endpoint | Input / requirement | Success | Expected errors |
-| --- | --- | --- | --- | --- |
-| POST | `/api/auth/register` | JSON name, email, password | 201, user and access cookie | 400 invalid input, 409 duplicate email, 429 rate limit |
-| POST | `/api/auth/login` | JSON email, password | 200, user and access cookie | 400 invalid input, 401 invalid email or password, 429 rate limit |
-| GET | `/api/auth/me` | Access cookie | 200, current user | 401 missing/invalid/expired token or missing account |
-| POST | `/api/auth/logout` | CSRF headers; cookie optional | 200, cleared cookie | 403 CSRF rejection |
+| Method | Endpoint             | Input / requirement           | Success                     | Expected errors                                                  |
+| ------ | -------------------- | ----------------------------- | --------------------------- | ---------------------------------------------------------------- |
+| POST   | `/api/auth/register` | JSON name, email, password    | 201, user and access cookie | 400 invalid input, 409 duplicate email, 429 rate limit           |
+| POST   | `/api/auth/login`    | JSON email, password          | 200, user and access cookie | 400 invalid input, 401 invalid email or password, 429 rate limit |
+| GET    | `/api/auth/me`       | Access cookie                 | 200, current user           | 401 missing/invalid/expired token or missing account             |
+| POST   | `/api/auth/logout`   | CSRF headers; cookie optional | 200, cleared cookie         | 403 CSRF rejection                                               |
 
 All POST authentication endpoints require `Origin: <CLIENT_ORIGIN>` and
 `X-CSRF-Protection: 1`. Missing, null, or nonmatching origins are rejected with 403.
@@ -303,18 +324,17 @@ from the future request body. Repository reads always include that owner.
 
 **Creation contract update (Phase 5 Step 2A):** POST /api/transactions and POST /api/recurring require a UUID `Idempotency-Key`. New creation returns 201 with `data.replayed: false`; identical replay returns 200 with `data.replayed: true` and the current resource. Deleted intents return 409 and cannot be resurrected. See [creation idempotency](docs/phase-5-step-2a.md) for exact contracts, receipts, rollout and uncertain-outcome guidance.
 
-
 See the [CRUD specification](docs/phase-2-step-2.md) and current
 [query/version specification](docs/phase-2-step-3.md) for endpoint examples,
 validation, pagination, concurrency, and manual requests.
 
-| Method | Endpoint | Success |
-| --- | --- | --- |
-| POST | `/api/transactions` | 201, created transaction |
-| GET | `/api/transactions` | 200, owned transactions with pagination (default 20, max 100) |
-| GET | `/api/transactions/:id` | 200, owned transaction |
-| PATCH | `/api/transactions/:id` | 200, updated transaction |
-| DELETE | `/api/transactions/:id` | 200, `Transaction deleted` |
+| Method | Endpoint                | Success                                                       |
+| ------ | ----------------------- | ------------------------------------------------------------- |
+| POST   | `/api/transactions`     | 201, created transaction                                      |
+| GET    | `/api/transactions`     | 200, owned transactions with pagination (default 20, max 100) |
+| GET    | `/api/transactions/:id` | 200, owned transaction                                        |
+| PATCH  | `/api/transactions/:id` | 200, updated transaction                                      |
+| DELETE | `/api/transactions/:id` | 200, `Transaction deleted`                                    |
 
 All endpoints require the existing JWT cookie. POST, PATCH, and DELETE require
 the configured Origin and `X-CSRF-Protection: 1`; POST/PATCH require JSON. Only
@@ -404,7 +424,6 @@ measurements, and limitations. Existing development commands remain unchanged.
 Run `npm ci --prefix frontend` to install the new Recharts dependency if needed.
 The chart module is lazy loaded; transaction and authentication contracts remain intact.
 
-
 ## Monthly budgeting backend (Phase 3, Step 1)
 
 Budgets are independent personal records for a UTC calendar month (`YYYY-MM`),
@@ -426,7 +445,6 @@ Run the existing commands above: `npm test --prefix backend` for isolated tests,
 then `docker compose up -d --wait mongodb` and `npm run test:mongo --prefix backend`
 for disposable real MongoDB tests. No dependencies or environment settings change.
 
-
 ## Budget spending analytics (Phase 3, Step 2)
 
 `GET /api/budgets/summary?month=2026-10` requires the existing authenticated cookie.
@@ -446,7 +464,6 @@ See the [summary API and financial specification](docs/phase-3-step-2.md) for th
 full response, status definitions, reconciliation rules, precision, consistency,
 verification results and limitations. Existing test/development commands apply;
 no dependencies or environment configuration were added.
-
 
 ## Budget management frontend (Phase 3, Step 3)
 
@@ -468,7 +485,6 @@ See the [frontend implementation and verification report](docs/phase-3-step-3.md
 for architecture, API integration, tests, Chromium results, screenshots and known
 limitations. Existing development/check commands above apply; no dependencies,
 backend contracts, schemas or environment configuration changed.
-
 
 ## Recurring transaction backend (Phase 3, Step 4)
 
@@ -503,7 +519,6 @@ Existing local commands apply; no new dependencies, environment settings or fron
 screens were added. `npm run test:mongo --prefix backend` now also verifies recurring
 behavior against disposable local MongoDB databases.
 
-
 ## Recurring management frontend (Phase 3, Step 5)
 
 Choose **Recurring** in desktop/mobile navigation, or open `/app/recurring`.
@@ -525,7 +540,6 @@ transaction API client. No backend contracts, schemas or scheduling rules change
 See the [frontend implementation and verification report](docs/phase-3-step-5.md)
 for the updated file tree, tests, Chromium results, screenshots and limitations.
 Existing local development and verification commands above apply.
-
 
 ## Groups and membership backend (Phase 4, Step 1)
 
@@ -550,7 +564,6 @@ membership management below. Splitting and group UI remain unimplemented. See th
 for schemas, indexes, permissions, API examples, atomic creation/failure semantics,
 future decisions and verification results. Existing development/test commands apply;
 startup requires MongoDB collection-validator/index administration permissions.
-
 
 ## Invitations and membership management (Phase 4, Step 2)
 
@@ -581,7 +594,6 @@ settlements. See the [invitation and membership specification](docs/phase-4-step
 for endpoint responses, privacy, token handling, concurrency/recovery, indexes, limits
 and real MongoDB verification. Existing development/test commands apply; never log
 invitation URL secrets or creation response bodies in future proxy/telemetry systems.
-
 
 ## Shared expenses and splitting (Phase 4, Step 3)
 
@@ -655,7 +667,6 @@ See [the frontend integration specification](docs/phase-4-step-5.md) for API bin
 ETags, idempotency, invitation security, accessibility and limitations. Existing
 local backend/frontend commands above apply; no new environment variables or
 dependencies are required.
-
 
 ## Personal creation retry safety (Phase 5, Step 2A)
 

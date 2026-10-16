@@ -6,7 +6,12 @@ export function createAuthController(authService, { cookieName, cookieOptions, j
 
   return {
     async register(req, res) {
-      sendSession(res, await authService.register(req.validatedBody), 201, 'Registration successful');
+      sendSession(
+        res,
+        await authService.register(req.validatedBody),
+        201,
+        'Registration successful',
+      );
     },
     async login(req, res) {
       sendSession(res, await authService.login(req.validatedBody), 200, 'Login successful');

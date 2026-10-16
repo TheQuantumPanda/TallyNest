@@ -11,19 +11,33 @@ import { registerSchema } from '../src/validators/auth.validator.js';
 const secret = '0123456789abcdef'.repeat(4); // Public test fixture only.
 const origin = 'http://localhost:5173';
 const userId = '0123456789abcdef01234567';
-const input = { name: ' Test User ', email: ' TEST@Example.com ', password: 'correct horse battery' };
+const input = {
+  name: ' Test User ',
+  email: ' TEST@Example.com ',
+  password: 'correct horse battery',
+};
 
 function isolatedRepository() {
   const users = new Map();
   return {
     users,
-    async findByEmail(email) { return users.get(email) ?? null; },
-    async findByEmailWithPassword(email) { return users.get(email) ?? null; },
-    async findById(id) { return [...users.values()].find((user) => user._id === id) ?? null; },
+    async findByEmail(email) {
+      return users.get(email) ?? null;
+    },
+    async findByEmailWithPassword(email) {
+      return users.get(email) ?? null;
+    },
+    async findById(id) {
+      return [...users.values()].find((user) => user._id === id) ?? null;
+    },
     async create(data) {
       if (users.has(data.email)) throw Object.assign(new Error('duplicate'), { code: 11000 });
-      const user = { ...data, _id: userId,
-        createdAt: new Date('2026-01-01T00:00:00Z'), updatedAt: new Date('2026-01-01T00:00:00Z') };
+      const user = {
+        ...data,
+        _id: userId,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        updatedAt: new Date('2026-01-01T00:00:00Z'),
+      };
       users.set(data.email, user);
       return user;
     },
@@ -31,20 +45,32 @@ function isolatedRepository() {
 }
 
 async function setup(t, { config = {}, repository = isolatedRepository() } = {}) {
-  const app = createApp({ nodeEnv: 'test', clientOrigin: origin, jwtSecret: secret,
-    jwtTtlSeconds: 900, ...config }, { repository });
+  const app = createApp(
+    { nodeEnv: 'test', clientOrigin: origin, jwtSecret: secret, jwtTtlSeconds: 900, ...config },
+    { repository },
+  );
   const server = app.listen(0, '127.0.0.1');
-  t.after(() => new Promise((resolve, reject) => {
-    server.close((error) => error ? reject(error) : resolve());
-  }));
+  t.after(
+    () =>
+      new Promise((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      }),
+  );
   await once(server, 'listening');
   const url = `http://127.0.0.1:${server.address().port}/api/auth`;
-  async function request(path, { body, cookie, headers = {}, method = body ? 'POST' : 'GET' } = {}) {
+  async function request(
+    path,
+    { body, cookie, headers = {}, method = body ? 'POST' : 'GET' } = {},
+  ) {
     const response = await fetch(`${url}${path}`, {
       method,
-      headers: { Origin: config.clientOrigin ?? origin, 'X-CSRF-Protection': '1',
+      headers: {
+        Origin: config.clientOrigin ?? origin,
+        'X-CSRF-Protection': '1',
         ...(body ? { 'Content-Type': 'application/json' } : {}),
-        ...(cookie ? { Cookie: cookie } : {}), ...headers },
+        ...(cookie ? { Cookie: cookie } : {}),
+        ...headers,
+      },
       body: body ? JSON.stringify(body) : undefined,
     });
     return { status: response.status, headers: response.headers, body: await response.json() };
@@ -52,9 +78,17 @@ async function setup(t, { config = {}, repository = isolatedRepository() } = {})
   return { request, repository, url };
 }
 
-function cookieOf(response) { return response.headers.get('set-cookie').split(';')[0]; }
+function cookieOf(response) {
+  return response.headers.get('set-cookie').split(';')[0];
+}
 function assertPublicUser(body) {
-  assert.deepEqual(Object.keys(body.data.user).sort(), ['createdAt', 'email', 'id', 'name', 'updatedAt']);
+  assert.deepEqual(Object.keys(body.data.user).sort(), [
+    'createdAt',
+    'email',
+    'id',
+    'name',
+    'updatedAt',
+  ]);
   const json = JSON.stringify(body);
   for (const sensitive of ['password', 'passwordHash', 'token', secret, '$2b$', input.password]) {
     assert.equal(json.includes(sensitive), false, `Unexpected sensitive field: ${sensitive}`);
@@ -81,8 +115,11 @@ test('registration normalizes input, hashes the password, returns 201 and an HTT
   assert.match(cookie, /Expires=/);
   assert.doesNotMatch(cookie, /Secure|Domain=/);
   assert.equal(response.headers.get('cache-control'), 'no-store');
-  const payload = jwt.verify(cookieOf(response).slice('sfm_access='.length), secret,
-    { algorithms: ['HS256'], issuer: 'smart-finance-manager', audience: 'smart-finance-manager-web' });
+  const payload = jwt.verify(cookieOf(response).slice('sfm_access='.length), secret, {
+    algorithms: ['HS256'],
+    issuer: 'smart-finance-manager',
+    audience: 'smart-finance-manager-web',
+  });
   assert.equal(payload.sub, userId);
   assert.equal(payload.exp - payload.iat, 900);
   assert.equal(payload.email, undefined);
@@ -99,19 +136,26 @@ test('duplicate registration returns 409 after normalized-email lookup', async (
 
 test('MongoDB unique-index errors are translated to safe duplicate responses', async (t) => {
   const repository = isolatedRepository();
-  repository.create = async () => { throw Object.assign(new Error('sensitive database details'), { code: 11000 }); };
+  repository.create = async () => {
+    throw Object.assign(new Error('sensitive database details'), { code: 11000 });
+  };
   const { request } = await setup(t, { repository });
   const response = await request('/register', { body: input });
   assert.equal(response.status, 409);
-  assert.deepEqual(response.body, { status: 'error', message: 'An account with this email already exists' });
+  assert.deepEqual(response.body, {
+    status: 'error',
+    message: 'An account with this email already exists',
+  });
 });
 
 test('invalid registration input is rejected before repository writes', async (t) => {
   const { request, repository } = await setup(t);
   assert.equal(registerSchema.safeParse({ ...input, password: '😀'.repeat(6) }).success, false);
   for (const body of [
-    { ...input, name: ' ' }, { ...input, email: 'invalid' },
-    { ...input, password: 'short' }, { ...input, password: '😀'.repeat(20) },
+    { ...input, name: ' ' },
+    { ...input, email: 'invalid' },
+    { ...input, password: 'short' },
+    { ...input, password: '😀'.repeat(20) },
     { ...input, passwordHash: 'injected' },
   ]) {
     const response = await request('/register', { body });
@@ -132,7 +176,9 @@ test('password hashing is salted and verification is centralized', async () => {
 test('successful login returns public user and a fresh cookie', async (t) => {
   const { request } = await setup(t);
   await request('/register', { body: input });
-  const response = await request('/login', { body: { email: input.email, password: input.password } });
+  const response = await request('/login', {
+    body: { email: input.email, password: input.password },
+  });
   assert.equal(response.status, 200);
   assertPublicUser(response.body);
   assert.match(response.headers.get('set-cookie'), /HttpOnly/);
@@ -141,8 +187,12 @@ test('successful login returns public user and a fresh cookie', async (t) => {
 test('incorrect passwords and unknown accounts receive identical generic errors', async (t) => {
   const { request } = await setup(t);
   await request('/register', { body: input });
-  const wrong = await request('/login', { body: { email: input.email, password: 'wrong password' } });
-  const unknown = await request('/login', { body: { email: 'unknown@example.com', password: 'wrong password' } });
+  const wrong = await request('/login', {
+    body: { email: input.email, password: 'wrong password' },
+  });
+  const unknown = await request('/login', {
+    body: { email: 'unknown@example.com', password: 'wrong password' },
+  });
   assert.equal(wrong.status, 401);
   assert.equal(unknown.status, 401);
   assert.deepEqual(wrong.body, { status: 'error', message: 'Invalid email or password' });
@@ -169,7 +219,11 @@ test('/me rejects absent cookies and ignores bearer headers', async (t) => {
 
 test('/me rejects malformed, expired, wrong-signature, wrong-algorithm and invalid-claim JWTs', async (t) => {
   const { request } = await setup(t);
-  const options = { subject: userId, issuer: 'smart-finance-manager', audience: 'smart-finance-manager-web' };
+  const options = {
+    subject: userId,
+    issuer: 'smart-finance-manager',
+    audience: 'smart-finance-manager-web',
+  };
   const tokens = [
     'not-a-jwt',
     jwt.sign({ exp: 1 }, secret, options),
@@ -195,7 +249,8 @@ test('malformed auth JSON cannot echo passwords or stack traces in development',
   const { url } = await setup(t, { config: { nodeEnv: 'development' } });
   for (const authUrl of [url, url.replace('/api/auth', '/API/AUTH')]) {
     const response = await fetch(`${authUrl}/register`, {
-      method: 'POST', headers: { Origin: origin, 'X-CSRF-Protection': '1', 'Content-Type': 'application/json' },
+      method: 'POST',
+      headers: { Origin: origin, 'X-CSRF-Protection': '1', 'Content-Type': 'application/json' },
       body: '{"password":"private-password",broken}',
     });
     assert.equal(response.status, 400);
@@ -228,7 +283,9 @@ test('logout clears matching cookie settings but does not revoke an issued JWT',
 });
 
 test('production cookie is Secure, host-only, HTTP-only and clears consistently', async (t) => {
-  const { request } = await setup(t, { config: { nodeEnv: 'production', clientOrigin: 'https://app.example' } });
+  const { request } = await setup(t, {
+    config: { nodeEnv: 'production', clientOrigin: 'https://app.example' },
+  });
   const registered = await request('/register', { body: input });
   const cleared = await request('/logout', { method: 'POST' });
   assert.equal(registered.status, 201);
@@ -245,7 +302,10 @@ test('production cookie is Secure, host-only, HTTP-only and clears consistently'
 
 test('registration and login have independent IP rate limits', async (t) => {
   const { request } = await setup(t);
-  for (const [path, count] of [['/register', 5], ['/login', 10]]) {
+  for (const [path, count] of [
+    ['/register', 5],
+    ['/login', 10],
+  ]) {
     for (let i = 0; i < count; i++) {
       assert.equal((await request(path, { body: {} })).status, 400);
     }
@@ -261,13 +321,19 @@ test('all state-changing auth endpoints reject missing or untrusted Origin and C
   const { request, repository } = await setup(t);
   for (const path of ['/register', '/login', '/logout']) {
     for (const headers of [
-      { Origin: '' }, { Origin: 'null' }, { Origin: 'https://evil.example' },
-      { Origin: `${origin}.evil.example` }, { 'X-CSRF-Protection': '' },
+      { Origin: '' },
+      { Origin: 'null' },
+      { Origin: 'https://evil.example' },
+      { Origin: `${origin}.evil.example` },
+      { 'X-CSRF-Protection': '' },
       { 'X-CSRF-Protection': 'wrong' },
     ]) {
       const response = await request(path, { body: input, headers });
       assert.equal(response.status, 403);
-      assert.deepEqual(response.body, { status: 'error', message: 'Request origin or CSRF header rejected' });
+      assert.deepEqual(response.body, {
+        status: 'error',
+        message: 'Request origin or CSRF header rejected',
+      });
       assert.equal(response.headers.get('set-cookie'), null);
     }
   }
@@ -276,9 +342,18 @@ test('all state-changing auth endpoints reject missing or untrusted Origin and C
 
 test('authentication input requires JSON and never accepts password hashes or extra login fields', async (t) => {
   const { request } = await setup(t);
-  assert.equal((await request('/register', { body: input,
-    headers: { 'Content-Type': 'text/plain' } })).status, 415);
-  assert.equal((await request('/login', { body: { email: input.email, password: input.password, role: 'admin' } })).status, 400);
+  assert.equal(
+    (await request('/register', { body: input, headers: { 'Content-Type': 'text/plain' } })).status,
+    415,
+  );
+  assert.equal(
+    (
+      await request('/login', {
+        body: { email: input.email, password: input.password, role: 'admin' },
+      })
+    ).status,
+    400,
+  );
 });
 
 test('credentialed CORS preflight permits only the configured origin and required headers', async (t) => {
@@ -288,8 +363,12 @@ test('credentialed CORS preflight permits only the configured origin and require
   await once(server, 'listening');
   for (const incomingOrigin of [origin, 'https://evil.example']) {
     const response = await fetch(`http://127.0.0.1:${server.address().port}/api/auth/login`, {
-      method: 'OPTIONS', headers: { Origin: incomingOrigin,
-        'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'content-type,x-csrf-protection' },
+      method: 'OPTIONS',
+      headers: {
+        Origin: incomingOrigin,
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'content-type,x-csrf-protection',
+      },
     });
     assert.equal(response.status, 204);
     assert.equal(response.headers.get('access-control-allow-origin'), origin);
@@ -301,7 +380,9 @@ test('credentialed CORS preflight permits only the configured origin and require
 test('auth database failures return safe errors in development and production', async (t) => {
   for (const nodeEnv of ['development', 'production']) {
     const repository = isolatedRepository();
-    repository.findByEmail = async () => { throw new Error(`database credentials ${input.password}`); };
+    repository.findByEmail = async () => {
+      throw new Error(`database credentials ${input.password}`);
+    };
     const { request } = await setup(t, { repository, config: { nodeEnv } });
     const response = await request('/register', { body: input });
     assert.equal(response.status, 500);
@@ -318,7 +399,9 @@ test('model normalizes email, declares unique index, hides hashes and rejects pl
   assert.ok(User.schema.indexes().some(([keys, options]) => keys.email === 1 && options.unique));
   assert.equal(user.toJSON().passwordHash, undefined);
   assert.equal(user.toObject().passwordHash, undefined);
-  await assert.rejects(new User({ name: 'User', email: 'user@example.com', passwordHash: input.password }).validate());
+  await assert.rejects(
+    new User({ name: 'User', email: 'user@example.com', passwordHash: input.password }).validate(),
+  );
 });
 
 test('missing signing configuration fails closed without registering users', async (t) => {

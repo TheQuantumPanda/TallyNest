@@ -9,15 +9,20 @@ const audience = 'smart-finance-manager-web';
 
 export function toPublicUser(user) {
   return {
-    id: String(user._id), name: user.name, email: user.email,
-    createdAt: user.createdAt, updatedAt: user.updatedAt,
+    id: String(user._id),
+    name: user.name,
+    email: user.email,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
 }
 
 export function createAuthService({ repository = userRepository, jwtSecret, jwtTtlSeconds = 900 }) {
   function requireConfig() {
-    if (!jwtSecretSchema.safeParse(jwtSecret).success
-      || !jwtTtlSchema.safeParse(jwtTtlSeconds).success) {
+    if (
+      !jwtSecretSchema.safeParse(jwtSecret).success ||
+      !jwtTtlSchema.safeParse(jwtTtlSeconds).success
+    ) {
       throw new HttpError(503, 'Authentication is unavailable');
     }
   }
@@ -26,8 +31,11 @@ export function createAuthService({ repository = userRepository, jwtSecret, jwtT
     return {
       user: toPublicUser(user),
       token: jwt.sign({}, jwtSecret, {
-        algorithm: 'HS256', expiresIn: Number(jwtTtlSeconds),
-        subject: String(user._id), issuer, audience,
+        algorithm: 'HS256',
+        expiresIn: Number(jwtTtlSeconds),
+        subject: String(user._id),
+        issuer,
+        audience,
       }),
     };
   }
@@ -62,11 +70,18 @@ export function createAuthService({ repository = userRepository, jwtSecret, jwtT
       requireConfig();
       try {
         const payload = jwt.verify(token, jwtSecret, {
-          algorithms: ['HS256'], issuer, audience, maxAge: Number(jwtTtlSeconds),
+          algorithms: ['HS256'],
+          issuer,
+          audience,
+          maxAge: Number(jwtTtlSeconds),
         });
-        if (typeof payload !== 'object' || typeof payload.sub !== 'string'
-          || !/^[a-fA-F0-9]{24}$/.test(payload.sub)
-          || !Number.isInteger(payload.exp) || !Number.isInteger(payload.iat)) {
+        if (
+          typeof payload !== 'object' ||
+          typeof payload.sub !== 'string' ||
+          !/^[a-fA-F0-9]{24}$/.test(payload.sub) ||
+          !Number.isInteger(payload.exp) ||
+          !Number.isInteger(payload.iat)
+        ) {
           throw new Error('Invalid claims');
         }
         return payload.sub;

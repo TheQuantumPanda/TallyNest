@@ -29,7 +29,7 @@ async function shutdown(signal, exitCode = 0) {
   try {
     if (server?.listening) {
       await new Promise((resolve, reject) => {
-        server.close((error) => error ? reject(error) : resolve());
+        server.close((error) => (error ? reject(error) : resolve()));
       });
     }
     await stopRecurringJob?.();
@@ -74,8 +74,11 @@ async function start() {
     console.info(`TallyNest API listening on port ${config.port}`);
   } catch (error) {
     // Never log raw driver errors: they may contain connection credentials.
-    console.error(error.message.startsWith('Invalid environment configuration:')
-      ? error.message : 'Startup failed: unable to connect to MongoDB, initialize indexes, or start HTTP server');
+    console.error(
+      error.message.startsWith('Invalid environment configuration:')
+        ? error.message
+        : 'Startup failed: unable to connect to MongoDB, initialize indexes, or start HTTP server',
+    );
     await shutdown('startup failure', 1);
   }
 }
