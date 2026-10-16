@@ -51,6 +51,17 @@ const fields = groupExpenseInputSchema.shape;
 const schema = new mongoose.Schema(
   {
     group: { ...reference('Group'), immutable: true },
+    // Optional while old group financial records and write paths remain in service.
+    cycleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'GroupFinancialCycle',
+      immutable: true,
+      set(value) {
+        return value === undefined
+          ? value
+          : ownerIdSchema.parse(value instanceof mongoose.Types.ObjectId ? String(value) : value);
+      },
+    },
     creator: { ...reference('User'), immutable: true },
     payer: reference('User'),
     title: field(String, fields.title, { required: true }),
@@ -174,6 +185,7 @@ export const groupExpenseCollectionValidator = {
           lastFinancialOperation: user,
           _id: user,
           group: user,
+          cycleId: user,
           creator: user,
           payer: user,
           title: { bsonType: 'string', minLength: 1, maxLength: 200, pattern: '\\S' },

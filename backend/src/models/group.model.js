@@ -52,6 +52,17 @@ const schema = new mongoose.Schema(
     currency: field(String, currencySchema, { required: true, default: 'INR' }),
     creator: { ...reference(), immutable: true },
     settlementStartedAt: { type: Date, immutable: true },
+    // Reserved for the future cycle write protocol; absent on legacy groups.
+    currentCycleId: { type: mongoose.Schema.Types.ObjectId, ref: 'GroupFinancialCycle' },
+    cycleEpoch: {
+      type: Number,
+      validate: (value) => Number.isSafeInteger(value) && value >= 0,
+    },
+    currentCycleState: { type: String, enum: ['open', 'frozen', 'closed'] },
+    financialProtocolVersion: {
+      type: Number,
+      validate: (value) => Number.isSafeInteger(value) && value >= 2,
+    },
     financialOperation: {
       type: new mongoose.Schema(
         {
@@ -119,6 +130,18 @@ export const groupCollectionValidator = {
           _id: { bsonType: 'objectId' },
           financialHistoryAt: { bsonType: 'date' },
           settlementStartedAt: { bsonType: 'date' },
+          currentCycleId: { bsonType: 'objectId' },
+          cycleEpoch: {
+            bsonType: ['int', 'long', 'double'],
+            minimum: 0,
+            maximum: Number.MAX_SAFE_INTEGER,
+          },
+          currentCycleState: { enum: ['open', 'frozen', 'closed'] },
+          financialProtocolVersion: {
+            bsonType: ['int', 'long', 'double'],
+            minimum: 2,
+            maximum: Number.MAX_SAFE_INTEGER,
+          },
           financialOperation: {
             bsonType: 'object',
             additionalProperties: false,
@@ -239,6 +262,15 @@ export const groupCollectionValidator = {
                 ],
               },
               { $eq: ['$__v', { $trunc: '$__v' }] },
+              {
+                $and: ['cycleEpoch', 'financialProtocolVersion'].map((key) => ({
+                  $cond: [
+                    { $eq: [{ $type: `$${key}` }, 'missing'] },
+                    true,
+                    { $eq: [`$${key}`, { $trunc: `$${key}` }] },
+                  ],
+                })),
+              },
             ],
           },
         },

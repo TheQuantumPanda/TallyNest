@@ -19,6 +19,9 @@ Step 4 adds exact group balances, deterministic debt suggestions and member-conf
 settlements, with durable financial-write serialization and immutable settlement history.
 Step 5 adds the responsive collaborative frontend for groups, invitations, shared
 expenses, balances, settlement acknowledgement and explicit financial recovery.
+Phase 5 Step 3B adds a dormant settlement-cycle model and optional compatibility
+fields; the existing permanent settlement freeze remains in force. See
+[the Step 3B specification](docs/phase-5-step-3b.md) for the activation boundary.
 
 ## Run locally
 
@@ -57,7 +60,8 @@ for state-changing requests.
 
 Edit `backend/.env` for local configuration. Existing shell environment variables
 take precedence. The server validates configuration and connects to MongoDB before
-listening. It also waits for user, budget, recurring schedule, transaction and group indexes to initialize,
+listening. It also waits for user, budget, recurring schedule, transaction, group and
+dormant settlement-cycle indexes to initialize,
 and installs strict group membership collection validation. `.env` is
 ignored by Git; never commit real credentials.
 

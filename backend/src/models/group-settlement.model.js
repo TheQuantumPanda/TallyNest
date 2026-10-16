@@ -4,10 +4,10 @@ import {
   ownerIdSchema,
   currencySchema,
 } from '../validators/transaction.validator.js';
-const reference = (ref) => ({
+const reference = (ref, required = true) => ({
   type: mongoose.Schema.Types.ObjectId,
   ref,
-  required: true,
+  required,
   immutable: true,
   set(value) {
     return value === undefined
@@ -18,6 +18,8 @@ const reference = (ref) => ({
 const schema = new mongoose.Schema(
   {
     group: reference('Group'),
+    // Optional for legacy settlements; later migration will backfill it.
+    cycleId: reference('GroupFinancialCycle', false),
     sender: reference('User'),
     recipient: reference('User'),
     amountMinor: {
@@ -100,9 +102,15 @@ export const settlementCollectionValidator = {
         ],
         properties: {
           ...Object.fromEntries(
-            ['_id', 'group', 'sender', 'recipient', 'lastFinancialOperation', 'decisionBy'].map(
-              (key) => [key, { bsonType: 'objectId' }],
-            ),
+            [
+              '_id',
+              'group',
+              'cycleId',
+              'sender',
+              'recipient',
+              'lastFinancialOperation',
+              'decisionBy',
+            ].map((key) => [key, { bsonType: 'objectId' }]),
           ),
           amountMinor: {
             bsonType: ['int', 'long', 'double'],

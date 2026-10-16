@@ -1,6 +1,7 @@
 import { ensureSettlementIndexes } from './src/repositories/settlement.repository.js';
 import { ensureGroupExpenseIndexes } from './src/repositories/group-expense.repository.js';
 import { ensureGroupIndexes } from './src/repositories/group.repository.js';
+import { ensureGroupFinancialCycleIndexes } from './src/repositories/group-financial-cycle.repository.js';
 import { ensureRecurringIndexes } from './src/repositories/recurring.repository.js';
 import { startRecurringJob } from './src/jobs/recurring.job.js';
 import { createServer } from 'node:http';
@@ -51,6 +52,7 @@ async function start() {
     await ensureBudgetIndexes();
     await ensureRecurringIndexes();
     await ensureGroupIndexes();
+    await ensureGroupFinancialCycleIndexes();
     await ensureGroupExpenseIndexes();
     await ensureSettlementIndexes();
     if (shuttingDown) {
