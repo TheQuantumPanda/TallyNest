@@ -5,6 +5,7 @@ import {
 } from './invitation.model.js';
 import { GROUP_INVITATION_LIMIT } from '../validators/invitation.validator.js';
 import mongoose from 'mongoose';
+import { LIFECYCLE_KINDS } from '../utils/cycle-lifecycle.js';
 import {
   groupNameSchema,
   groupDescriptionSchema,
@@ -81,7 +82,7 @@ const schema = new mongoose.Schema(
           targetId: { type: mongoose.Schema.Types.ObjectId, immutable: true },
           payloadHash: { type: String, immutable: true, match: /^[a-f0-9]{64}$/ },
           phase: { type: String, enum: ['checking', 'applying'] },
-          startState: { type: String, enum: ['open', 'frozen'], immutable: true },
+          startState: { type: String, enum: ['none', 'open', 'frozen', 'closed'], immutable: true },
           kind: {
             type: String,
             required: true,
@@ -92,6 +93,7 @@ const schema = new mongoose.Schema(
               'settlement_create',
               'settlement_confirm',
               'settlement_reject',
+              ...LIFECYCLE_KINDS,
             ],
           },
           payload: { type: mongoose.Schema.Types.Mixed, required: true },
@@ -128,14 +130,28 @@ schema.pre('validate', function () {
   if (!Number.isSafeInteger(this.__v ?? 0) || (this.__v ?? 0) < 0)
     this.invalidate('__v', 'Invalid group version');
   const op = this.financialOperation;
+  const lifecycle = LIFECYCLE_KINDS.includes(op?.kind);
+  const opening = ['cycle_open_first', 'cycle_open_next'].includes(op?.kind);
+  const associated =
+    op &&
+    ((String(op.cycleId) === String(this.currentCycleId) && op.cycleEpoch === this.cycleEpoch) ||
+      (op.kind === 'cycle_open_first' &&
+        !this.currentCycleId &&
+        this.cycleEpoch === 0 &&
+        !this.currentCycleState) ||
+      (opening &&
+        op.phase === 'applying' &&
+        String(op.targetId) === String(this.currentCycleId) &&
+        this.cycleEpoch === op.cycleEpoch + 1 &&
+        this.currentCycleState === 'open'));
   if (
     op?.protocolVersion === 2 &&
     (this.financialProtocolVersion !== 2 ||
       String(op.groupId) !== String(this._id) ||
-      String(op.cycleId) !== String(this.currentCycleId) ||
-      op.cycleEpoch !== this.cycleEpoch ||
+      !associated ||
+      (lifecycle && String(op.actor) !== String(this.creator)) ||
       !['checking', 'applying'].includes(op.phase) ||
-      !['open', 'frozen'].includes(op.startState) ||
+      !['none', 'open', 'frozen', 'closed'].includes(op.startState) ||
       !Number.isSafeInteger(op.expectedGroupVersion) ||
       !Number.isSafeInteger(op.expectedCycleVersion) ||
       !op.targetId ||
@@ -200,7 +216,7 @@ export const groupCollectionValidator = {
               targetId: { bsonType: 'objectId' },
               payloadHash: { bsonType: 'string', pattern: '^[a-f0-9]{64}$' },
               phase: { enum: ['checking', 'applying'] },
-              startState: { enum: ['open', 'frozen'] },
+              startState: { enum: ['none', 'open', 'frozen', 'closed'] },
               kind: {
                 enum: [
                   'expense_create',
@@ -209,6 +225,7 @@ export const groupCollectionValidator = {
                   'settlement_create',
                   'settlement_confirm',
                   'settlement_reject',
+                  ...LIFECYCLE_KINDS,
                 ],
               },
               payload: { bsonType: 'object' },
@@ -267,16 +284,69 @@ export const groupCollectionValidator = {
                   {
                     $cond: [
                       { $eq: [{ $type: '$financialOperation.protocolVersion' }, 'missing'] },
-                      { $eq: [{ $type: '$financialProtocolVersion' }, 'missing'] },
+                      {
+                        $and: [
+                          { $eq: [{ $type: '$financialProtocolVersion' }, 'missing'] },
+                          { $not: [{ $in: ['$financialOperation.kind', LIFECYCLE_KINDS] }] },
+                        ],
+                      },
                       {
                         $and: [
                           { $eq: ['$financialOperation.protocolVersion', 2] },
                           { $eq: ['$financialProtocolVersion', 2] },
                           { $eq: ['$financialOperation.groupId', '$_id'] },
-                          { $eq: ['$financialOperation.cycleId', '$currentCycleId'] },
-                          { $eq: ['$financialOperation.cycleEpoch', '$cycleEpoch'] },
+                          {
+                            $or: [
+                              {
+                                $and: [
+                                  { $eq: ['$financialOperation.cycleId', '$currentCycleId'] },
+                                  { $eq: ['$financialOperation.cycleEpoch', '$cycleEpoch'] },
+                                ],
+                              },
+                              {
+                                $and: [
+                                  { $eq: ['$financialOperation.kind', 'cycle_open_first'] },
+                                  { $eq: [{ $type: '$currentCycleId' }, 'missing'] },
+                                  { $eq: [{ $type: '$currentCycleState' }, 'missing'] },
+                                  { $eq: ['$cycleEpoch', 0] },
+                                  { $eq: ['$financialOperation.cycleEpoch', 0] },
+                                ],
+                              },
+                              {
+                                $and: [
+                                  {
+                                    $in: [
+                                      '$financialOperation.kind',
+                                      ['cycle_open_first', 'cycle_open_next'],
+                                    ],
+                                  },
+                                  { $eq: ['$financialOperation.phase', 'applying'] },
+                                  { $eq: ['$currentCycleId', '$financialOperation.targetId'] },
+                                  {
+                                    $eq: [
+                                      '$cycleEpoch',
+                                      { $add: ['$financialOperation.cycleEpoch', 1] },
+                                    ],
+                                  },
+                                  { $eq: ['$currentCycleState', 'open'] },
+                                ],
+                              },
+                            ],
+                          },
+                          {
+                            $cond: [
+                              { $in: ['$financialOperation.kind', LIFECYCLE_KINDS] },
+                              { $eq: ['$financialOperation.actor', '$creator'] },
+                              true,
+                            ],
+                          },
                           { $in: ['$financialOperation.phase', ['checking', 'applying']] },
-                          { $in: ['$financialOperation.startState', ['open', 'frozen']] },
+                          {
+                            $in: [
+                              '$financialOperation.startState',
+                              ['none', 'open', 'frozen', 'closed'],
+                            ],
+                          },
                           ...['groupId', 'cycleId', 'targetId'].map((key) => ({
                             $eq: [{ $type: `$financialOperation.${key}` }, 'objectId'],
                           })),

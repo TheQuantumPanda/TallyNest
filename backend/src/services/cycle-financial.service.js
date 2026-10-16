@@ -508,6 +508,7 @@ export function createCycleFinancialService({
       if (!group.financialOperation) return { recovered: false };
       const op = group.financialOperation;
       if (op.protocolVersion !== 2) throw inactive();
+      if (op.kind.startsWith('cycle_')) throw conflict('CYCLE_LIFECYCLE_RECOVERY_REQUIRED');
       if (!same(op.actor, user) && !same(group.creator, user))
         throw new HttpError(403, 'Recovery requires the actor or owner', 'RECOVERY_FORBIDDEN');
       const row = await finish(group);

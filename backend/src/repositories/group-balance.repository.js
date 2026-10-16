@@ -12,6 +12,14 @@ export function createGroupBalanceRepository(
   settlements = GroupSettlement,
 ) {
   return {
+    async hasHistory(group) {
+      const match = { group: objectId(group) };
+      const results = await Promise.all([
+        expenses.exists(match).readConcern('majority').maxTimeMS(1000).exec(),
+        settlements.exists(match).readConcern('majority').maxTimeMS(1000).exec(),
+      ]);
+      return results.some(Boolean);
+    },
     async aggregate(group, memberIds, cycleId) {
       const members = memberIds.map(objectId),
         match = { group: objectId(group), ...(cycleId ? { cycleId: objectId(cycleId) } : {}) };

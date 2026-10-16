@@ -25,6 +25,9 @@ fields; the existing permanent settlement freeze remains in force. See
 Step 3C adds an internal-only cycle-aware financial-write coordinator and
 disposable-database concurrency tests. It does not enable multi-cycle activity
 through the API; see [the Step 3C protocol](docs/phase-5-step-3c.md).
+Step 3D adds internal owner-authorized cycle freeze, exact zero-balance closure,
+next-cycle opening and durable recovery. These remain inactive for public APIs;
+see [the Step 3D lifecycle specification](docs/phase-5-step-3d.md).
 
 ## Run locally
 

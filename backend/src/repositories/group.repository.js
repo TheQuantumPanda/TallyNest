@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { Group, groupCollectionValidator } from '../models/group.model.js';
 import { ownerIdSchema } from '../validators/transaction.validator.js';
 import { groupInputSchema, groupPageSchema } from '../validators/group.validator.js';
+import { LIFECYCLE_KINDS } from '../utils/cycle-lifecycle.js';
 import { durableWriteOptions } from '../utils/durable-write.js';
 const objectId = (value) =>
   ownerIdSchema.parse(value instanceof mongoose.Types.ObjectId ? value.toHexString() : value);
@@ -9,6 +10,41 @@ const memberFilter = (user) => ({ 'members.user': objectId(user) });
 const ownerFilter = (user) => ({
   creator: objectId(user),
   members: { $elemMatch: { user: objectId(user), role: 'owner' } },
+});
+function lifecycleSource(op) {
+  return op.kind === 'cycle_open_first'
+    ? { currentCycleId: { $exists: false }, currentCycleState: { $exists: false }, cycleEpoch: 0 }
+    : {
+        currentCycleId: objectId(op.cycleId),
+        currentCycleState: op.startState,
+        cycleEpoch: op.cycleEpoch,
+      };
+}
+function lifecycleTarget(op) {
+  return {
+    currentCycleId: objectId(op.targetId),
+    currentCycleState: op.payload.outcome,
+    cycleEpoch: op.cycleEpoch + (op.kind.startsWith('cycle_open_') ? 1 : 0),
+  };
+}
+function lifecycleGate(id, op, phase) {
+  if (!LIFECYCLE_KINDS.includes(op.kind)) throw new TypeError('Invalid lifecycle kind');
+  return {
+    _id: objectId(id),
+    ...ownerFilter(String(op.actor)),
+    financialProtocolVersion: 2,
+    'financialOperation._id': objectId(op._id),
+    'financialOperation.phase': phase,
+    'financialOperation.payloadHash': op.payloadHash,
+    'financialOperation.cycleId': objectId(op.cycleId),
+    'financialOperation.cycleEpoch': op.cycleEpoch,
+  };
+}
+const lifecycleOptions = () => ({
+  returnDocument: 'after',
+  overwriteImmutable: true,
+  ...durableWriteOptions(),
+  maxTimeMS: 2000,
 });
 export function createGroupRepository(model = Group) {
   return {
@@ -252,6 +288,93 @@ export function createGroupRepository(model = Group) {
           },
           { $unset: { financialOperation: 1 }, $inc: { __v: 1 } },
           { returnDocument: 'after', ...durableWriteOptions(), maxTimeMS: 2000 },
+        )
+        .exec();
+    },
+    reserveLifecycle(user, id, op) {
+      if (
+        !LIFECYCLE_KINDS.includes(op.kind) ||
+        String(op.actor) !== user ||
+        !Number.isSafeInteger(op.expectedGroupVersion) ||
+        op.expectedGroupVersion < 0 ||
+        op.expectedGroupVersion >= Number.MAX_SAFE_INTEGER - 6
+      )
+        throw new RangeError('Invalid lifecycle reservation');
+      const bootstrap = op.kind === 'cycle_open_first';
+      return model
+        .findOneAndUpdate(
+          {
+            _id: objectId(id),
+            ...ownerFilter(user),
+            __v: op.expectedGroupVersion,
+            financialProtocolVersion: 2,
+            financialOperation: { $exists: false },
+            ...(bootstrap
+              ? {
+                  currentCycleId: { $exists: false },
+                  currentCycleState: { $exists: false },
+                  $or: [{ cycleEpoch: { $exists: false } }, { cycleEpoch: 0 }],
+                  settlementStartedAt: { $exists: false },
+                }
+              : { ...lifecycleSource(op), financialHistoryAt: { $exists: true } }),
+          },
+          {
+            $set: {
+              financialOperation: op,
+              ...(bootstrap ? { cycleEpoch: 0 } : {}),
+              ...(bootstrap && !op.payload.hadHistory ? { financialHistoryAt: op.createdAt } : {}),
+            },
+            $inc: { __v: 1 },
+          },
+          lifecycleOptions(),
+        )
+        .exec();
+    },
+    promoteLifecycle(id, op) {
+      return model
+        .findOneAndUpdate(
+          {
+            ...lifecycleGate(id, op, 'checking'),
+            ...lifecycleSource(op),
+            __v: op.expectedGroupVersion + 1,
+          },
+          { $set: { 'financialOperation.phase': 'applying' }, $inc: { __v: 1 } },
+          lifecycleOptions(),
+        )
+        .exec();
+    },
+    cancelLifecycle(id, op) {
+      return model
+        .findOneAndUpdate(
+          { ...lifecycleGate(id, op, 'checking'), ...lifecycleSource(op) },
+          { $unset: { financialOperation: 1 }, $inc: { __v: 1 } },
+          lifecycleOptions(),
+        )
+        .exec();
+    },
+    mirrorLifecycle(id, op) {
+      return model
+        .findOneAndUpdate(
+          { ...lifecycleGate(id, op, 'applying'), ...lifecycleSource(op) },
+          {
+            $set: {
+              ...lifecycleTarget(op),
+              ...(op.kind === 'cycle_freeze' && !op.payload.hadSettlementMarker
+                ? { settlementStartedAt: new Date(op.payload.effectiveAt) }
+                : {}),
+            },
+            $inc: { __v: 1 },
+          },
+          lifecycleOptions(),
+        )
+        .exec();
+    },
+    finishLifecycle(id, op) {
+      return model
+        .findOneAndUpdate(
+          { ...lifecycleGate(id, op, 'applying'), ...lifecycleTarget(op) },
+          { $unset: { financialOperation: 1 }, $inc: { __v: 1 } },
+          lifecycleOptions(),
         )
         .exec();
     },
