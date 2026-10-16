@@ -1,3 +1,4 @@
+import { AuthContext } from '../context/AuthContext';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
@@ -42,7 +43,9 @@ const page = (rows = [row], cursor = null) => ({
   pagination: { limit: 20, hasMore: !!cursor, nextCursor: cursor },
 });
 let unauthorized;
+let creationTestAccount = 0;
 beforeEach(() => {
+  creationTestAccount++;
   vi.resetAllMocks();
   transactionService.list.mockResolvedValue(page());
   transactionService.get.mockResolvedValue(row);
@@ -73,7 +76,11 @@ function renderPage(full = false) {
                 <App />
               </AuthProvider>
             ) : (
-              <TransactionsPage />
+              <AuthContext.Provider
+                value={{ user: { id: `creation-test-${creationTestAccount}` } }}
+              >
+                <TransactionsPage />
+              </AuthContext.Provider>
             )}
           </MotionConfig>
         ),
@@ -146,6 +153,7 @@ for (const type of ['income', 'expense'])
           category: type === 'income' ? 'salary' : 'food_dining',
           currency: 'INR',
         }),
+        expect.any(String),
       ),
     );
     expect(await screen.findByText('Transaction added.')).toBeVisible();
@@ -389,4 +397,79 @@ it('ignores an in-flight next page after filters reset the ledger', async () => 
   );
   expect(screen.queryByText('Stale next page')).not.toBeInTheDocument();
   expect(screen.getByText('1 loaded · INR')).toBeVisible();
+});
+
+it('retains a frozen transaction intent across modal reopening and retries exactly after a lost response', async () => {
+  transactionService.create.mockRejectedValueOnce(new Error('network response lost'));
+  renderPage();
+  await screen.findByRole('table');
+  let dialog = await openAdd();
+  await fillForm(dialog);
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Add transaction' }));
+  await screen.findByText(/A full reload loses the retry key/);
+  const [payload, key] = transactionService.create.mock.calls[0];
+  expect(key).toMatch(/^[a-f0-9-]{36}$/);
+  expect(within(dialog).getByLabelText('Title')).toBeDisabled();
+  await userEvent.click(
+    within(dialog).getByRole('button', { name: 'Close and review existing records' }),
+  );
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  dialog = await openAdd();
+  expect(within(dialog).getByLabelText('Title')).toHaveValue(payload.title);
+  expect(within(dialog).getByLabelText('Title')).toBeDisabled();
+  transactionService.create.mockResolvedValueOnce({ ...row, replayed: true });
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Retry identical submission' }));
+  await screen.findByText(/Transaction recovered by idempotent replay/);
+  expect(transactionService.create.mock.calls[1]).toEqual([payload, key]);
+});
+it('requires explicit review before changing an uncertain transaction into a new intent', async () => {
+  transactionService.create.mockRejectedValueOnce(new Error('unknown outcome'));
+  renderPage();
+  await screen.findByRole('table');
+  const dialog = await openAdd();
+  await fillForm(dialog);
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Add transaction' }));
+  const start = await within(dialog).findByRole('button', {
+    name: 'Start a new intended creation',
+  });
+  expect(start).toBeDisabled();
+  await userEvent.click(
+    within(dialog).getByRole('checkbox', { name: /I reviewed the latest records/ }),
+  );
+  await userEvent.click(start);
+  await userEvent.type(within(dialog).getByLabelText('Title'), ' reviewed');
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Add transaction' }));
+  expect(transactionService.create.mock.calls[1][1]).not.toEqual(
+    transactionService.create.mock.calls[0][1],
+  );
+  expect(transactionService.create.mock.calls[1][0].title).toContain('reviewed');
+});
+it('reviews a deleted uncertain creation without entering an edit-version dead end', async () => {
+  transactionService.create
+    .mockRejectedValueOnce(new Error('unknown outcome'))
+    .mockRejectedValueOnce({ response: { status: 409, data: { code: 'CREATION_DELETED' } } });
+  renderPage();
+  await screen.findByRole('table');
+  const dialog = await openAdd();
+  await fillForm(dialog);
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Add transaction' }));
+  await userEvent.click(
+    await within(dialog).findByRole('button', { name: 'Retry identical submission' }),
+  );
+  await within(dialog).findByText(/The original creation was deleted/);
+  expect(
+    within(dialog).queryByRole('button', { name: 'Reload latest transaction' }),
+  ).not.toBeInTheDocument();
+  await userEvent.click(
+    within(dialog).getByRole('checkbox', { name: /I reviewed the latest records/ }),
+  );
+  await userEvent.click(
+    within(dialog).getByRole('button', { name: 'Start a new intended creation' }),
+  );
+  const save = within(dialog).getByRole('button', { name: 'Add transaction' });
+  expect(save).toBeEnabled();
+  await userEvent.click(save);
+  expect(transactionService.create.mock.calls[2][1]).not.toBe(
+    transactionService.create.mock.calls[0][1],
+  );
 });

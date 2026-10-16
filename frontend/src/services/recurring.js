@@ -88,8 +88,10 @@ export const recurringService = {
     idSchema.parse(id);
     return single(await api.get(`/recurring/${id}`, { signal }));
   },
-  async create(data) {
-    return single(await api.post('/recurring', data));
+  async create(data, key) {
+    z.uuid().parse(key);
+    const response = await api.post('/recurring', data, { headers: { 'Idempotency-Key': key } });
+    return { ...single(response), replayed: z.boolean().parse(response.data.data.replayed) };
   },
   async update(row, data) {
     return single(await api.patch(`/recurring/${row.id}`, data, { headers: versionHeaders(row) }));

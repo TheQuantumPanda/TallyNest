@@ -19,7 +19,7 @@ const row = {
 beforeEach(() => {
   for (const method of ['get', 'post', 'patch'])
     api[method].mockResolvedValue({
-      data: { data: { transaction: row } },
+      data: { data: { transaction: row, replayed: false } },
       headers: { etag: '"actual-server-tag"' },
     });
 });
@@ -45,8 +45,12 @@ it('uses all mutation endpoints and sends the retrieved If-Match exactly', async
     { title: 'Edited' },
     { headers: { 'If-Match': '"actual-server-tag"' } },
   );
-  await transactionService.create({ title: 'New' });
-  expect(api.post).toHaveBeenCalledWith('/transactions', { title: 'New' });
+  await transactionService.create({ title: 'New' }, 'ab62cc0f-82f3-4d45-bd03-e347e047493a');
+  expect(api.post).toHaveBeenCalledWith(
+    '/transactions',
+    { title: 'New' },
+    { headers: { 'Idempotency-Key': 'ab62cc0f-82f3-4d45-bd03-e347e047493a' } },
+  );
   await transactionService.remove(row.id);
   expect(api.delete).toHaveBeenCalledWith(`/transactions/${row.id}`);
 });

@@ -169,7 +169,16 @@ export function DashboardPage() {
           </>
         )
       )}
-      {adding && <TransactionForm onClose={() => setAdding(false)} onSaved={saved} />}
+      {adding && (
+        <TransactionForm
+          onClose={() => setAdding(false)}
+          onReview={() => {
+            setAdding(false);
+            reload();
+          }}
+          onSaved={saved}
+        />
+      )}
     </PageTransition>
   );
 }

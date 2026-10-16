@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import test from 'node:test';
@@ -16,7 +17,7 @@ export async function recurringApiSetup(t, { repository, transactions, users = {
   return async (path = '', { method = 'GET', body, user = ownerA, headers = {} } = {}) => {
     const token = user ? jwt.sign({}, secret, { subject: user, algorithm: 'HS256', issuer: 'smart-finance-manager', audience: 'smart-finance-manager-web', expiresIn: 900 }) : null;
     const response = await fetch(`http://127.0.0.1:${server.address().port}/api/recurring${path}`, {
-      method, headers: { Origin: origin, 'X-CSRF-Protection': '1', ...(token ? { Cookie: `sfm_access=${token}` } : {}),
+      method, headers: { ...(method === 'POST' && path === '' ? { 'Idempotency-Key': randomUUID() } : {}), Origin: origin, 'X-CSRF-Protection': '1', ...(token ? { Cookie: `sfm_access=${token}` } : {}),
         ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...headers },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     });
@@ -39,7 +40,7 @@ export function recurringApiContract(setup) {
   });
   test('recurring API rejects protected fields, invalid money/categories/currencies/calendar ranges', async t => {
     const request = await setup(t);
-    for (const changes of [{ owner: ownerB }, { _id: ownerB }, { __v: 7 }, { nextOccurrenceDate: schedule.startDate }, { pending: {} },
+    for (const changes of [{ creationKey: 'f'.repeat(64) }, { creationHash: 'f'.repeat(64) }, { owner: ownerB }, { _id: ownerB }, { __v: 7 }, { nextOccurrenceDate: schedule.startDate }, { pending: {} },
       { lastOccurrenceDate: schedule.startDate }, { occurrenceNumber: 0 }, { createdAt: schedule.startDate }, { updatedAt: schedule.startDate },
       { $set: {} }, { amountMinor: 0 }, { amountMinor: -1 }, { amountMinor: 1.5 }, { amountMinor: '100' }, { amountMinor: null },
       { amountMinor: Number.MAX_SAFE_INTEGER + 1 }, { category: 'salary' }, { currency: 'USD' }, { frequency: 'hourly' },

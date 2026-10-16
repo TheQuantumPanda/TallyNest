@@ -7,7 +7,7 @@ vi.mock('../services/api', () => ({
   api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
 }));
 const single = (row = scheduleRecord) => ({
-  data: { status: 'ok', data: { schedule: row } },
+  data: { status: 'ok', data: { schedule: row, replayed: false } },
   headers: { etag: `"tn-${row.id}-v${row.version}"` },
 });
 const page = (rows = [scheduleRecord]) => ({
@@ -89,7 +89,7 @@ it('rejects missing or incompatible server ETags and malformed identifiers befor
 });
 it('creates, removes and performs exactly one fixed bounded processing request', async () => {
   api.post.mockResolvedValue(single());
-  await recurringService.create({ title: 'One' });
+  await recurringService.create({ title: 'One' }, 'ab62cc0f-82f3-4d45-bd03-e347e047493a');
   expect(api.post.mock.calls[0][0]).toBe('/recurring');
   api.delete.mockResolvedValue({ data: { status: 'ok', message: 'Recurring schedule deleted' } });
   await recurringService.remove(scheduleRecord.id);

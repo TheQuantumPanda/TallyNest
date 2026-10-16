@@ -1,3 +1,4 @@
+import { AuthContext } from '../context/AuthContext';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
@@ -17,7 +18,9 @@ vi.mock('../components/dashboard/DashboardCharts', () => ({
   },
   SpendingChart: () => <div role="img" aria-label="Spending chart" />,
 }));
+let creationTestAccount = 0;
 beforeEach(() => {
+  creationTestAccount++;
   vi.resetAllMocks();
   chartFails = false;
   dashboardService.summary.mockResolvedValue(dashboardFixture());
@@ -29,7 +32,11 @@ function renderDashboard() {
       path: '/',
       element: (
         <MotionConfig reducedMotion="always">
-          <DashboardPage />
+          <AuthContext.Provider
+            value={{ user: { id: `dashboard-creation-${creationTestAccount}` } }}
+          >
+            <DashboardPage />
+          </AuthContext.Provider>
         </MotionConfig>
       ),
     },
@@ -111,6 +118,7 @@ it('reuses the exact add form and refreshes figures after creation', async () =>
   await waitFor(() => expect(dashboardService.summary).toHaveBeenCalledTimes(2));
   expect(transactionService.create).toHaveBeenCalledWith(
     expect.objectContaining({ amountMinor: 1 }),
+    expect.any(String),
   );
 });
 it('partial chart failures retain totals and exact data', async () => {

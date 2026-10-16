@@ -127,7 +127,7 @@ test('schema declares timestamps, immutable ownership and scoped date and amount
   assert.equal(Transaction.schema.path('owner').options.immutable, true);
   assert.ok(Transaction.schema.path('createdAt'));
   assert.ok(Transaction.schema.path('updatedAt'));
-  assert.deepEqual(Transaction.schema.indexes().map(([keys]) => keys), [{ owner: 1, transactionDate: -1, _id: -1 }, { owner: 1, amountMinor: -1, _id: -1 }, { recurringSchedule: 1, scheduledDate: 1 }]);
+  assert.deepEqual(Transaction.schema.indexes().map(([keys]) => keys), [{ owner: 1, transactionDate: -1, _id: -1 }, { owner: 1, amountMinor: -1, _id: -1 }, { recurringSchedule: 1, scheduledDate: 1 }, { owner: 1, creationKey: 1 }]);
 });
 
 function mockRepository() {
@@ -215,8 +215,8 @@ test('repository atomic write and deletion filters always include owner, ID and 
   assert.equal(calls[0].update.$set.amountMinor, 10050);
   assert.equal(Object.hasOwn(calls[0].update.$set, 'owner'), false);
   await repository.deleteForOwner(owner, id);
-  assert.deepEqual(calls[1].filter, { owner, _id: id, deletedAt: { $exists: false }, recurringSchedule: { $exists: true } });
-  assert.deepEqual(calls[2].filter, { owner, _id: id, deletedAt: { $exists: false }, recurringSchedule: { $exists: false } });
+  assert.deepEqual(calls[1].filter, { owner, _id: id, deletedAt: { $exists: false }, $or: [{ recurringSchedule: { $exists: true } }, { creationKey: { $exists: true } }] });
+  assert.deepEqual(calls[2].filter, { owner, _id: id, deletedAt: { $exists: false }, recurringSchedule: { $exists: false }, creationKey: { $exists: false } });
   const before = calls.length;
   await assert.rejects(() => repository.replaceForOwner(owner, id, 7, { ...input, amountMinor: 1.5 }));
   await assert.rejects(() => repository.replaceForOwner(owner, id, 7, { ...input, owner }));

@@ -1,3 +1,4 @@
+import { creationError } from './creationErrors';
 import { z } from 'zod';
 import { majorToMinor, minorToMajor } from '../../../shared/money.js';
 import {
@@ -141,6 +142,8 @@ export function transactionQuery(filters, search) {
   };
 }
 export function transactionError(error) {
+  const receiptError = creationError(error);
+  if (receiptError) return receiptError;
   const status = error.response?.status;
   if (status === 401) return 'Your session has ended. Please sign in again.';
   if (status === 404)

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { RecurringSchedule } from '../src/models/recurring.model.js';
@@ -44,7 +45,7 @@ test('schedule model enforces ownership, currency/category, exact amounts and cu
 });
 test('bounded catch-up, no early generation, pause/resume and end exhaustion work without a timer', async () => {
   const store = isolatedRecurring(), service = createRecurringService(store);
-  const created = await service.create(ownerA, { ...schedule, endDate: '2024-03-31T09:30:00.000Z' });
+  const { schedule: created } = await service.create(ownerA, { ...schedule, endDate: '2024-03-31T09:30:00.000Z' }, randomUUID());
   let now = new Date('2024-01-31T09:29:59.999Z');
   const engine = createRecurringEngine({ ...store, now: () => now });
   assert.equal((await engine.processDueSchedules()).generated, 0);
@@ -83,7 +84,7 @@ test('concurrent workers and retries insert once; a deleted receipt cannot be re
 });
 test('edit/start/frequency changes rebase strictly after completed watermark and preserve history', async () => {
   const store = isolatedRecurring(), service = createRecurringService(store);
-  const row = await service.create(ownerA, schedule);
+  const { schedule: row } = await service.create(ownerA, schedule, randomUUID());
   await createRecurringEngine({ ...store, now: () => new Date('2024-02-29T09:30:00.000Z') }).processDueSchedules();
   const current = await service.get(ownerA, row.id);
   const changed = await service.update(ownerA, row.id, { startDate: '2023-01-01T00:00:00.000Z', frequency: 'weekly', amountMinor: 777 }, `"tn-${row.id}-v${current.version}"`);

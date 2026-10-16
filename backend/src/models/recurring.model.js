@@ -1,3 +1,4 @@
+import { creationReceiptFields, validCreationReceipt } from '../utils/creation-intent.js';
 import mongoose from 'mongoose';
 import { recurringInputSchema, frequencySchema } from '../validators/recurring.validator.js';
 import { transactionDateSchema, ownerIdSchema } from '../validators/transaction.validator.js';
@@ -11,6 +12,7 @@ function date(options = {}) {
 }
 const fields = recurringInputSchema.shape;
 const schema = new mongoose.Schema({
+  ...creationReceiptFields,
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, immutable: true,
     set(value) { return value === undefined ? value : ownerIdSchema.parse(value instanceof mongoose.Types.ObjectId ? value.toHexString() : value); } },
   type: field(String, fields.type, { required: true }), title: field(String, fields.title, { required: true }),
@@ -18,10 +20,12 @@ const schema = new mongoose.Schema({
   category: field(String, fields.category, { required: true }), notes: field(String, fields.notes),
   frequency: field(String, frequencySchema, { required: true }), status: field(String, fields.status, { required: true, default: 'active' }),
   startDate: date({ required: true }), endDate: date(), nextOccurrenceDate: date({ default: null }),
+  deletedAt: { type: Date },
   lastOccurrenceDate: date({ default: null }), occurrenceNumber: { type: Number, required: true, min: 0, default: 0, validate: Number.isSafeInteger },
   pending: { type: new mongoose.Schema({ date: date({ required: true }), transactionId: { type: mongoose.Schema.Types.ObjectId, required: true } }, { _id: false }), default: undefined },
 }, { timestamps: true, strict: 'throw', optimisticConcurrency: true });
 schema.pre('validate', function () {
+  if (!validCreationReceipt(this)) this.invalidate('creationKey', 'Incomplete creation receipt');
   const result = recurringInputSchema.safeParse(scheduleValues(this));
   if (!result.success) this.invalidate('category', 'Invalid recurring schedule');
   else {
@@ -32,4 +36,5 @@ schema.pre('validate', function () {
 });
 schema.index({ owner: 1, _id: -1 });
 schema.index({ status: 1, nextOccurrenceDate: 1, _id: 1 });
+schema.index({ owner: 1, creationKey: 1 }, { unique: true, partialFilterExpression: { creationKey: { $type: 'string' } } });
 export const RecurringSchedule = mongoose.model('RecurringSchedule', schema);

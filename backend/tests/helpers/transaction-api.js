@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import test from 'node:test';
@@ -24,7 +25,7 @@ export async function apiSetup(t, transactions, users = {
     const token = user ? jwt.sign({}, secret, { algorithm: 'HS256', subject: user,
       issuer: 'smart-finance-manager', audience: 'smart-finance-manager-web', expiresIn: 900 }) : null;
     const response = await fetch(`http://127.0.0.1:${server.address().port}/api/transactions${path}`, {
-      method, headers: { Origin: origin, 'X-CSRF-Protection': '1',
+      method, headers: { ...(method === 'POST' && path === '' ? { 'Idempotency-Key': randomUUID() } : {}), Origin: origin, 'X-CSRF-Protection': '1',
         ...(token ? { Cookie: `${config.nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access'}=${token}` } : {}),
         ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...headers },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
@@ -53,7 +54,7 @@ export function transactionApiContract(setup) {
 
   test('API rejects invalid amounts, currencies, categories, dates and protected fields', async t => {
     const request = await setup(t);
-    for (const changes of [{ amountMinor: 0 }, { amountMinor: -1 }, { amountMinor: 1.1 },
+    for (const changes of [{ creationKey: 'f'.repeat(64) }, { creationHash: 'f'.repeat(64) }, { amountMinor: 0 }, { amountMinor: -1 }, { amountMinor: 1.1 },
       { amountMinor: '100' }, { amountMinor: null }, { amountMinor: Number.MAX_SAFE_INTEGER + 1 },
       { currency: 'USD' }, { category: 'salary' }, { category: 'bad' },
       { transactionDate: '2026-02-30T00:00:00.000Z' }, { owner: ownerB }, { _id: ownerB },

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { before, after, beforeEach, test } from 'node:test';
 import mongoose from 'mongoose';
 import { RecurringSchedule } from '../src/models/recurring.model.js';
@@ -112,7 +112,7 @@ test('generation reservation atomically blocks owned edits, pause and deletion a
 });
 test('manual edits keep immutable provenance; deleting a schedule retains owned transaction history', async () => {
   const service = createRecurringService({ repository });
-  const row = await service.create(ownerA, { ...schedule, endDate: schedule.startDate });
+  const { schedule: row } = await service.create(ownerA, { ...schedule, endDate: schedule.startDate }, randomUUID());
   await engine.processDueSchedules();
   const generated = (await transactions.findForOwner(ownerA))[0];
   await transactions.replaceForOwner(ownerA, String(generated._id), generated.__v, { type: 'income', title: 'Historical correction', amountMinor: 777,

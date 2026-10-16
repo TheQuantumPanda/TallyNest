@@ -301,6 +301,9 @@ from the future request body. Repository reads always include that owner.
 
 ## Personal transaction API (Phase 2, Steps 2–3)
 
+**Creation contract update (Phase 5 Step 2A):** POST /api/transactions and POST /api/recurring require a UUID `Idempotency-Key`. New creation returns 201 with `data.replayed: false`; identical replay returns 200 with `data.replayed: true` and the current resource. Deleted intents return 409 and cannot be resurrected. See [creation idempotency](docs/phase-5-step-2a.md) for exact contracts, receipts, rollout and uncertain-outcome guidance.
+
+
 See the [CRUD specification](docs/phase-2-step-2.md) and current
 [query/version specification](docs/phase-2-step-3.md) for endpoint examples,
 validation, pagination, concurrency, and manual requests.
@@ -652,3 +655,17 @@ See [the frontend integration specification](docs/phase-4-step-5.md) for API bin
 ETags, idempotency, invitation security, accessibility and limitations. Existing
 local backend/frontend commands above apply; no new environment variables or
 dependencies are required.
+
+
+## Personal creation retry safety (Phase 5, Step 2A)
+
+Transaction and recurring forms retain uncertain creation payloads and UUIDs in
+account-scoped memory across modal and SPA route changes. Retry the identical
+submission after an unknown outcome, or explicitly review current records before
+starting a new intent. Full reload loses memory-only keys: inspect authoritative
+records before creating again. New manual transaction and recurring schedule
+deletions retain hidden creation receipts. Personal summaries exclude deleted
+records; historical generated transactions remain after schedule deletion.
+
+[Implementation and verification](docs/phase-5-step-2a.md) addresses audit H1
+without changing the original audit findings. No new local configuration is needed.

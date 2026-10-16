@@ -49,8 +49,10 @@ export const transactionService = {
   async get(id, signal) {
     return single(await api.get(`/transactions/${id}`, { signal }));
   },
-  async create(data) {
-    return single(await api.post('/transactions', data));
+  async create(data, key) {
+    z.uuid().parse(key);
+    const response = await api.post('/transactions', data, { headers: { 'Idempotency-Key': key } });
+    return { ...single(response), replayed: z.boolean().parse(response.data.data.replayed) };
   },
   async update(transaction, data) {
     return single(

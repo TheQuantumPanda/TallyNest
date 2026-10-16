@@ -5,9 +5,9 @@ function setVersion(res, transaction) {
 export function createTransactionController(service) {
   return {
     async create(req, res) {
-      const transaction = await service.create(req.user.id, req.body);
+      const { transaction, replayed } = await service.create(req.user.id, req.body, req.get('idempotency-key'));
       setVersion(res, transaction);
-      res.status(201).json({ status: 'ok', data: { transaction } });
+      res.status(replayed ? 200 : 201).json({ status: 'ok', data: { transaction, replayed } });
     },
     async list(req, res) {
       const { transactions, pagination } = await service.list(req.user.id, req.query);

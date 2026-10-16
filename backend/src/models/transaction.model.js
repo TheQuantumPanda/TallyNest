@@ -1,3 +1,4 @@
+import { creationReceiptFields, validCreationReceipt } from '../utils/creation-intent.js';
 import mongoose from 'mongoose';
 import { DEFAULT_CURRENCY, isCategoryForType } from '../constants/transaction.constants.js';
 import { ownerIdSchema, transactionTypeSchema, amountMinorSchema, currencySchema, categorySchema,
@@ -14,6 +15,7 @@ function constrainedField(type, schema, options = {}) {
 }
 
 const transactionSchema = new mongoose.Schema({
+  ...creationReceiptFields,
   owner: {
     type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, immutable: true,
     set(value) {
@@ -60,11 +62,13 @@ transactionSchema.index({ owner: 1, transactionDate: -1, _id: -1 });
 transactionSchema.index({ owner: 1, amountMinor: -1, _id: -1 });
 
 transactionSchema.pre('validate', function () {
+  if (!validCreationReceipt(this)) this.invalidate('creationKey', 'Incomplete creation receipt');
   if (!!this.recurringSchedule !== !!this.scheduledDate ||
     (this.scheduledDate && !transactionDateSchema.safeParse(this.scheduledDate.toISOString()).success) ||
-    (this.deletedAt && !this.recurringSchedule)) this.invalidate('recurringSchedule', 'Invalid recurrence provenance');
+    (this.deletedAt && !this.recurringSchedule && !this.creationKey)) this.invalidate('recurringSchedule', 'Invalid recurrence provenance');
 });
 transactionSchema.index({ recurringSchedule: 1, scheduledDate: 1 }, { unique: true,
   partialFilterExpression: { recurringSchedule: { $type: 'objectId' }, scheduledDate: { $type: 'date' } } });
 
+transactionSchema.index({ owner: 1, creationKey: 1 }, { unique: true, partialFilterExpression: { creationKey: { $type: 'string' } } });
 export const Transaction = mongoose.model('Transaction', transactionSchema);

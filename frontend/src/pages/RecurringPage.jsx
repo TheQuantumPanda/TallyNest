@@ -128,6 +128,10 @@ export function RecurringPage() {
         <RecurringOverlay
           selected={selected}
           onClose={() => setSelected(null)}
+          onReview={() => {
+            setSelected(null);
+            data.reload();
+          }}
           onSaved={saved}
           onUnavailable={(message) => saved(message, 'error')}
         />

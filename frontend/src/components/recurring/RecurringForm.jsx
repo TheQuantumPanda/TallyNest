@@ -1,3 +1,5 @@
+import { useCreationIntent } from '../../hooks/useCreationIntent';
+import { CreationIntentNotice } from '../ui/CreationIntentNotice';
 import { useCallback, useRef, useState } from 'react';
 import { useBeforeUnload, useBlocker } from 'react-router-dom';
 import { Dialog } from '../ui/Dialog';
@@ -36,8 +38,18 @@ function SelectField({ label, name, value, onChange, error, children }) {
     </div>
   );
 }
-export function RecurringForm({ schedule, onClose, onSaved, onReload, returnFocus }) {
-  const [initial] = useState(() => initialScheduleValues(schedule));
+export function RecurringForm({
+  schedule,
+  onClose,
+  onSaved,
+  onReload,
+  onReview = onClose,
+  returnFocus,
+}) {
+  const creation = useCreationIntent('recurring');
+  const [initial] = useState(() =>
+    !schedule && creation.intent ? creation.intent.draft : initialScheduleValues(schedule),
+  );
   const [values, setValues] = useState(initial),
     [errors, setErrors] = useState({}),
     [error, setError] = useState('');
@@ -46,7 +58,8 @@ export function RecurringForm({ schedule, onClose, onSaved, onReload, returnFocu
     [discard, setDiscard] = useState(null);
   const busy = useRef(false),
     form = useRef(null);
-  const dirty = JSON.stringify(values) !== JSON.stringify(initial);
+  const dirty =
+    JSON.stringify(values) !== JSON.stringify(initial) || (!schedule && !!creation.intent);
   const blocker = useBlocker(dirty || pending);
   useBeforeUnload(
     useCallback(
@@ -93,7 +106,10 @@ export function RecurringForm({ schedule, onClose, onSaved, onReload, returnFocu
   async function submit(event) {
     event.preventDefault();
     if (busy.current || conflict) return;
-    const result = validateScheduleForm(values, schedule);
+    const result =
+      !schedule && creation.intent
+        ? { data: creation.intent.data, errors: {} }
+        : validateScheduleForm(values, schedule);
     setErrors(result.errors);
     setError('');
     if (!result.data) {
@@ -103,12 +119,15 @@ export function RecurringForm({ schedule, onClose, onSaved, onReload, returnFocu
     busy.current = true;
     setPending(true);
     try {
-      if (schedule) await recurringService.update(schedule, result.data);
-      else await recurringService.create(result.data);
+      const saved = schedule
+        ? await recurringService.update(schedule, result.data)
+        : await creation.create(result.data, values, recurringService.create);
       onSaved(
         schedule
           ? 'Schedule updated. Historical entries are unchanged.'
-          : 'Schedule created. Due entries are generated through catch-up processing.',
+          : saved?.replayed
+            ? 'Schedule recovered by idempotent replay. No duplicate template was created.'
+            : 'Schedule created. Due entries are generated through catch-up processing.',
       );
     } catch (err) {
       setError(recurringError(err));
@@ -135,6 +154,7 @@ export function RecurringForm({ schedule, onClose, onSaved, onReload, returnFocu
         </p>
       )}
       {error && <Notice>{error}</Notice>}
+      {!schedule && !pending && <CreationIntentNotice creation={creation} onReview={onReview} />}
       {conflict && (
         <Button
           variant="ghost"
@@ -148,9 +168,11 @@ export function RecurringForm({ schedule, onClose, onSaved, onReload, returnFocu
         <section className="discard-notice" role="alert">
           <h3>Discard unsaved changes?</h3>
           <p>
-            {discard === 'reload'
-              ? 'Reload replaces this draft with the latest saved schedule. Review before saving again.'
-              : 'Your changes have not been saved.'}
+            {!schedule && creation.intent
+              ? 'Closing retains the uncertain retry intent in memory. Reopen Add schedule to reconcile it. A full reload loses the key; review records before creating again.'
+              : discard === 'reload'
+                ? 'Reload replaces this draft with the latest saved schedule. Review before saving again.'
+                : 'Your changes have not been saved.'}
           </p>
           <div className="dialog-actions">
             <Button variant="ghost" onClick={() => setDiscard(null)}>
@@ -181,7 +203,7 @@ export function RecurringForm({ schedule, onClose, onSaved, onReload, returnFocu
         </section>
       )}
       <form ref={form} onSubmit={submit} noValidate className="transaction-form recurring-form">
-        <fieldset disabled={pending}>
+        <fieldset disabled={pending || (!schedule && !!creation.intent)}>
           <legend className="sr-only">Recurring schedule fields</legend>
           <SelectField
             label="Transaction type"
@@ -294,7 +316,13 @@ export function RecurringForm({ schedule, onClose, onSaved, onReload, returnFocu
             Cancel
           </Button>
           <Button type="submit" loading={pending} disabled={conflict}>
-            {pending ? 'Saving…' : schedule ? 'Save changes' : 'Create schedule'}
+            {pending
+              ? 'Saving…'
+              : schedule
+                ? 'Save changes'
+                : creation.intent
+                  ? 'Retry identical submission'
+                  : 'Create schedule'}
           </Button>
         </div>
       </form>

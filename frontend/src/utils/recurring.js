@@ -1,3 +1,4 @@
+import { creationError } from './creationErrors';
 import { z } from 'zod';
 import { categoriesFor, decimalAmount, positiveMinor } from './transactions';
 import { isCategoryForType } from '../../../shared/transaction.constants.js';
@@ -118,6 +119,8 @@ export function validateScheduleForm(values, existing) {
   };
 }
 export function recurringError(error) {
+  const receiptError = creationError(error);
+  if (receiptError) return receiptError;
   const status = error.response?.status,
     code = error.response?.data?.code;
   if (status === 401) return 'Your session has ended. Please sign in again.';

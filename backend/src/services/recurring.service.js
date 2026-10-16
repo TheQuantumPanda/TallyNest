@@ -1,3 +1,4 @@
+import { createWithIntent } from '../utils/creation-intent.js';
 import { recurringRepository } from '../repositories/recurring.repository.js';
 import { recurringInputSchema, recurringPatchSchema, recurringQuerySchema } from '../validators/recurring.validator.js';
 import { ownerIdSchema } from '../validators/transaction.validator.js';
@@ -23,7 +24,11 @@ export function toPublicSchedule(document) {
 }
 export function createRecurringService({ repository = recurringRepository } = {}) {
   return {
-    async create(owner, input) { return toPublicSchedule(await repository.createForOwner(owner, parse(recurringInputSchema, input))); },
+    async create(owner, input, idempotencyKey) {
+      const data = parse(recurringInputSchema, input);
+      const result = await createWithIntent(repository, owner, data, idempotencyKey);
+      return { schedule: toPublicSchedule(result.document), replayed: result.replayed };
+    },
     async list(owner, input) {
       const query = parse(recurringQuerySchema, input, 'INVALID_QUERY');
       const rows = await repository.listForOwner(owner, query), hasMore = rows.length > query.limit;

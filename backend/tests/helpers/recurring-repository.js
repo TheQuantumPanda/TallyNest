@@ -5,30 +5,31 @@ export function isolatedRecurring() {
   const schedules = new Map(), ledger = new Map();
   const copy = row => row ? RecurringSchedule.hydrate(row.toObject()) : null;
   const repository = {
-    async createForOwner(owner, data) {
-      const row = new RecurringSchedule({ ...data, owner, ...cursorAfter(data), __v: 0 }); await row.validate();
+    async createForOwner(owner, data, receipt = {}) {
+      const row = new RecurringSchedule({ ...data, ...receipt, owner, ...cursorAfter(data), __v: 0 }); await row.validate();
       row.createdAt = row.updatedAt = new Date('2024-01-01T00:00:00.000Z'); schedules.set(String(row._id), row); return copy(row);
     },
-    async findByIdForOwner(owner, id) { const row = schedules.get(id); return row && String(row.owner) === owner ? copy(row) : null; },
-    async listForOwner(owner, { status, limit, after }) { return [...schedules.values()].filter(row => String(row.owner) === owner && (!status || row.status === status) && (!after || String(row._id) < after))
+    async findCreationReceipt(owner, key) { return copy([...schedules.values()].find(row => String(row.owner) === owner && row.creationKey === key)); },
+    async findByIdForOwner(owner, id) { const row = schedules.get(id); return row && !row.deletedAt && String(row.owner) === owner ? copy(row) : null; },
+    async listForOwner(owner, { status, limit, after }) { return [...schedules.values()].filter(row => !row.deletedAt && String(row.owner) === owner && (!status || row.status === status) && (!after || String(row._id) < after))
       .sort((a, b) => String(b._id).localeCompare(String(a._id))).slice(0, limit + 1).map(copy); },
     async replaceForOwner(owner, id, version, data, lastOccurrenceDate) {
-      const old = schedules.get(id); if (!old || String(old.owner) !== owner || old.__v !== version || old.pending) return null;
-      const row = new RecurringSchedule({ ...data, owner, _id: id, __v: version + 1, ...cursorAfter(data, lastOccurrenceDate), lastOccurrenceDate, createdAt: old.createdAt, updatedAt: new Date() });
+      const old = schedules.get(id); if (!old || old.deletedAt || String(old.owner) !== owner || old.__v !== version || old.pending) return null;
+      const row = new RecurringSchedule({ ...data, owner, _id: id, __v: version + 1, ...cursorAfter(data, lastOccurrenceDate), lastOccurrenceDate, creationKey: old.creationKey, creationHash: old.creationHash, createdAt: old.createdAt, updatedAt: new Date() });
       await row.validate(); if (schedules.get(id)?.__v !== version || schedules.get(id)?.pending) return null;
       schedules.set(id, row); return copy(row);
     },
-    async deleteForOwner(owner, id) { const row = await this.findByIdForOwner(owner, id); if (!row || row.pending) return null; schedules.delete(id); return row; },
-    async findDue({ owner, asOf, exclude = [] }) { return copy([...schedules.values()].filter(row => (!owner || String(row.owner) === owner) && row.status === 'active' && row.nextOccurrenceDate && row.nextOccurrenceDate <= asOf && !exclude.includes(String(row._id)))
+    async deleteForOwner(owner, id) { const row = await this.findByIdForOwner(owner, id); if (!row || row.pending) return null; schedules.get(id).deletedAt = new Date(); schedules.get(id).__v++; return row; },
+    async findDue({ owner, asOf, exclude = [] }) { return copy([...schedules.values()].filter(row => (!owner || String(row.owner) === owner) && !row.deletedAt && row.status === 'active' && row.nextOccurrenceDate && row.nextOccurrenceDate <= asOf && !exclude.includes(String(row._id)))
       .sort((a, b) => a.nextOccurrenceDate - b.nextOccurrenceDate || String(a._id).localeCompare(String(b._id)))[0]); },
     async reserve(document, transactionId) {
       const id = String(document._id), row = schedules.get(id);
-      if (!row || row.__v !== document.__v || row.status !== 'active' || row.pending) return null;
+      if (!row || row.deletedAt || row.__v !== document.__v || row.status !== 'active' || row.pending) return null;
       row.pending = { date: row.nextOccurrenceDate, transactionId }; row.__v++; return copy(row);
     },
     async advance(document, cursor) {
       const row = schedules.get(String(document._id));
-      if (!row || row.__v !== document.__v || String(row.pending?.transactionId) !== String(document.pending.transactionId)) return null;
+      if (!row || row.deletedAt || row.__v !== document.__v || String(row.pending?.transactionId) !== String(document.pending.transactionId)) return null;
       row.lastOccurrenceDate = row.pending.date; Object.assign(row, cursor); row.pending = undefined; row.__v++; return copy(row);
     },
   };

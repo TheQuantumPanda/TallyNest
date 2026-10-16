@@ -1,3 +1,5 @@
+import { useCreationIntent } from '../../hooks/useCreationIntent';
+import { CreationIntentNotice } from '../ui/CreationIntentNotice';
 import { useCallback, useRef, useState } from 'react';
 import { useBeforeUnload, useBlocker } from 'react-router-dom';
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
@@ -13,15 +15,20 @@ import {
   validateTransactionForm,
 } from '../../utils/transactions';
 
-export function TransactionForm({ transaction, onClose, onSaved, onReload }) {
-  const [initial] = useState(() => ({
-    type: transaction?.type ?? 'expense',
-    title: transaction?.title ?? '',
-    amount: transaction ? decimalAmount(transaction.amountMinor) : '',
-    category: transaction?.category ?? 'food_dining',
-    date: transaction?.transactionDate.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
-    notes: transaction?.notes ?? '',
-  }));
+export function TransactionForm({ transaction, onClose, onSaved, onReload, onReview = onClose }) {
+  const creation = useCreationIntent('transaction');
+  const [initial] = useState(() =>
+    !transaction && creation.intent
+      ? creation.intent.draft
+      : {
+          type: transaction?.type ?? 'expense',
+          title: transaction?.title ?? '',
+          amount: transaction ? decimalAmount(transaction.amountMinor) : '',
+          category: transaction?.category ?? 'food_dining',
+          date: transaction?.transactionDate.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+          notes: transaction?.notes ?? '',
+        },
+  );
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState({});
   const [error, setError] = useState('');
@@ -30,7 +37,8 @@ export function TransactionForm({ transaction, onClose, onSaved, onReload }) {
   const [discard, setDiscard] = useState(null);
   const busy = useRef(false);
   const form = useRef(null);
-  const dirty = JSON.stringify(values) !== JSON.stringify(initial);
+  const dirty =
+    JSON.stringify(values) !== JSON.stringify(initial) || (!transaction && !!creation.intent);
   const blocker = useBlocker(dirty || pending);
   useBeforeUnload(
     useCallback(
@@ -74,7 +82,10 @@ export function TransactionForm({ transaction, onClose, onSaved, onReload }) {
   async function submit(event) {
     event.preventDefault();
     if (busy.current || conflict) return;
-    const validated = validateTransactionForm(values, transaction);
+    const validated =
+      !transaction && creation.intent
+        ? { data: creation.intent.data, errors: {} }
+        : validateTransactionForm(values, transaction);
     setErrors(validated.errors);
     setError('');
     if (!validated.data) {
@@ -85,12 +96,19 @@ export function TransactionForm({ transaction, onClose, onSaved, onReload }) {
     busy.current = true;
     setPending(true);
     try {
-      if (transaction) await transactionService.update(transaction, validated.data);
-      else await transactionService.create(validated.data);
-      onSaved(transaction ? 'Transaction updated.' : 'Transaction added.');
+      const saved = transaction
+        ? await transactionService.update(transaction, validated.data)
+        : await creation.create(validated.data, values, transactionService.create);
+      onSaved(
+        transaction
+          ? 'Transaction updated.'
+          : saved?.replayed
+            ? 'Transaction recovered by idempotent replay. No duplicate was created.'
+            : 'Transaction added.',
+      );
     } catch (err) {
       setError(transactionError(err));
-      setConflict([409, 412, 428].includes(err.response?.status));
+      if (transaction && [409, 412, 428].includes(err.response?.status)) setConflict(true);
     } finally {
       busy.current = false;
       setPending(false);
@@ -108,6 +126,7 @@ export function TransactionForm({ transaction, onClose, onSaved, onReload }) {
           : 'A small record. A clearer picture of your money.'}
       </p>
       {error && <Notice>{error}</Notice>}
+      {!transaction && !pending && <CreationIntentNotice creation={creation} onReview={onReview} />}
       {conflict && (
         <Button
           variant="ghost"
@@ -121,9 +140,11 @@ export function TransactionForm({ transaction, onClose, onSaved, onReload }) {
         <section className="discard-notice" role="alert">
           <h3>Discard unsaved changes?</h3>
           <p>
-            {discard === 'reload'
-              ? 'Reloading will replace your draft with the latest saved record.'
-              : 'Your changes have not been saved.'}
+            {!transaction && creation.intent
+              ? 'Closing retains the uncertain retry intent in memory. Reopen Add transaction to reconcile it. A full reload loses the key; review records before creating again.'
+              : discard === 'reload'
+                ? 'Reloading will replace your draft with the latest saved record.'
+                : 'Your changes have not been saved.'}
           </p>
           <div className="dialog-actions">
             <Button variant="ghost" onClick={() => setDiscard(null)}>
@@ -141,7 +162,9 @@ export function TransactionForm({ transaction, onClose, onSaved, onReload }) {
           <p>
             {pending
               ? 'A save is still in progress. Please stay until it finishes.'
-              : 'Leaving will discard your unsaved changes.'}
+              : !transaction && creation.intent
+                ? 'The uncertain intent remains in memory across SPA navigation. A full reload loses its retry key; review records before creating again.'
+                : 'Leaving will discard your unsaved changes.'}
           </p>
           <div className="dialog-actions">
             <Button onClick={() => blocker.reset()}>Stay here</Button>
@@ -154,7 +177,7 @@ export function TransactionForm({ transaction, onClose, onSaved, onReload }) {
         </section>
       )}
       <form ref={form} onSubmit={submit} noValidate className="transaction-form">
-        <fieldset disabled={pending}>
+        <fieldset disabled={pending || (!transaction && !!creation.intent)}>
           <legend className="sr-only">Transaction fields</legend>
           <div className="type-selector" role="group" aria-label="Transaction type">
             <button
@@ -258,7 +281,13 @@ export function TransactionForm({ transaction, onClose, onSaved, onReload }) {
             Cancel
           </Button>
           <Button type="submit" loading={pending} disabled={conflict}>
-            {pending ? 'Saving…' : transaction ? 'Save changes' : 'Add transaction'}
+            {pending
+              ? 'Saving…'
+              : transaction
+                ? 'Save changes'
+                : creation.intent
+                  ? 'Retry identical submission'
+                  : 'Add transaction'}
           </Button>
         </div>
       </form>

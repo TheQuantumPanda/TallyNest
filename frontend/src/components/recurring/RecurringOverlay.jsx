@@ -96,7 +96,7 @@ function ScheduleAction({ row, mode, onClose, onSaved, onUnavailable, onReload, 
     </Dialog>
   );
 }
-export function RecurringOverlay({ selected, onClose, onSaved, onUnavailable }) {
+export function RecurringOverlay({ selected, onClose, onSaved, onUnavailable, onReview }) {
   const [record, setRecord] = useState(null),
     [revision, setRevision] = useState(0),
     [cycle, setCycle] = useState(0),
@@ -131,7 +131,7 @@ export function RecurringOverlay({ selected, onClose, onSaved, onUnavailable }) 
     }
   }
   const props = { onClose, onSaved, returnFocus: selected.trigger };
-  if (selected.mode === 'add') return <RecurringForm {...props} />;
+  if (selected.mode === 'add') return <RecurringForm {...props} onReview={onReview} />;
   if (selected.mode === 'delete')
     return (
       <ScheduleAction {...props} row={selected.row} mode="delete" onUnavailable={onUnavailable} />

@@ -19,9 +19,14 @@ export function createTransactionRepository(model = Transaction) {
     return document;
   }
   return {
-    async createForOwner(ownerId, data) {
+    async createForOwner(ownerId, data, receipt = {}) {
       const document = await validatedData(ownerId, data);
-      return document.save();
+      Object.assign(document, receipt);
+      return document.save(durableWriteOptions());
+    },
+    findCreationReceipt(ownerId, key) {
+      if (!/^[a-f0-9]{64}$/.test(key)) throw new TypeError('Invalid creation key');
+      return model.findOne({ owner: objectId(ownerId), creationKey: key }).readConcern('majority').maxTimeMS(1000).exec();
     },
     async replaceForOwner(ownerId, transactionId, version, data) {
       if (!Number.isSafeInteger(version) || version < 0) throw new RangeError('Invalid transaction version');
@@ -38,9 +43,9 @@ export function createTransactionRepository(model = Transaction) {
     },
     async deleteForOwner(ownerId, transactionId) {
       const filter = { owner: objectId(ownerId), _id: objectId(transactionId), deletedAt: { $exists: false } };
-      const generated = await model.findOneAndUpdate({ ...filter, recurringSchedule: { $exists: true } },
+      const generated = await model.findOneAndUpdate({ ...filter, $or: [{ recurringSchedule: { $exists: true } }, { creationKey: { $exists: true } }] },
         { $set: { deletedAt: new Date() }, $inc: { __v: 1 } }, { returnDocument: 'after', ...durableWriteOptions(), maxTimeMS: 2000 }).exec();
-      return generated ?? model.findOneAndDelete({ ...filter, recurringSchedule: { $exists: false } }).exec();
+      return generated ?? model.findOneAndDelete({ ...filter, recurringSchedule: { $exists: false }, creationKey: { $exists: false } }).exec();
     },
     async createGeneratedForOwner(ownerId, transactionId, scheduleId, date, input) {
       const document = await validatedData(ownerId, input);

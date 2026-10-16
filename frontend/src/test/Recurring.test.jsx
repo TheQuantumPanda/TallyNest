@@ -1,3 +1,4 @@
+import { AuthContext } from '../context/AuthContext';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, expect, it, vi } from 'vitest';
@@ -26,7 +27,9 @@ vi.mock('../services/auth', () => ({
   authService: { me: vi.fn(), logout: vi.fn(), login: vi.fn(), register: vi.fn() },
 }));
 let unauthorized;
+let creationTestAccount = 0;
 beforeEach(() => {
+  creationTestAccount++;
   vi.resetAllMocks();
   recurringService.list.mockResolvedValue(schedulePage());
   recurringService.get.mockResolvedValue(scheduleRecord);
@@ -57,7 +60,11 @@ function renderPage(full = false) {
                 <App />
               </AuthProvider>
             ) : (
-              <RecurringPage />
+              <AuthContext.Provider
+                value={{ user: { id: `creation-test-${creationTestAccount}` } }}
+              >
+                <RecurringPage />
+              </AuthContext.Provider>
             )}
           </MotionConfig>
         ),
@@ -184,6 +191,7 @@ for (const [type, frequency] of [
         startDate: '2030-01-31T09:15:20.123Z',
         category: type === 'income' ? 'salary' : 'food_dining',
       }),
+      expect.any(String),
     );
     expect(await screen.findByText(/Schedule created/)).toBeVisible();
     expect(recurringService.list).toHaveBeenCalledTimes(2);
@@ -490,4 +498,50 @@ it('prevents unauthenticated recurring content from flashing', async () => {
   renderPage(true);
   expect(await screen.findByRole('heading', { name: 'Welcome back.' })).toBeVisible();
   expect(recurringService.list).not.toHaveBeenCalled();
+});
+
+it('retains the template intent through uncertain outcomes and modal reopening without a second schedule', async () => {
+  recurringService.create.mockRejectedValueOnce(new Error('response lost after commit'));
+  renderPage();
+  await loaded();
+  let dialog = await add();
+  await fill(dialog);
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Create schedule' }));
+  await screen.findByText(/A full reload loses the retry key/);
+  const [payload, key] = recurringService.create.mock.calls[0];
+  expect(within(dialog).getByLabelText('Title')).toBeDisabled();
+  await userEvent.click(
+    within(dialog).getByRole('button', { name: 'Close and review existing records' }),
+  );
+  dialog = await add();
+  expect(within(dialog).getByLabelText('Title')).toHaveValue(payload.title);
+  recurringService.create.mockResolvedValueOnce({ ...scheduleRecord, replayed: true });
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Retry identical submission' }));
+  expect(await screen.findByText(/Schedule recovered by idempotent replay/)).toBeVisible();
+  expect(recurringService.create.mock.calls[1]).toEqual([payload, key]);
+});
+it('keeps a conflicting uncertain template frozen until explicit review permits a new intent', async () => {
+  recurringService.create
+    .mockRejectedValueOnce(new Error('unknown outcome'))
+    .mockRejectedValueOnce({ response: { status: 409, data: { code: 'IDEMPOTENCY_CONFLICT' } } });
+  renderPage();
+  await loaded();
+  const dialog = await add();
+  await fill(dialog);
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Create schedule' }));
+  await userEvent.click(
+    await within(dialog).findByRole('button', { name: 'Retry identical submission' }),
+  );
+  await within(dialog).findByText(/This retry key belongs to a different creation payload/);
+  expect(within(dialog).getByLabelText('Title')).toBeDisabled();
+  await userEvent.click(
+    within(dialog).getByRole('checkbox', { name: /I reviewed the latest records/ }),
+  );
+  await userEvent.click(
+    within(dialog).getByRole('button', { name: 'Start a new intended creation' }),
+  );
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Create schedule' }));
+  expect(recurringService.create.mock.calls[2][1]).not.toBe(
+    recurringService.create.mock.calls[0][1],
+  );
 });

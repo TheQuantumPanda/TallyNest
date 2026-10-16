@@ -1,3 +1,4 @@
+import { createWithIntent } from '../utils/creation-intent.js';
 import { transactionRepository } from '../repositories/transaction.repository.js';
 import { transactionInputSchema, transactionPatchSchema, ownerIdSchema } from '../validators/transaction.validator.js';
 import { transactionQuerySchema, ifMatchSchema } from '../validators/transaction-query.validator.js';
@@ -41,9 +42,10 @@ export function toPublicTransaction(document) {
 export function createTransactionService({ repository = transactionRepository, cursorSecret } = {}) {
   const cursors = createTransactionCursor(cursorSecret);
   return {
-    async create(ownerId, input) {
+    async create(ownerId, input, idempotencyKey) {
       const data = parse(transactionInputSchema, input);
-      return toPublicTransaction(await repository.createForOwner(ownerId, data));
+      const result = await createWithIntent(repository, ownerId, data, idempotencyKey);
+      return { transaction: toPublicTransaction(result.document), replayed: result.replayed };
     },
     async list(ownerId, query) {
       const result = transactionQuerySchema.safeParse(query);

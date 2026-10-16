@@ -19,7 +19,7 @@ import { DEFAULT_FILTERS, transactionQuery, transactionError } from '../utils/tr
 import { transactionService } from '../services/transactions';
 import { useDebouncedValue, useTransactions } from '../hooks/useTransactions';
 
-function TransactionOverlay({ selected, onClose, onSaved, onUnavailable }) {
+function TransactionOverlay({ selected, onClose, onSaved, onUnavailable, onReview }) {
   const [record, setRecord] = useState(null);
   const [revision, setRevision] = useState(0);
   const [error, setError] = useState('');
@@ -36,7 +36,8 @@ function TransactionOverlay({ selected, onClose, onSaved, onUnavailable }) {
     );
     return () => controller.abort();
   }, [selected]);
-  if (selected.mode === 'add') return <TransactionForm onClose={onClose} onSaved={onSaved} />;
+  if (selected.mode === 'add')
+    return <TransactionForm onClose={onClose} onSaved={onSaved} onReview={onReview} />;
   if (selected.mode === 'delete')
     return (
       <DeleteTransaction
@@ -202,6 +203,10 @@ export function TransactionsPage() {
         <TransactionOverlay
           selected={selected}
           onClose={() => setSelected(null)}
+          onReview={() => {
+            setSelected(null);
+            ledger.reload();
+          }}
           onSaved={saved}
           onUnavailable={(message) => saved(message, 'error')}
         />
