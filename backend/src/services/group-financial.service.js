@@ -168,6 +168,12 @@ export function createGroupFinancialService({
   return {
     async run(user, groupId, kind, payload) {
       const group = await requireGroupMember(groups, user, groupId);
+      if (group.financialProtocolVersion !== undefined)
+        throw new HttpError(
+          409,
+          'Cycle protocol is not active on this API',
+          'CYCLE_PROTOCOL_INACTIVE',
+        );
       if (group.financialOperation) throw busy();
       if (group.__v >= Number.MAX_SAFE_INTEGER - 4)
         throw new HttpError(409, 'Group financial version exhausted', 'GROUP_CONFLICT');
@@ -190,6 +196,12 @@ export function createGroupFinancialService({
     },
     async recover(user, groupId) {
       const group = await requireGroupMember(groups, user, groupId);
+      if (group.financialProtocolVersion !== undefined)
+        throw new HttpError(
+          409,
+          'Cycle protocol is not active on this API',
+          'CYCLE_PROTOCOL_INACTIVE',
+        );
       if (!group.financialOperation) return { recovered: false };
       if (String(group.financialOperation.actor) !== user && String(group.creator) !== user)
         throw new HttpError(

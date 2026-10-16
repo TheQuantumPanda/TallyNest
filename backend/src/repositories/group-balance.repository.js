@@ -12,9 +12,9 @@ export function createGroupBalanceRepository(
   settlements = GroupSettlement,
 ) {
   return {
-    async aggregate(group, memberIds) {
+    async aggregate(group, memberIds, cycleId) {
       const members = memberIds.map(objectId),
-        match = { group: objectId(group) };
+        match = { group: objectId(group), ...(cycleId ? { cycleId: objectId(cycleId) } : {}) };
       const [expense, settlement] = await Promise.all([
         expenses
           .aggregate([

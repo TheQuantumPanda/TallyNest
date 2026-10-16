@@ -67,6 +67,21 @@ const schema = new mongoose.Schema(
       type: new mongoose.Schema(
         {
           actor: reference(),
+          // Absent on durable legacy reservations. Version 2 is internal only.
+          protocolVersion: { type: Number, enum: [2], immutable: true },
+          groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', immutable: true },
+          cycleId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'GroupFinancialCycle',
+            immutable: true,
+          },
+          cycleEpoch: { type: Number, immutable: true },
+          expectedGroupVersion: { type: Number, immutable: true },
+          expectedCycleVersion: { type: Number, immutable: true },
+          targetId: { type: mongoose.Schema.Types.ObjectId, immutable: true },
+          payloadHash: { type: String, immutable: true, match: /^[a-f0-9]{64}$/ },
+          phase: { type: String, enum: ['checking', 'applying'] },
+          startState: { type: String, enum: ['open', 'frozen'], immutable: true },
           kind: {
             type: String,
             required: true,
@@ -112,6 +127,21 @@ schema.pre('validate', function () {
     this.invalidate('invitations', 'Invalid invitations');
   if (!Number.isSafeInteger(this.__v ?? 0) || (this.__v ?? 0) < 0)
     this.invalidate('__v', 'Invalid group version');
+  const op = this.financialOperation;
+  if (
+    op?.protocolVersion === 2 &&
+    (this.financialProtocolVersion !== 2 ||
+      String(op.groupId) !== String(this._id) ||
+      String(op.cycleId) !== String(this.currentCycleId) ||
+      op.cycleEpoch !== this.cycleEpoch ||
+      !['checking', 'applying'].includes(op.phase) ||
+      !['open', 'frozen'].includes(op.startState) ||
+      !Number.isSafeInteger(op.expectedGroupVersion) ||
+      !Number.isSafeInteger(op.expectedCycleVersion) ||
+      !op.targetId ||
+      !op.payloadHash)
+  )
+    this.invalidate('financialOperation', 'Invalid cycle financial reservation');
 });
 schema.index({ 'members.user': 1, _id: -1 });
 schema.index({ 'invitations.tokenHash': 1 }, { unique: true, sparse: true });
@@ -149,6 +179,28 @@ export const groupCollectionValidator = {
             properties: {
               _id: { bsonType: 'objectId' },
               actor: { bsonType: 'objectId' },
+              protocolVersion: { enum: [2] },
+              groupId: { bsonType: 'objectId' },
+              cycleId: { bsonType: 'objectId' },
+              cycleEpoch: {
+                bsonType: ['int', 'long', 'double'],
+                minimum: 0,
+                maximum: Number.MAX_SAFE_INTEGER,
+              },
+              expectedGroupVersion: {
+                bsonType: ['int', 'long', 'double'],
+                minimum: 0,
+                maximum: Number.MAX_SAFE_INTEGER,
+              },
+              expectedCycleVersion: {
+                bsonType: ['int', 'long', 'double'],
+                minimum: 0,
+                maximum: Number.MAX_SAFE_INTEGER,
+              },
+              targetId: { bsonType: 'objectId' },
+              payloadHash: { bsonType: 'string', pattern: '^[a-f0-9]{64}$' },
+              phase: { enum: ['checking', 'applying'] },
+              startState: { enum: ['open', 'frozen'] },
               kind: {
                 enum: [
                   'expense_create',
@@ -212,6 +264,35 @@ export const groupCollectionValidator = {
                 $and: [
                   { $eq: [{ $type: '$financialHistoryAt' }, 'date'] },
                   { $in: ['$financialOperation.actor', '$members.user'] },
+                  {
+                    $cond: [
+                      { $eq: [{ $type: '$financialOperation.protocolVersion' }, 'missing'] },
+                      { $eq: [{ $type: '$financialProtocolVersion' }, 'missing'] },
+                      {
+                        $and: [
+                          { $eq: ['$financialOperation.protocolVersion', 2] },
+                          { $eq: ['$financialProtocolVersion', 2] },
+                          { $eq: ['$financialOperation.groupId', '$_id'] },
+                          { $eq: ['$financialOperation.cycleId', '$currentCycleId'] },
+                          { $eq: ['$financialOperation.cycleEpoch', '$cycleEpoch'] },
+                          { $in: ['$financialOperation.phase', ['checking', 'applying']] },
+                          { $in: ['$financialOperation.startState', ['open', 'frozen']] },
+                          ...['groupId', 'cycleId', 'targetId'].map((key) => ({
+                            $eq: [{ $type: `$financialOperation.${key}` }, 'objectId'],
+                          })),
+                          ...['cycleEpoch', 'expectedGroupVersion', 'expectedCycleVersion'].map(
+                            (key) => ({
+                              $eq: [
+                                `$financialOperation.${key}`,
+                                { $trunc: `$financialOperation.${key}` },
+                              ],
+                            }),
+                          ),
+                          { $eq: [{ $type: '$financialOperation.payloadHash' }, 'string'] },
+                        ],
+                      },
+                    ],
+                  },
                 ],
               },
             ],

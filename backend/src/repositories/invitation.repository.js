@@ -68,6 +68,14 @@ export function createInvitationRepository(model = Group) {
             _id: id(groupId),
             __v: version(expected),
             'members.user': { $ne: id(user) },
+            $or: [
+              { financialProtocolVersion: { $exists: false } },
+              {
+                financialProtocolVersion: 2,
+                currentCycleState: 'closed',
+                financialOperation: { $exists: false },
+              },
+            ],
             [`members.${GROUP_MEMBER_LIMIT - 1}`]: { $exists: false },
             invitations: {
               $elemMatch: {

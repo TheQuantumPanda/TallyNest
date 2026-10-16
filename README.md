@@ -22,6 +22,9 @@ expenses, balances, settlement acknowledgement and explicit financial recovery.
 Phase 5 Step 3B adds a dormant settlement-cycle model and optional compatibility
 fields; the existing permanent settlement freeze remains in force. See
 [the Step 3B specification](docs/phase-5-step-3b.md) for the activation boundary.
+Step 3C adds an internal-only cycle-aware financial-write coordinator and
+disposable-database concurrency tests. It does not enable multi-cycle activity
+through the API; see [the Step 3C protocol](docs/phase-5-step-3c.md).
 
 ## Run locally
 

@@ -78,6 +78,7 @@ schema.pre('validate', function () {
     this.invalidate('status', 'Invalid settlement audit state');
 });
 schema.index({ group: 1, _id: -1 });
+schema.index({ group: 1, cycleId: 1, _id: -1 });
 schema.index({ group: 1, sender: 1, creationKey: 1 }, { unique: true });
 export const GroupSettlement = mongoose.model('GroupSettlement', schema);
 export const settlementCollectionValidator = {

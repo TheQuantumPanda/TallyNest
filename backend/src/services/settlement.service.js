@@ -53,7 +53,10 @@ export function createSettlementService({
   });
   async function groupFor(user, groupId) {
     parse(ownerIdSchema, groupId, 'INVALID_GROUP_ID');
-    return requireGroupMember(groups, user, groupId);
+    const group = await requireGroupMember(groups, user, groupId);
+    if (group.financialProtocolVersion !== undefined)
+      throw new HttpError(409, 'Cycle write protocol is inactive', 'CYCLE_PROTOCOL_INACTIVE');
+    return group;
   }
   return {
     async balances(user, groupId, query) {

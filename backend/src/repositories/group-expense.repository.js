@@ -13,7 +13,7 @@ import { allocateSplit } from '../utils/split.js';
 import { durableWriteOptions } from '../utils/durable-write.js';
 const id = (value) =>
   ownerIdSchema.parse(value instanceof mongoose.Types.ObjectId ? String(value) : value);
-async function documentFor(model, group, creator, input, creationKey, creationHash) {
+async function documentFor(model, group, creator, input, creationKey, creationHash, cycleId) {
   const data = groupExpenseInputSchema.parse(input),
     allocation = allocateSplit(data.amountMinor, data.split);
   const document = new model({
@@ -21,6 +21,7 @@ async function documentFor(model, group, creator, input, creationKey, creationHa
     split: persistedSplit(allocation.split),
     shares: allocation.shares,
     group: id(group),
+    ...(cycleId ? { cycleId: id(cycleId) } : {}),
     creator: id(creator),
     creationKey,
     creationHash,
@@ -31,10 +32,10 @@ async function documentFor(model, group, creator, input, creationKey, creationHa
 }
 export function createGroupExpenseRepository(model = GroupExpense) {
   return {
-    async create(group, creator, input, key, hash, operationId, targetId) {
+    async create(group, creator, input, key, hash, operationId, targetId, cycleId) {
       id(operationId);
       id(targetId);
-      const document = await documentFor(model, group, creator, input, key, hash);
+      const document = await documentFor(model, group, creator, input, key, hash, cycleId);
       document._id = targetId;
       document.lastFinancialOperation = operationId;
       return document.save(durableWriteOptions());
@@ -81,7 +82,7 @@ export function createGroupExpenseRepository(model = GroupExpense) {
         .maxTimeMS(1000)
         .exec();
     },
-    async replace(group, expenseId, actor, owner, expected, input, creator, operationId) {
+    async replace(group, expenseId, actor, owner, expected, input, creator, operationId, cycleId) {
       id(operationId);
       if (!Number.isSafeInteger(expected) || expected < 0 || expected >= Number.MAX_SAFE_INTEGER)
         throw new RangeError('Invalid expense version');
@@ -92,6 +93,7 @@ export function createGroupExpenseRepository(model = GroupExpense) {
         input,
         '0'.repeat(64),
         '0'.repeat(64),
+        cycleId,
       );
       const values = Object.fromEntries(
         [
@@ -112,6 +114,7 @@ export function createGroupExpenseRepository(model = GroupExpense) {
         .findOneAndUpdate(
           {
             group: id(group),
+            ...(cycleId ? { cycleId: id(cycleId) } : {}),
             _id: id(expenseId),
             ...(!owner ? { creator: id(actor) } : {}),
             __v: expected,
@@ -126,7 +129,7 @@ export function createGroupExpenseRepository(model = GroupExpense) {
         )
         .exec();
     },
-    remove(group, expenseId, actor, owner, expected, operationId) {
+    remove(group, expenseId, actor, owner, expected, operationId, cycleId) {
       id(operationId);
       if (!Number.isSafeInteger(expected) || expected < 0 || expected >= Number.MAX_SAFE_INTEGER)
         throw new RangeError('Invalid expense version');
@@ -134,6 +137,7 @@ export function createGroupExpenseRepository(model = GroupExpense) {
         .findOneAndUpdate(
           {
             group: id(group),
+            ...(cycleId ? { cycleId: id(cycleId) } : {}),
             _id: id(expenseId),
             ...(!owner ? { creator: id(actor) } : {}),
             __v: expected,

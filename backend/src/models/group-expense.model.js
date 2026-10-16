@@ -143,6 +143,7 @@ schema.pre('validate', function () {
   }
 });
 schema.index({ group: 1, expenseDate: -1, _id: -1 });
+schema.index({ group: 1, cycleId: 1, expenseDate: -1, _id: -1 });
 schema.index({ group: 1, creator: 1, creationKey: 1 }, { unique: true });
 export const GroupExpense = mongoose.model('GroupExpense', schema);
 export function persistedSplit(split) {

@@ -32,11 +32,12 @@ export function createSettlementRepository(model = GroupSettlement) {
         .maxTimeMS(1000)
         .exec();
     },
-    async create(group, op) {
+    async create(group, op, cycleId) {
       const p = op.payload;
       return new model({
         _id: p.targetId,
         group: id(group),
+        ...(cycleId ? { cycleId: id(cycleId) } : {}),
         sender: id(op.actor),
         recipient: p.recipient,
         amountMinor: p.amountMinor,
@@ -49,13 +50,14 @@ export function createSettlementRepository(model = GroupSettlement) {
         lastFinancialOperation: op._id,
       }).save(durableWriteOptions());
     },
-    decide(group, op) {
+    decide(group, op, cycleId) {
       const p = op.payload,
         confirmed = op.kind === 'settlement_confirm';
       return model
         .findOneAndUpdate(
           {
             group: id(group),
+            ...(cycleId ? { cycleId: id(cycleId) } : {}),
             _id: id(p.targetId),
             recipient: id(op.actor),
             status: 'pending',

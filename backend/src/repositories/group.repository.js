@@ -81,6 +81,7 @@ export function createGroupRepository(model = Group) {
             __v: expected,
             currency: 'INR',
             financialHistoryAt: { $exists: false },
+            financialProtocolVersion: { $exists: false },
             $and: identities.map((value) => ({ 'members.user': objectId(value) })),
           },
           { $set: { financialHistoryAt: new Date() }, $inc: { __v: 1 } },
@@ -107,6 +108,7 @@ export function createGroupRepository(model = Group) {
             ...memberFilter(user),
             __v: expected,
             financialHistoryAt: { $exists: true },
+            financialProtocolVersion: { $exists: false },
             financialOperation: { $exists: false },
             ...(op.kind.startsWith('expense_') ? { settlementStartedAt: { $exists: false } } : {}),
           },
@@ -121,6 +123,7 @@ export function createGroupRepository(model = Group) {
           {
             _id: objectId(id),
             'financialOperation._id': objectId(opId),
+            financialProtocolVersion: { $exists: false },
             settlementStartedAt: { $exists: false },
           },
           { $set: { settlementStartedAt: new Date() } },
@@ -136,7 +139,117 @@ export function createGroupRepository(model = Group) {
     finishFinancial(id, opId) {
       return model
         .findOneAndUpdate(
-          { _id: objectId(id), 'financialOperation._id': objectId(opId) },
+          {
+            _id: objectId(id),
+            financialProtocolVersion: { $exists: false },
+            'financialOperation._id': objectId(opId),
+          },
+          { $unset: { financialOperation: 1 }, $inc: { __v: 1 } },
+          { returnDocument: 'after', ...durableWriteOptions(), maxTimeMS: 2000 },
+        )
+        .exec();
+    },
+    reserveCycleFinancial(user, id, expected, cycleId, epoch, state, operation) {
+      if (
+        !Number.isSafeInteger(expected) ||
+        expected < 0 ||
+        expected >= Number.MAX_SAFE_INTEGER - 6 ||
+        !Number.isSafeInteger(epoch) ||
+        epoch < 0 ||
+        !['open', 'frozen'].includes(state)
+      )
+        throw new RangeError('Invalid cycle financial reservation');
+      return model
+        .findOneAndUpdate(
+          {
+            _id: objectId(id),
+            ...memberFilter(user),
+            __v: expected,
+            financialProtocolVersion: 2,
+            currentCycleId: objectId(cycleId),
+            cycleEpoch: epoch,
+            currentCycleState: state,
+            financialHistoryAt: { $exists: true },
+            financialOperation: { $exists: false },
+          },
+          { $set: { financialOperation: operation }, $inc: { __v: 1 } },
+          { returnDocument: 'after', ...durableWriteOptions(), maxTimeMS: 2000 },
+        )
+        .exec();
+    },
+    promoteCycleFinancial(id, opId, cycleId, epoch) {
+      return model
+        .findOneAndUpdate(
+          {
+            _id: objectId(id),
+            financialProtocolVersion: 2,
+            currentCycleId: objectId(cycleId),
+            cycleEpoch: epoch,
+            'financialOperation._id': objectId(opId),
+            'financialOperation.protocolVersion': 2,
+            'financialOperation.phase': 'checking',
+          },
+          { $set: { 'financialOperation.phase': 'applying' }, $inc: { __v: 1 } },
+          { returnDocument: 'after', ...durableWriteOptions(), maxTimeMS: 2000 },
+        )
+        .exec();
+    },
+    cancelCycleChecking(id, opId, cycleId, epoch) {
+      return model
+        .findOneAndUpdate(
+          {
+            _id: objectId(id),
+            financialProtocolVersion: 2,
+            currentCycleId: objectId(cycleId),
+            cycleEpoch: epoch,
+            'financialOperation._id': objectId(opId),
+            'financialOperation.phase': 'checking',
+          },
+          { $unset: { financialOperation: 1 }, $inc: { __v: 1 } },
+          { returnDocument: 'after', ...durableWriteOptions(), maxTimeMS: 2000 },
+        )
+        .exec();
+    },
+    markCycleFrozen(id, opId, cycleId, epoch, hasLegacyMarker) {
+      return model
+        .findOneAndUpdate(
+          {
+            _id: objectId(id),
+            financialProtocolVersion: 2,
+            currentCycleId: objectId(cycleId),
+            cycleEpoch: epoch,
+            currentCycleState: 'open',
+            'financialOperation._id': objectId(opId),
+            'financialOperation.phase': 'applying',
+            settlementStartedAt: { $exists: !!hasLegacyMarker },
+          },
+          {
+            $set: {
+              currentCycleState: 'frozen',
+              ...(!hasLegacyMarker ? { settlementStartedAt: new Date() } : {}),
+            },
+            $inc: { __v: 1 },
+          },
+          {
+            returnDocument: 'after',
+            overwriteImmutable: true,
+            ...durableWriteOptions(),
+            maxTimeMS: 2000,
+          },
+        )
+        .exec();
+    },
+    finishCycleFinancial(id, opId, cycleId, epoch) {
+      return model
+        .findOneAndUpdate(
+          {
+            _id: objectId(id),
+            financialProtocolVersion: 2,
+            currentCycleId: objectId(cycleId),
+            cycleEpoch: epoch,
+            'financialOperation._id': objectId(opId),
+            'financialOperation.phase': 'applying',
+          },
           { $unset: { financialOperation: 1 }, $inc: { __v: 1 } },
           { returnDocument: 'after', ...durableWriteOptions(), maxTimeMS: 2000 },
         )
