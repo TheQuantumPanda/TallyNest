@@ -69,6 +69,11 @@ try {
     email: 'cycle-member@test.invalid',
     passwordHash: await hashPassword(password),
   });
+  await User.create({
+    name: 'Cycle joiner',
+    email: 'cycle-joiner@test.invalid',
+    passwordHash: await hashPassword(password),
+  });
   const group = await groupRepository.createForOwner(String(owner._id), {
     name: 'Disposable cycle group',
   });

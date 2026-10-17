@@ -1,0 +1,61 @@
+# Phase 5, Step 3H — cycle release readiness and end-to-end hardening
+
+## Scope and decision
+
+**NO-GO for public activation.** The version-2 router and frontend remain available only in the explicit disposable test composition. No maintenance hold was released, no real financial database was migrated, and no deployment was attempted. The normal `backend/app.js`/`backend/server.js` and `frontend/src/main.jsx` retain the legacy group contracts and permanent settlement freeze. The browser cannot select a protocol through a URL, header, DTO, environment variable, or storage value.
+
+This milestone fixes four visible Step 3G presentation defects, adds a reproducible local Chromium suite, and records the exact cutover blockers. It does **not** introduce a release mechanism.
+
+## Browser and UI changes
+
+- `frontend/vite.cycle.config.js` now serves the existing `frontend/public` assets in the isolated fixture, so the desktop sidebar's original TallyNest SVG loads. The normal Vite entry is unchanged.
+- The skip link is visually clipped until `:focus-visible`; it retains its accessible name and Tab/Enter behavior, moving focus to `#main-content`.
+- Cycle opening, freeze, and close timestamps use `en-IN` day/month/year and 24-hour time with an explicit `UTC` suffix, rendered in semantic `<time>` elements. The formatter rejects malformed timestamps; it does not use browser-local time.
+- At 390px and below, cycle cards use tighter local spacing and the cycle-section navigation forms compact rows with touch-sized controls. The wider layouts and personal-finance pages are unchanged.
+- Invitation acceptance now explains a `GROUP_CONFLICT` conservatively: the group may have changed, and cycle groups admit new members only between a close and the next open. The server's authoritative predicate remains unchanged.
+
+Genuine Chromium captures from the disposable staged composition: [1440px](../output/playwright/cycle-step3h-1440.png), [1024px](../output/playwright/cycle-step3h-1024.png), [390px](../output/playwright/cycle-step3h-390.png), [320px](../output/playwright/cycle-step3h-320.png). These captures show the initial open-cycle view; other states are asserted by the browser test and retained as failure traces when a test fails.
+
+## Reusable local browser suite
+
+Run `npm run verify:browser` after starting local standalone MongoDB. The script starts the dedicated Step 3G Express fixture and isolated Vite entry, chooses a fresh `tallynest_cycle_http_test_<timestamp>_<random>` database, creates three test-only users with a random password, runs Playwright Chromium, stops both processes, and checks twice for late database recreation. It refuses a nonlocal `MONGO_URI`; the fixture also requires `NODE_ENV=test` and `TALLYNEST_CYCLE_FIXTURE=disposable-local`. The browser dependency is a frontend **development** dependency and is not imported into the production bundle. Install Chromium with `cd frontend && npx playwright install chromium` if absent.
+
+The browser test uses real cookies, Express, Mongoose, MongoDB, React and network requests. It checks login/session restoration, logo loading, keyboard skip navigation, first-cycle opening, UTC presentation, four widths without document overflow, equal/exact/percentage split previews and persistence, authorized expense edit/delete, three distinct accounts, invitation refusal while open and acceptance after close, settlement proposal freeze, pending-capacity controls, pending and nonzero close refusal, recipient rejection and confirmation, zero-balance close, stale group ETag review, next-cycle opening, historical read-only controls, later-joiner historical balance denial, session-expiry redirect and a deliberate lost-acknowledgement retry with the same UUID. It asserts CSRF and explicit cycle scope on the intercepted creation request. Network interception is limited to one POST acknowledgement; the server commits it before the browser sees a failure, then the UI explicitly retries the identical intent and receives a replay. The runner's only cleanup target is its own generated database.
+
+This is a **local** browser suite, not a CI or hosted HTTPS gate. It does not yet automate every Step 3H scenario: an interrupted applying reservation and explicit recovery, a post-reload lost-intent decision, zoom/reduced-motion assistive checks, or all keyboard paths through every dialog. The backend integration suites cover many of these financial and concurrency conditions; the missing browser paths remain release work. A successful viewport overflow check is not a full WCAG audit.
+
+## Migration and readiness compatibility
+
+The Step 3E migration installs `strictGroupValidator` and `strictFinancialValidator` for the migrated group IDs, while `assertCycleHttpReadiness` currently compares the installed validators to the **base** `definitions` using deep equality. A successfully migrated held database therefore cannot pass this staged readiness function after an eventual hold release without a separately reviewed compatibility contract. We intentionally did not relax either validator or release the marker to make a test pass. A future release must verify the exact strict validator structure against the fixed migrated group set and keep the compatibility rules explicit and read-only.
+
+The migration installs and verifies cycle and transition-journal indexes, and the isolated HTTP fixture installs them before staging. Ordinary server startup initializes group/cycle/expense/settlement indexes but deliberately omits `ensureCycleTransitionIndexes`; it is not a version-2 readiness path. Its current `ensure*Indexes` calls create or modify collection schemas, requiring privileges beyond intended steady-state CRUD. A future new-binary startup should first perform read-only schema/marker/protocol preflight under runtime credentials; setup and `collMod` should be handled by a separate migration identity. No runtime privilege split or public activation preflight is implemented here.
+
+`assertCycleHttpReadiness` checks a database-wide `offlineHeld` run, any group `cycleMigration`, required validators/indexes and unresolved version-2 reservations. `assertCycleGroupConsistency` checks pointers, protocol fields and cycle associations. These scans use metadata queries, collection/index enumeration and per-group lookups/aggregations. They are acceptable for bounded offline checks but have unmeasured cost on Atlas M0; a future cutover should measure them on a disposable production-shaped restore, avoid running full scans on every request, and fail closed on timeouts. The ordinary startup probe checks only the database-wide hold before Mongoose initialization; its protection against old binaries is **operational shutdown and credential/network fencing**, not a marker old code ignores.
+
+Existing invitation acceptance uses an atomic group predicate requiring `currentCycleState: 'closed'`, no financial operation and no migration marker for a version-2 group. Cycle opening snapshots the roster. Member removal/departure remain blocked by permanent financial history. A later joiner cannot change Cycle 1 attribution or automatically read its detailed balances. Existing strict frontend DTOs and the staged version-2 adapter require coordinated new-binary/new-frontend deployment; mixing them is not a safe release strategy.
+
+## Operational cutover prerequisites
+
+Before a future **separately approved** real-data release, an operator must:
+
+1. Inventory and stop every API instance, recurring scheduler, recovery worker, one-off writer and auto-restart path. Confirm old binaries cannot reconnect; a database marker alone cannot fence them.
+2. Produce an independently retained encrypted backup, verify key custody separately from the archive, restore into an isolated database, and reconcile the restore. The current synthetic backup drill does not establish real retention or independent key custody.
+3. Run the versioned offline migrator with maintenance held, resolve every reservation with its fixed intent, approve exact pre/post balances, versions, tombstones, creation/transition receipts, and settlement history, and quarantine any mismatch.
+4. Verify strict post-migration validators and all unique/cycle/receipt indexes under a migration identity. Review a read-only readiness contract that accepts those exact strict definitions, rejects unresolved operations and maintenance, and is measured on realistic data.
+5. Approve a separate, currently **unimplemented** maintenance-release mechanism and new-binary-only startup path. Validate runtime permissions, frontend/backend DTO compatibility, HTTPS cookie/Origin/CSRF behavior, invitation admission, and monitored rollback decision point before allowing new financial writes.
+
+Rollback to the pre-cutover backup is only potentially safe before any new cycle financial write. After new writes, restoration can erase acknowledged settlement history; forward recovery or a separately reviewed repair is required. Do not discard tombstones or idempotency receipts. MongoDB Atlas, hosted HTTPS cookies, actual backup retention, and production restart behavior were **not** tested here.
+
+## Teardown and operational observations
+
+The Step 3F report noted a late empty disposable database recreation after a drop. The cycle HTTP and cycle-model integration teardown now disconnects Mongoose and its auto-initializing models **before** dropping the exact generated database through a fresh raw client, then checks absence again after a short delay. The browser runner similarly waits for all child processes to stop before checking twice and fails if it finds a late database; it drops only its own matching namespace. This narrows a plausible cause, but cannot prove that a different long-lived process will never recreate a namespace. Do not delete unrelated databases during cleanup.
+
+Maintenance-held databases remain inaccessible to the staged fixture and ordinary startup. Recovery errors retain sanitized public responses; unknown applying outcomes stay blocked rather than force-unlocked. After a future cutover, recurring catch-up workers must be restarted only after the writer fence is lifted and verified. Their timing on sleeping hosts is best effort, never precise scheduling.
+
+## Verification and remaining blockers
+
+On this checkout, `npm run verify:clean` passed: 314 backend unit/HTTP tests, 264 frontend tests, 238 real MongoDB integration tests (including cycle HTTP, lifecycle, migration, frozen legacy groups and cleanup assertions), backend/frontend/shared ESLint, configured Prettier, a production frontend build, and both production audits with zero reported vulnerabilities. `npm run verify:browser` passed one serial Chromium journey with three registered test accounts and four viewport captures. The direct Prettier check on this document and `git diff --check` passed. A read-only MongoDB inventory after both suites found no matching disposable test databases; a process inventory found no fixture API, Vite or Playwright test process. The normal production build contained no staged cycle workspace strings. An earlier clean-gate attempt stopped at one ESLint warning in the new browser runner; the warning was fixed before the passing rerun. Neither these local results nor a successful local browser run constitutes hosted release approval.
+
+**High blockers:** strict post-migration validator/readiness mismatch; absent approved maintenance-release and runtime privilege/startup design; old-worker fencing and backup custody not proven in a hosted environment. **Medium blockers:** incomplete browser recovery/accessibility matrix, unmeasured readiness cost on Atlas M0, and no hosted HTTPS cookie/Origin verification. These are release limitations, not evidence that current legacy financial behavior is broken.
+
+**Proposed next task (do not execute automatically):** design and test a read-only release preflight that recognizes only the exact migrated strict validators, then review maintenance release, least-privilege startup and coordinated new-binary cutover against a disposable restored dataset. Complete the missing browser recovery/accessibility cases before considering a public GO decision.

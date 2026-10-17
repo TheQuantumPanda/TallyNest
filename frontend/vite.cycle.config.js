@@ -18,6 +18,7 @@ const frontendPackages = [
 ];
 export default defineConfig({
   root: fixtureRoot,
+  publicDir: fileURLToPath(new URL('./public/', import.meta.url)),
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: frontendPackages.map((name) => ({

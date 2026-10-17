@@ -11,7 +11,8 @@
     "backup:cycles:rehearse": "node scripts/rehearse-cycle-backup.js",
     "setup:env": "node scripts/setup-env.js",
     "lint": "eslint . --max-warnings 0",
-    "test:mongo": "node --test integration/transactions.mongo.js integration/dashboard.mongo.js integration/budgets.mongo.js integration/budget-summary.mongo.js integration/recurring.mongo.js integration/groups.mongo.js integration/invitations.mongo.js integration/group-expenses.mongo.js integration/settlements.mongo.js integration/creation-intent.mongo.js integration/group-financial-cycles.mongo.js integration/cycle-financial-writes.mongo.js integration/cycle-lifecycle.mongo.js integration/cycle-migration.mongo.js integration/cycle-http.mongo.js"
+    "test:mongo": "node --test integration/transactions.mongo.js integration/dashboard.mongo.js integration/budgets.mongo.js integration/budget-summary.mongo.js integration/recurring.mongo.js integration/groups.mongo.js integration/invitations.mongo.js integration/group-expenses.mongo.js integration/settlements.mongo.js integration/creation-intent.mongo.js integration/group-financial-cycles.mongo.js integration/cycle-financial-writes.mongo.js integration/cycle-lifecycle.mongo.js integration/cycle-migration.mongo.js integration/cycle-http.mongo.js",
+    "test:cycle:browser": "node integration/run-cycle-browser.js"
   },
   "keywords": [],
   "author": "",

@@ -26,6 +26,10 @@ function Invitation({ token }) {
         navigate(`/app/groups/${resource.data.group.id}`, { replace: true, state: null });
       else if (err.response?.status === 404)
         navigate('/app/join', { replace: true, state: { unavailable: true } });
+      else if (err.response?.data?.code === 'GROUP_CONFLICT')
+        setError(
+          'The group changed or is not admitting members now. Cycle groups admit new members only after a cycle closes and before the next opens. Ask the owner to confirm the current state, then review this invitation and retry.',
+        );
       else setError(groupError(err));
     } finally {
       busy.current = false;

@@ -78,13 +78,26 @@ beforeEach(async () => {
 after(async () => {
   if (mongoose.connection.readyState === 1) {
     assert.equal(mongoose.connection.name, database);
-    await mongoose.connection.dropDatabase();
-    const { databases } = await mongoose.connection.db.admin().listDatabases({ nameOnly: true });
-    assert.equal(
-      databases.some((row) => row.name === database),
-      false,
-    );
+    // Stop model auto-initialization before dropping; a late index writer can
+    // recreate an empty database after an otherwise successful teardown.
     await mongoose.disconnect();
+    const client = new mongoose.mongo.MongoClient('mongodb://127.0.0.1:27017', {
+      serverSelectionTimeoutMS: 10000,
+    });
+    await client.connect();
+    try {
+      await client.db(database).dropDatabase();
+      for (const delay of [0, 300]) {
+        if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+        const { databases } = await client.db().admin().listDatabases({ nameOnly: true });
+        assert.equal(
+          databases.some((row) => row.name === database),
+          false,
+        );
+      }
+    } finally {
+      await client.close();
+    }
     console.log(`Dropped disposable database: ${database}`);
   }
 });

@@ -18,6 +18,7 @@ import { Button } from '../components/ui/Button';
 import { Notice } from '../components/ui/Notice';
 import { PageTransition } from '../components/ui/PageTransition';
 import { groupError } from '../utils/groups';
+import { displayCycleUtc } from '../utils/cycleDates';
 
 function Workspace({ groupId, routeCycleId }) {
   const { user } = useAuth(),
@@ -168,15 +169,20 @@ function Workspace({ groupId, routeCycleId }) {
                   <h2>Cycle {cycle.sequence}</h2>
                   <p>
                     {isCurrent ? 'Current cycle' : 'Historical cycle'} · {cycle.state} · opened{' '}
-                    {cycle.openedAt}
+                    <time dateTime={cycle.openedAt}>{displayCycleUtc(cycle.openedAt)}</time>
                   </p>
                 </div>
                 <span className="category-pill">{cycle.state}</span>
               </div>
               {cycle.frozenAt && (
                 <p className="group-muted">
-                  Frozen {cycle.frozenAt}
-                  {cycle.closedAt ? ` · Closed ${cycle.closedAt}` : ''}
+                  Frozen <time dateTime={cycle.frozenAt}>{displayCycleUtc(cycle.frozenAt)}</time>
+                  {cycle.closedAt && (
+                    <>
+                      {' · Closed '}
+                      <time dateTime={cycle.closedAt}>{displayCycleUtc(cycle.closedAt)}</time>
+                    </>
+                  )}
                 </p>
               )}
               {!isCurrent && (

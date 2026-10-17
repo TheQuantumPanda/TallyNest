@@ -36,6 +36,9 @@ Step 3F adds a disposable-test-only version-2 HTTP contract, and Step 3G adds a
 matching test-only cycle frontend. Neither is active in the normal application;
 see the [staged API](docs/phase-5-step-3f.md) and
 [cycle frontend review guide](docs/phase-5-step-3g.md).
+The local disposable Chromium gate is `npm run verify:browser`; see the
+[Step 3H release-readiness report](docs/phase-5-step-3h.md). Public cycle
+activation remains blocked pending a separately reviewed cutover.
 
 ## Run locally
 

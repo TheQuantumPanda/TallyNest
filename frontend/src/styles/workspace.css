@@ -656,13 +656,20 @@
   top: 10px;
   left: 12px;
   z-index: 50;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
   padding: 12px 17px;
   border-radius: 8px;
   color: #0f111a;
   background: #83e5d5;
-  transform: translateY(-150%);
   font-size: 13px;
 }
-.skip-link:focus {
-  transform: none;
+.skip-link:focus-visible {
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
 }

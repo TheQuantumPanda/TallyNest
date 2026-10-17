@@ -32,6 +32,38 @@
   overflow-wrap: anywhere;
 }
 @media (max-width: 390px) {
+  .cycle-workspace .group-back {
+    margin-bottom: 14px;
+  }
+  .cycle-workspace .page-heading {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .cycle-workspace .page-heading h1 {
+    margin-top: 7px;
+    line-height: 1.2;
+  }
+  .cycle-workspace .page-heading p {
+    margin-top: 6px;
+  }
+  .cycle-workspace .group-panel {
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .cycle-workspace .group-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin: 14px 0;
+  }
+  .cycle-workspace .group-tabs button {
+    min-width: 0;
+    padding: 8px 3px;
+  }
+  .cycle-history-list {
+    gap: 8px;
+    margin-top: 12px;
+  }
   .cycle-choice {
     padding: 0.8rem;
   }

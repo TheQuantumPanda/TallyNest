@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useGroupPage } from '../../hooks/useGroupData';
 import { cyclesService } from '../../services/cycles';
 import { GroupFeedback, GroupPageMore } from '../groups/GroupFeedback';
-import { displayDate } from '../../utils/transactions';
+import { displayCycleUtc } from '../../utils/cycleDates';
 
 export function CycleHistory({ groupId, selectedId, currentId, onSelect, revision }) {
   const load = useCallback(
@@ -36,9 +36,19 @@ export function CycleHistory({ groupId, selectedId, currentId, onSelect, revisio
               {currentId === cycle.id ? ' · Current' : ''}
             </span>
             <small>
-              Opened {displayDate(cycle.openedAt)}
-              {cycle.frozenAt ? ` · Frozen ${displayDate(cycle.frozenAt)}` : ''}
-              {cycle.closedAt ? ` · Closed ${displayDate(cycle.closedAt)}` : ''}
+              Opened <time dateTime={cycle.openedAt}>{displayCycleUtc(cycle.openedAt)}</time>
+              {cycle.frozenAt && (
+                <>
+                  {' · Frozen '}
+                  <time dateTime={cycle.frozenAt}>{displayCycleUtc(cycle.frozenAt)}</time>
+                </>
+              )}
+              {cycle.closedAt && (
+                <>
+                  {' · Closed '}
+                  <time dateTime={cycle.closedAt}>{displayCycleUtc(cycle.closedAt)}</time>
+                </>
+              )}
             </small>
           </button>
         ))}

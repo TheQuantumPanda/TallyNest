@@ -114,14 +114,25 @@ beforeEach(async () => {
 });
 after(async () => {
   assert.equal(mongoose.connection.name, database);
-  await mongoose.connection.dropDatabase();
-  assert.equal(
-    (await mongoose.connection.db.admin().listDatabases({ nameOnly: true })).databases.some(
-      (d) => d.name === database,
-    ),
-    false,
-  );
   await mongoose.disconnect();
+  const client = new mongoose.mongo.MongoClient('mongodb://127.0.0.1:27017', {
+    serverSelectionTimeoutMS: 10000,
+  });
+  await client.connect();
+  try {
+    await client.db(database).dropDatabase();
+    for (const delay of [0, 300]) {
+      if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+      assert.equal(
+        (await client.db().admin().listDatabases({ nameOnly: true })).databases.some(
+          (d) => d.name === database,
+        ),
+        false,
+      );
+    }
+  } finally {
+    await client.close();
+  }
   console.log(`Verified cleanup: ${database}`);
 });
 async function setup(t, fault, normal = false, independent = false) {
