@@ -1,16 +1,10 @@
-import { ensureSettlementIndexes } from './src/repositories/settlement.repository.js';
-import { ensureGroupExpenseIndexes } from './src/repositories/group-expense.repository.js';
-import { ensureGroupIndexes } from './src/repositories/group.repository.js';
-import { ensureGroupFinancialCycleIndexes } from './src/repositories/group-financial-cycle.repository.js';
-import { ensureRecurringIndexes } from './src/repositories/recurring.repository.js';
+import mongoose from 'mongoose';
+import { assertFreshCycleReadiness } from './src/config/fresh-cycle-setup.js';
 import { startRecurringJob } from './src/jobs/recurring.job.js';
 import { createServer } from 'node:http';
 import { createApp } from './app.js';
 import { loadEnv } from './src/config/env.js';
-import { assertNoCycleMaintenance } from './src/config/cycle-maintenance.js';
 import { connectDB, disconnectDB } from './src/config/db.js';
-import { ensureUserIndexes } from './src/repositories/user.repository.js';
-import { ensureBudgetIndexes } from './src/repositories/budget.repository.js';
 
 let server;
 let stopRecurringJob;
@@ -48,21 +42,14 @@ async function shutdown(signal, exitCode = 0) {
 async function start() {
   try {
     const config = loadEnv();
-    await assertNoCycleMaintenance(config.mongoUri);
     await connectDB(config.mongoUri);
-    await ensureUserIndexes();
-    await ensureBudgetIndexes();
-    await ensureRecurringIndexes();
-    await ensureGroupIndexes();
-    await ensureGroupFinancialCycleIndexes();
-    await ensureGroupExpenseIndexes();
-    await ensureSettlementIndexes();
+    await assertFreshCycleReadiness(mongoose.connection.db);
     if (shuttingDown) {
       await disconnectDB();
       return;
     }
 
-    server = createServer(createApp(config));
+    server = createServer(createApp(config, { freshV2Groups: true }));
     await new Promise((resolve, reject) => {
       server.once('error', reject);
       server.listen(config.port, () => {
@@ -81,7 +68,7 @@ async function start() {
     console.error(
       error.message.startsWith('Invalid environment configuration:')
         ? error.message
-        : 'Startup failed: unable to connect to MongoDB, initialize indexes, or start HTTP server',
+        : 'Startup failed: unable to connect to MongoDB, verify the fresh-v2 schema, or start HTTP server',
     );
     await shutdown('startup failure', 1);
   }

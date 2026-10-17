@@ -42,6 +42,11 @@ activation remains blocked pending a separately reviewed cutover.
 The [Step 3I read-only preflight](docs/phase-5-step-3i.md) can inspect only a
 uniquely named local disposable migrated rehearsal; correct strict validators
 do not release its maintenance hold or authorize public activation.
+The [Step 3K fresh-v2 foundation](docs/phase-5-step-3k.md) adds an explicit
+disposable schema setup command and read-only startup gate. Normal startup now
+requires that exact fresh schema; it does not initialize an existing database.
+New groups start at protocol 2 without a cycle, while public cycle routes and
+the normal cycle workspace remain inactive.
 
 ## Run locally
 
@@ -55,6 +60,9 @@ docker compose up -d --wait mongodb
 cd backend
 npm ci
 npm run setup:env
+FRESH_TEST_DB="tallynest_fresh_v2_test_$(date +%s%3N)_$(openssl rand -hex 6)"
+npm run setup:cycles:fresh:test -- --database "$FRESH_TEST_DB"
+export MONGO_URI="mongodb://127.0.0.1:27017/$FRESH_TEST_DB"
 npm run dev
 ```
 
@@ -80,10 +88,15 @@ for state-changing requests.
 
 Edit `backend/.env` for local configuration. Existing shell environment variables
 take precedence. The server validates configuration and connects to MongoDB before
-listening. It also waits for user, budget, recurring schedule, transaction, group and
-dormant settlement-cycle indexes to initialize,
-and installs strict group membership collection validation. `.env` is
-ignored by Git; never commit real credentials.
+listening. It performs a read-only check of the explicit fresh-v2 schema and refuses
+an uninitialized or legacy database; it no longer installs indexes or collection
+validators on startup. For a new **disposable local test** database, first run
+`npm run setup:cycles:fresh:test --prefix backend -- --database <unique-test-name>`
+with a name matching `tallynest_fresh_v2_test_<13-digit timestamp>_<12 hex>` and
+set `MONGO_URI` to `mongodb://127.0.0.1:27017/<unique-test-name>`. This CLI does
+not accept an existing development or production database. The normal group UI's
+financial actions remain unavailable for these v2 groups until Milestone 2. `.env`
+is ignored by Git; never commit real credentials.
 
 `npm run setup:env` creates `.env` from the example if absent. It preserves existing
 nonempty settings, generates a signing secret only when missing or empty, adds the

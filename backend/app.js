@@ -46,6 +46,7 @@ export function createApp(
     recurringTransactions,
     recurringNow,
     groupRepository,
+    freshV2Groups = false,
     invitationRepository,
     membershipRepository,
     invitationNow,
@@ -175,7 +176,7 @@ export function createApp(
   app.use(
     '/api/groups',
     createGroupRoutes(
-      createGroupService({ repository: groupRepository }),
+      createGroupService({ repository: groupRepository, freshV2: freshV2Groups }),
       authService,
       {
         clientOrigin,

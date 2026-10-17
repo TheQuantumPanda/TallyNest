@@ -61,6 +61,19 @@ export function createGroupRepository(model = Group) {
       await document.validate();
       return document.save(durableWriteOptions());
     },
+    async createForOwnerV2(user, input) {
+      const creator = objectId(user);
+      const document = new model({
+        ...groupInputSchema.parse(input),
+        creator,
+        __v: 0,
+        members: [{ user: creator, role: 'owner', createdAt: new Date() }],
+        financialProtocolVersion: 2,
+        cycleEpoch: 0,
+      });
+      await document.validate();
+      return document.save(durableWriteOptions());
+    },
     findByIdForMember(user, id) {
       return model
         .findOne({ _id: objectId(id), ...memberFilter(user) })

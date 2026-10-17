@@ -39,11 +39,14 @@ export function toPublicGroup(document, user) {
     updatedAt: document.updatedAt.toISOString(),
   };
 }
-export function createGroupService({ repository = groupRepository } = {}) {
+export function createGroupService({ repository = groupRepository, freshV2 = false } = {}) {
   return {
     async create(user, input) {
       return toPublicGroup(
-        await repository.createForOwner(user, parse(groupInputSchema, input)),
+        await (freshV2 ? repository.createForOwnerV2 : repository.createForOwner)(
+          user,
+          parse(groupInputSchema, input),
+        ),
         user,
       );
     },
