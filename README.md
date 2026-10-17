@@ -696,3 +696,11 @@ records; historical generated transactions remain after schedule deletion.
 
 [Implementation and verification](docs/phase-5-step-2a.md) addresses audit H1
 without changing the original audit findings. No new local configuration is needed.
+
+### Staged cycle HTTP contracts (Phase 5, Step 3F)
+
+The [staged HTTP specification](docs/phase-5-step-3f.md) documents the separate
+version-2 cycle, shared expense, settlement, balance and recovery contracts.
+These routes are constructed only by disposable authenticated integration fixtures;
+ordinary application startup does not register or activate them. Legacy financial
+locks and response envelopes remain unchanged. No migration hold is released.
