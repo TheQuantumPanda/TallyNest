@@ -1,6 +1,5 @@
-import { isDeepStrictEqual } from 'node:util';
-import { definitions } from '../migrations/cycle-v1/preflight.js';
 import { HttpError } from '../utils/httpError.js';
+import { verifyCycleSchemaAndIndexes } from './release-preflight.js';
 
 const unavailable = (code) => new HttpError(503, 'Staged cycle API is unavailable', code);
 // Read only: never creates indexes, installs validators, or releases maintenance.
@@ -9,34 +8,12 @@ export async function assertCycleHttpReadiness(db, { allowRecovery = false } = {
     throw unavailable('CYCLE_MIGRATION_MAINTENANCE');
   if (await db.collection('groups').findOne({ cycleMigration: { $exists: true } }))
     throw unavailable('CYCLE_MIGRATION_MAINTENANCE');
-  const metadata = await db.listCollections().toArray();
-  for (const [model, validator] of definitions) {
-    const entry = metadata.find((row) => row.name === model.collection.name);
-    if (
-      !entry ||
-      entry.options.validationLevel !== 'strict' ||
-      entry.options.validationAction !== 'error' ||
-      !isDeepStrictEqual(entry.options.validator, validator)
-    )
-      throw unavailable('CYCLE_SCHEMA_NOT_READY');
-    const indexes = await db.collection(model.collection.name).indexes();
-    if (indexes.some((index) => index.expireAfterSeconds !== undefined))
-      throw unavailable('CYCLE_INDEX_NOT_READY');
-    for (const [key, options] of model.schema.indexes()) {
-      if (
-        !indexes.some(
-          (index) =>
-            isDeepStrictEqual(index.key, key) &&
-            !!index.unique === !!options.unique &&
-            !!index.sparse === !!options.sparse &&
-            isDeepStrictEqual(
-              index.partialFilterExpression ?? {},
-              options.partialFilterExpression ?? {},
-            ),
-        )
-      )
-        throw unavailable('CYCLE_INDEX_NOT_READY');
-    }
+  try {
+    await verifyCycleSchemaAndIndexes(db);
+  } catch (error) {
+    throw unavailable(
+      error.code?.startsWith('CYCLE_INDEX') ? 'CYCLE_INDEX_NOT_READY' : 'CYCLE_SCHEMA_NOT_READY',
+    );
   }
   if (
     !allowRecovery &&

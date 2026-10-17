@@ -74,12 +74,12 @@ async function assertClean() {
         (row) => row.name === database,
       );
     // Check after all Mongoose/fixture workers have stopped, then recheck for late recreation.
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     if (await exists()) {
       await client.db(database).dropDatabase();
       throw new Error('Fixture left a disposable database behind; it was removed');
     }
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     if (await exists()) throw new Error('Disposable database was recreated after fixture exit');
     process.stdout.write('Verified disposable browser database cleanup\n');
   } finally {

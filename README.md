@@ -39,6 +39,9 @@ see the [staged API](docs/phase-5-step-3f.md) and
 The local disposable Chromium gate is `npm run verify:browser`; see the
 [Step 3H release-readiness report](docs/phase-5-step-3h.md). Public cycle
 activation remains blocked pending a separately reviewed cutover.
+The [Step 3I read-only preflight](docs/phase-5-step-3i.md) can inspect only a
+uniquely named local disposable migrated rehearsal; correct strict validators
+do not release its maintenance hold or authorize public activation.
 
 ## Run locally
 

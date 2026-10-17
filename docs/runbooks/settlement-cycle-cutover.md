@@ -101,6 +101,17 @@ Require every group report to be verified with no discrepancy. Review classifica
 
 Verify strict validators and unique indexes after the final stage, no residual `financialOperation`, matching pointer/state/epoch, and identical source/target reconciliation evidence. Legacy services must reject migrated groups; controlled internal reads may inspect them using the exact offline run adapter. Normal version-2 mutations are still blocked by maintenance. Check personal finance isolation and run the complete regression gate:
 
+The approved **read-only disposable inspection sequence** after the migration rehearsal is:
+
+```bash
+npm run preflight:cycles:rehearsal --prefix backend -- \
+  --database "$CYCLE_REHEARSAL_DB"
+```
+
+Exit 2 with `schema`, `indexes`, `migration`, `associations` and `reservations` at `PASS`, while `maintenance` and overall status remain `BLOCKED`, is the expected held-database result. Exit 1 or any `FAIL` requires investigation and no release. The CLI accepts only a uniquely named local disposable rehearsal database, constructs a read-only Mongoose connection (`autoCreate` and `autoIndex` disabled), and does not accept an arbitrary URI. It does not release a marker. Compare its sanitized report with the migrator's reconciliation report and the independently retained encrypted backup/restore evidence. Record the code revision and report privately; do not treat the marker's backup hash alone as proof that an independent backup remains recoverable. See [Step 3I](../phase-5-step-3i.md) for the exact strict-validator reconstruction and drift checks.
+
+Before a future real-data release is even designed, explicitly verify that old API, recurring and recovery workers are stopped **and cannot reconnect** with old write credentials or network paths; an attestation or idle connection scan is insufficient. Approve exact migration checkpoints and group set, validator/index metadata, no applying reservations, new-binary/frontend contract match, runtime read/write privileges, hosted HTTPS cookie/Origin behavior, backup key custody and restore proof, and a rollback decision point. The current `server.js` still runs collection/index/`collMod` setup under runtime credentials and does not install the transition-journal index; it is not the future least-privilege cycle startup. No maintenance-release command exists, and this read-only preflight is not one.
+
 ```bash
 npm run verify:clean
 npm exec --prefix frontend -- prettier --config frontend/.prettierrc.json --check \

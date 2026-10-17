@@ -42,10 +42,18 @@ const uri = `mongodb://127.0.0.1:27017/${database}`;
 let server;
 async function cleanup() {
   if (server) await new Promise((resolve) => server.close(resolve));
-  if (mongoose.connection.readyState === 1) {
-    if (mongoose.connection.name !== database) throw new Error('Database cleanup target changed');
-    await mongoose.connection.dropDatabase();
-    await mongoose.disconnect();
+  if (mongoose.connection.readyState && mongoose.connection.name !== database)
+    throw new Error('Database cleanup target changed');
+  await mongoose.disconnect();
+  // A disconnected model initializer cannot recreate this exact disposable namespace.
+  const client = new mongoose.mongo.MongoClient('mongodb://127.0.0.1:27017', {
+    serverSelectionTimeoutMS: 10000,
+  });
+  await client.connect();
+  try {
+    await client.db(database).dropDatabase();
+  } finally {
+    await client.close();
   }
 }
 try {
@@ -84,6 +92,9 @@ try {
     createdAt: new Date(),
   });
   await group.save();
+  // One deliberate, fixed test-only interruption after the expense is durable.
+  // No ordinary application composition imports this fixture.
+  let recoveryFaultPending = true;
   const app = await createDisposableCycleApp({
     connection: mongoose.connection,
     config: {
@@ -105,6 +116,17 @@ try {
       cycles: GroupFinancialCycle,
       expenses: GroupExpense,
       settlements: GroupSettlement,
+    },
+    fault: async (point, operation) => {
+      if (
+        recoveryFaultPending &&
+        point === 'after_target_write' &&
+        operation.kind === 'expense_create' &&
+        operation.payload?.data?.title === 'Browser recovery interruption'
+      ) {
+        recoveryFaultPending = false;
+        throw new Error('Disposable injected interruption');
+      }
     },
   });
   server = app.listen(5007, '127.0.0.1');

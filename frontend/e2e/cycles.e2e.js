@@ -35,6 +35,80 @@ test('a group created in the disposable cycle workspace opens its cycle history'
   await expect(page.getByRole('button', { name: 'Open first cycle' })).toBeVisible();
 });
 
+test('keyboard lifecycle, reduced motion, narrow zoom, and explicit recovery after an applying interruption', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await signIn(page, 'cycle-owner@test.invalid');
+  await expect(page.locator('.group-card').first()).toHaveCSS('transition-duration', '1e-05s');
+  await page.getByRole('button', { name: 'Create group', exact: true }).click();
+  const newGroup = page.getByRole('dialog', { name: 'Create group' });
+  await newGroup.getByRole('textbox', { name: 'Group name' }).fill('Browser recovery group');
+  await newGroup.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('heading', { name: 'Browser recovery group' })).toBeVisible();
+  const open = page.getByRole('button', { name: 'Open first cycle' });
+  await open.focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'Open first cycle' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Close dialog' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(open).toBeFocused();
+  await open.press('Enter');
+  await dialog.getByRole('button', { name: 'Open first cycle' }).press('Enter');
+  await expect(page.getByRole('heading', { name: 'Cycle 1', exact: true })).toBeVisible();
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
+  const expensesTab = page
+    .getByRole('navigation', { name: 'Cycle sections' })
+    .getByRole('button', { name: 'expenses' });
+  await expensesTab.focus();
+  await expensesTab.press('Enter');
+  await expect(page.getByRole('button', { name: 'Add shared expense' })).toBeVisible();
+  await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 });
+  await page.setViewportSize({ width: 320, height: 800 });
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+    .toBeLessThanOrEqual(320);
+  await page.getByRole('button', { name: 'Add shared expense' }).click();
+  const form = page.getByRole('dialog', { name: 'Add shared expense' });
+  await expect(form).toBeVisible();
+  await form.getByRole('textbox', { name: 'Expense title' }).fill('Browser recovery interruption');
+  await form.getByRole('textbox', { name: 'Total amount (INR)' }).fill('1.01');
+  await form.locator('#shared-date').fill('2026-10-17');
+  const failed = page.waitForResponse(
+    (row) =>
+      row.url().includes('/api/groups/') &&
+      row.url().endsWith('/expenses') &&
+      row.request().method() === 'POST',
+  );
+  await form.getByRole('button', { name: 'Save' }).click();
+  expect((await failed).status()).toBe(500);
+  await expect(form).toContainText('may already exist');
+  await expect(form.getByRole('button', { name: 'Retry same submission' })).toBeVisible();
+
+  page.once('dialog', (warning) => warning.accept());
+  await page.reload();
+  await expect(page.getByRole('dialog', { name: 'Add shared expense' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Recover pending operation' })).toBeVisible();
+  await page.getByRole('button', { name: 'Recover pending operation' }).click();
+  await expect(
+    page.getByText('The original operation was reconciled. Records are reloading.'),
+  ).toBeVisible();
+  await page
+    .getByRole('navigation', { name: 'Cycle sections' })
+    .getByRole('button', { name: 'expenses' })
+    .click();
+  await expect(page.getByRole('heading', { name: 'Browser recovery interruption' })).toHaveCount(1);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+    .toBeLessThanOrEqual(320);
+  await cdp.detach();
+});
+
 test('disposable cycle UI restores a session, keeps keyboard access, and renders at four widths', async ({
   page,
   browser,
