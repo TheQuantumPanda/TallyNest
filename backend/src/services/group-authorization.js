@@ -7,6 +7,15 @@ export function membershipFor(group, user) {
 export async function requireGroupMember(repository, user, id) {
   const group = await repository.findByIdForMember(user, id);
   if (!group || !membershipFor(group, user)) throw groupNotFound();
+  if (
+    group.cycleMigration &&
+    repository.offlineMigrationRunId !== String(group.cycleMigration.runId)
+  )
+    throw new HttpError(
+      503,
+      'Group is held for offline maintenance',
+      'CYCLE_MIGRATION_MAINTENANCE',
+    );
   return group;
 }
 export function requireGroupOwner(group, user) {

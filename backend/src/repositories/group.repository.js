@@ -31,6 +31,7 @@ function lifecycleGate(id, op, phase) {
   if (!LIFECYCLE_KINDS.includes(op.kind)) throw new TypeError('Invalid lifecycle kind');
   return {
     _id: objectId(id),
+    cycleMigration: { $exists: false },
     ...ownerFilter(String(op.actor)),
     financialProtocolVersion: 2,
     'financialOperation._id': objectId(op._id),
@@ -81,7 +82,12 @@ export function createGroupRepository(model = Group) {
       const data = groupInputSchema.parse(input);
       return model
         .findOneAndUpdate(
-          { _id: objectId(id), ...ownerFilter(user), __v: version },
+          {
+            _id: objectId(id),
+            cycleMigration: { $exists: false },
+            ...ownerFilter(user),
+            __v: version,
+          },
           {
             $set: {
               name: data.name,
@@ -113,6 +119,7 @@ export function createGroupRepository(model = Group) {
         .findOneAndUpdate(
           {
             _id: objectId(id),
+            cycleMigration: { $exists: false },
             ...memberFilter(user),
             __v: expected,
             currency: 'INR',
@@ -141,6 +148,7 @@ export function createGroupRepository(model = Group) {
         .findOneAndUpdate(
           {
             _id: objectId(id),
+            cycleMigration: { $exists: false },
             ...memberFilter(user),
             __v: expected,
             financialHistoryAt: { $exists: true },
@@ -158,6 +166,7 @@ export function createGroupRepository(model = Group) {
         .findOneAndUpdate(
           {
             _id: objectId(id),
+            cycleMigration: { $exists: false },
             'financialOperation._id': objectId(opId),
             financialProtocolVersion: { $exists: false },
             settlementStartedAt: { $exists: false },
@@ -177,6 +186,7 @@ export function createGroupRepository(model = Group) {
         .findOneAndUpdate(
           {
             _id: objectId(id),
+            cycleMigration: { $exists: false },
             financialProtocolVersion: { $exists: false },
             'financialOperation._id': objectId(opId),
           },
@@ -199,6 +209,7 @@ export function createGroupRepository(model = Group) {
         .findOneAndUpdate(
           {
             _id: objectId(id),
+            cycleMigration: { $exists: false },
             ...memberFilter(user),
             __v: expected,
             financialProtocolVersion: 2,
@@ -218,6 +229,7 @@ export function createGroupRepository(model = Group) {
         .findOneAndUpdate(
           {
             _id: objectId(id),
+            cycleMigration: { $exists: false },
             financialProtocolVersion: 2,
             currentCycleId: objectId(cycleId),
             cycleEpoch: epoch,
@@ -235,6 +247,7 @@ export function createGroupRepository(model = Group) {
         .findOneAndUpdate(
           {
             _id: objectId(id),
+            cycleMigration: { $exists: false },
             financialProtocolVersion: 2,
             currentCycleId: objectId(cycleId),
             cycleEpoch: epoch,
@@ -251,6 +264,7 @@ export function createGroupRepository(model = Group) {
         .findOneAndUpdate(
           {
             _id: objectId(id),
+            cycleMigration: { $exists: false },
             financialProtocolVersion: 2,
             currentCycleId: objectId(cycleId),
             cycleEpoch: epoch,
@@ -280,6 +294,7 @@ export function createGroupRepository(model = Group) {
         .findOneAndUpdate(
           {
             _id: objectId(id),
+            cycleMigration: { $exists: false },
             financialProtocolVersion: 2,
             currentCycleId: objectId(cycleId),
             cycleEpoch: epoch,
@@ -305,6 +320,7 @@ export function createGroupRepository(model = Group) {
         .findOneAndUpdate(
           {
             _id: objectId(id),
+            cycleMigration: { $exists: false },
             ...ownerFilter(user),
             __v: op.expectedGroupVersion,
             financialProtocolVersion: 2,
@@ -381,7 +397,12 @@ export function createGroupRepository(model = Group) {
     deleteForOwner(user, id) {
       return model
         .findOneAndDelete(
-          { _id: objectId(id), ...ownerFilter(user), financialHistoryAt: { $exists: false } },
+          {
+            _id: objectId(id),
+            cycleMigration: { $exists: false },
+            ...ownerFilter(user),
+            financialHistoryAt: { $exists: false },
+          },
           { ...durableWriteOptions(), maxTimeMS: 2000 },
         )
         .exec();

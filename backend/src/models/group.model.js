@@ -53,6 +53,18 @@ const schema = new mongoose.Schema(
     currency: field(String, currencySchema, { required: true, default: 'INR' }),
     creator: { ...reference(), immutable: true },
     settlementStartedAt: { type: Date, immutable: true },
+    // Offline rehearsal gate. Ordinary requests cannot assign this field.
+    cycleMigration: {
+      type: new mongoose.Schema(
+        {
+          version: { type: Number, required: true, enum: [1] },
+          runId: { type: mongoose.Schema.Types.ObjectId, required: true, immutable: true },
+          state: { type: String, required: true, enum: ['held', 'verified', 'quarantined'] },
+        },
+        { _id: false, strict: 'throw' },
+      ),
+      default: undefined,
+    },
     // Reserved for the future cycle write protocol; absent on legacy groups.
     currentCycleId: { type: mongoose.Schema.Types.ObjectId, ref: 'GroupFinancialCycle' },
     cycleEpoch: {
@@ -176,6 +188,16 @@ export const groupCollectionValidator = {
           _id: { bsonType: 'objectId' },
           financialHistoryAt: { bsonType: 'date' },
           settlementStartedAt: { bsonType: 'date' },
+          cycleMigration: {
+            bsonType: 'object',
+            required: ['version', 'runId', 'state'],
+            additionalProperties: false,
+            properties: {
+              version: { enum: [1] },
+              runId: { bsonType: 'objectId' },
+              state: { enum: ['held', 'verified', 'quarantined'] },
+            },
+          },
           currentCycleId: { bsonType: 'objectId' },
           cycleEpoch: {
             bsonType: ['int', 'long', 'double'],

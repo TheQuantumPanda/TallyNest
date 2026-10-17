@@ -28,6 +28,7 @@ export function createMembershipRepository(model = Group, users = User) {
         .findOneAndUpdate(
           {
             _id: id(groupId),
+            cycleMigration: { $exists: false },
             ...actor,
             __v: expected,
             financialHistoryAt: { $exists: false },

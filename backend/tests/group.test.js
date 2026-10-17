@@ -142,12 +142,14 @@ test('repository predicates enforce membership and authoritative ownership in da
     { _id: ownerB, 'members.user': ownerA },
     {
       _id: ownerB,
+      cycleMigration: { $exists: false },
       creator: ownerA,
       members: { $elemMatch: { user: ownerA, role: 'owner' } },
       __v: 0,
     },
     {
       _id: ownerB,
+      cycleMigration: { $exists: false },
       creator: ownerA,
       members: { $elemMatch: { user: ownerA, role: 'owner' } },
       financialHistoryAt: { $exists: false },

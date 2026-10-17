@@ -23,6 +23,8 @@ const schema = new mongoose.Schema(
       validate: (value) => Number.isSafeInteger(value) && value > 0,
     },
     previousCycleId: reference('GroupFinancialCycle', false),
+    migrationVersion: { type: Number, enum: [1], immutable: true },
+    migrationRunId: reference(undefined, false),
     currency: { type: String, required: true, immutable: true, enum: ['INR'] },
     status: { type: String, required: true, enum: CYCLE_STATUSES },
     activeSlot: { type: Boolean, default: undefined },
@@ -39,6 +41,11 @@ const schema = new mongoose.Schema(
 
 schema.pre('validate', function () {
   const members = this.memberIds ?? [];
+  if (
+    (this.migrationVersion === undefined) !== (this.migrationRunId === undefined) ||
+    (this.migrationVersion !== undefined && this.sequence !== 1)
+  )
+    this.invalidate('migrationVersion', 'Invalid cycle migration provenance');
   try {
     if (members.map(String).join(',') !== sortedCycleMembers(members).join(','))
       this.invalidate('memberIds', 'Cycle members must be unique and sorted');
@@ -103,6 +110,8 @@ export const groupFinancialCycleCollectionValidator = {
           group: objectIdBson,
           sequence: { ...integerBson, minimum: 1 },
           previousCycleId: objectIdBson,
+          migrationVersion: { enum: [1] },
+          migrationRunId: objectIdBson,
           currency: { enum: ['INR'] },
           status: { enum: CYCLE_STATUSES },
           activeSlot: { enum: [true] },
@@ -122,6 +131,23 @@ export const groupFinancialCycleCollectionValidator = {
     {
       $expr: {
         $and: [
+          {
+            $or: [
+              {
+                $and: [
+                  { $eq: [{ $type: '$migrationVersion' }, 'missing'] },
+                  { $eq: [{ $type: '$migrationRunId' }, 'missing'] },
+                ],
+              },
+              {
+                $and: [
+                  { $eq: ['$migrationVersion', 1] },
+                  { $eq: [{ $type: '$migrationRunId' }, 'objectId'] },
+                  { $eq: ['$sequence', 1] },
+                ],
+              },
+            ],
+          },
           { $eq: ['$sequence', { $trunc: '$sequence' }] },
           { $eq: ['$__v', { $trunc: '$__v' }] },
           { $eq: [{ $eq: ['$sequence', 1] }, { $eq: [{ $type: '$previousCycleId' }, 'missing'] }] },

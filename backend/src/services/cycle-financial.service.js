@@ -49,7 +49,12 @@ function prepare(kind, input, cycleId) {
     if (kind === 'expense_update')
       return { targetId: parsed.targetId, version: parsed.version, data };
     const key = hash(parsed.key.toLowerCase());
-    return { data, key, hash: hash(JSON.stringify({ cycleId, data })) };
+    return {
+      data,
+      key,
+      hash: hash(JSON.stringify({ cycleId, data })),
+      legacyHash: hash(JSON.stringify(data)),
+    };
   }
   if (kind === 'expense_delete' || kind === 'settlement_confirm' || kind === 'settlement_reject')
     return targetSchema.parse(input);
@@ -62,6 +67,7 @@ function prepare(kind, input, cycleId) {
       ...parsed.data,
       key: hash(parsed.key.toLowerCase()),
       hash: hash(JSON.stringify({ cycleId, data: parsed.data })),
+      legacyHash: hash(JSON.stringify(parsed.data)),
     };
   }
   throw new TypeError('Unknown cycle financial operation');
@@ -103,6 +109,17 @@ export function createCycleFinancialService({
   const enabled = () => {
     if (!internalEnabled) throw inactive();
   };
+  async function receiptMatches(row, p, cycleId) {
+    if (!same(row.cycleId, cycleId)) return false;
+    if (row.creationHash === p.hash) return true;
+    if (row.creationHash !== p.legacyHash) return false;
+    const originalCycle = await cycles.find(String(row.group), String(row.cycleId));
+    return (
+      originalCycle?.migrationVersion === 1 &&
+      originalCycle.sequence === 1 &&
+      !!originalCycle.migrationRunId
+    );
+  }
   async function groupFor(user, groupId) {
     const group = await requireGroupMember(groups, user, groupId);
     if (group.financialProtocolVersion !== 2) throw inactive();
@@ -285,8 +302,7 @@ export function createCycleFinancialService({
       if (op.kind === 'expense_create') {
         const previous = await expenses.findReceipt(groupId, String(op.actor), p.key);
         if (previous) {
-          if (previous.creationHash !== p.hash || !same(previous.cycleId, cycleId))
-            throw conflict('IDEMPOTENCY_CONFLICT');
+          if (!(await receiptMatches(previous, p, cycleId))) throw conflict('IDEMPOTENCY_CONFLICT');
           if (previous.deletedAt) throw conflict('EXPENSE_DELETED');
           return previous;
         }
@@ -307,7 +323,7 @@ export function createCycleFinancialService({
         } catch (error) {
           if (error.code !== 11000) throw error;
           const prior = await expenses.findReceipt(groupId, String(op.actor), p.key);
-          if (!prior || prior.creationHash !== p.hash || !same(prior.cycleId, cycleId)) throw error;
+          if (!prior || !(await receiptMatches(prior, p, cycleId))) throw error;
           return prior;
         }
       }
@@ -353,8 +369,7 @@ export function createCycleFinancialService({
       if (cycle.status !== 'frozen') throw conflict('CYCLE_STATE_INVALID');
       const prior = await settlements.receipt(groupId, String(op.actor), p.key);
       if (prior) {
-        if (prior.creationHash !== p.hash || !same(prior.cycleId, cycleId))
-          throw conflict('IDEMPOTENCY_CONFLICT');
+        if (!(await receiptMatches(prior, p, cycleId))) throw conflict('IDEMPOTENCY_CONFLICT');
         return prior;
       }
       await fault('before_target_write', op);
@@ -365,7 +380,7 @@ export function createCycleFinancialService({
       } catch (error) {
         if (error.code !== 11000) throw error;
         const prior = await settlements.receipt(groupId, String(op.actor), p.key);
-        if (!prior || prior.creationHash !== p.hash || !same(prior.cycleId, cycleId)) throw error;
+        if (!prior || !(await receiptMatches(prior, p, cycleId))) throw error;
         return prior;
       }
     }
@@ -441,8 +456,7 @@ export function createCycleFinancialService({
             ? await expenses.findReceipt(groupId, user, p.key)
             : await settlements.receipt(groupId, user, p.key);
         if (previous) {
-          if (previous.creationHash !== p.hash || !same(previous.cycleId, cycleId))
-            throw conflict('IDEMPOTENCY_CONFLICT');
+          if (!(await receiptMatches(previous, p, cycleId))) throw conflict('IDEMPOTENCY_CONFLICT');
           if (previous.deletedAt) throw conflict('EXPENSE_DELETED');
           return { row: previous, replayed: true };
         }

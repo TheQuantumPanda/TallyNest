@@ -7,6 +7,7 @@ import { startRecurringJob } from './src/jobs/recurring.job.js';
 import { createServer } from 'node:http';
 import { createApp } from './app.js';
 import { loadEnv } from './src/config/env.js';
+import { assertNoCycleMaintenance } from './src/config/cycle-maintenance.js';
 import { connectDB, disconnectDB } from './src/config/db.js';
 import { ensureUserIndexes } from './src/repositories/user.repository.js';
 import { ensureBudgetIndexes } from './src/repositories/budget.repository.js';
@@ -47,6 +48,7 @@ async function shutdown(signal, exitCode = 0) {
 async function start() {
   try {
     const config = loadEnv();
+    await assertNoCycleMaintenance(config.mongoUri);
     await connectDB(config.mongoUri);
     await ensureUserIndexes();
     await ensureBudgetIndexes();

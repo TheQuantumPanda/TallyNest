@@ -28,6 +28,10 @@ through the API; see [the Step 3C protocol](docs/phase-5-step-3c.md).
 Step 3D adds internal owner-authorized cycle freeze, exact zero-balance closure,
 next-cycle opening and durable recovery. These remain inactive for public APIs;
 see [the Step 3D lifecycle specification](docs/phase-5-step-3d.md).
+Step 3E adds a versioned offline migration **rehearsal only** for disposable local
+databases, with encrypted backup/restore and exact reconciliation. See the
+[Step 3E specification](docs/phase-5-step-3e.md) and
+[cutover runbook](docs/runbooks/settlement-cycle-cutover.md); public cycle activity remains disabled.
 
 ## Run locally
 
@@ -109,7 +113,9 @@ for backend/frontend/shared JavaScript, Prettier checks for both packages,
 shared code and current verification documentation, the frontend production
 build, both production dependency audits, and the real MongoDB integration
 suite. The latter uses uniquely named disposable databases and fails when
-MongoDB is unavailable. For an already installed checkout, use `npm run verify`;
+MongoDB is unavailable. The migration rehearsal suite also requires Docker access
+to exactly one `mongo:8.0` container publishing port 27017 for its real encrypted
+backup/restore drill. For an already installed checkout, use `npm run verify`;
 `npm run verify:fast` runs all checks except MongoDB integration. The GitHub
 Actions workflow runs the clean command on pushes to `main` and pull requests
 targeting `main`. It does not run a browser suite.

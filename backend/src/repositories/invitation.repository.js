@@ -19,7 +19,12 @@ export function createInvitationRepository(model = Group) {
     replaceInvitationsForOwner(user, groupId, expected, invitations) {
       return model
         .findOneAndUpdate(
-          { _id: id(groupId), ...owner(user), __v: version(expected) },
+          {
+            _id: id(groupId),
+            cycleMigration: { $exists: false },
+            ...owner(user),
+            __v: version(expected),
+          },
           { $set: { invitations }, $inc: { __v: 1 } },
           { ...options(), runValidators: true },
         )
@@ -30,6 +35,7 @@ export function createInvitationRepository(model = Group) {
         .findOneAndUpdate(
           {
             _id: id(groupId),
+            cycleMigration: { $exists: false },
             ...owner(user),
             __v: version(expected),
             'invitations._id': id(invitationId),
@@ -66,6 +72,7 @@ export function createInvitationRepository(model = Group) {
         .findOneAndUpdate(
           {
             _id: id(groupId),
+            cycleMigration: { $exists: false },
             __v: version(expected),
             'members.user': { $ne: id(user) },
             $or: [
