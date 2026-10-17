@@ -2,7 +2,6 @@
 import { randomBytes } from 'node:crypto';
 import { once } from 'node:events';
 import mongoose from 'mongoose';
-import { Group } from '../src/models/group.model.js';
 import { GroupFinancialCycle } from '../src/models/group-financial-cycle.model.js';
 import { GroupExpense } from '../src/models/group-expense.model.js';
 import { GroupSettlement } from '../src/models/group-settlement.model.js';
@@ -29,6 +28,7 @@ import { membershipRepository } from '../src/repositories/membership.repository.
 import { userRepository } from '../src/repositories/user.repository.js';
 import { hashPassword } from '../src/services/password.service.js';
 import { createDisposableCycleApp } from './helpers/staged-cycle-app.js';
+import { createCycleFixtureGroupRepository } from './helpers/cycle-fixture-groups.js';
 
 if (process.env.NODE_ENV !== 'test' || process.env.TALLYNEST_CYCLE_FIXTURE !== 'disposable-local')
   throw new Error('Explicit disposable test context required');
@@ -74,7 +74,8 @@ try {
     email: 'cycle-joiner@test.invalid',
     passwordHash: await hashPassword(password),
   });
-  const group = await groupRepository.createForOwner(String(owner._id), {
+  const fixtureGroups = createCycleFixtureGroupRepository(mongoose.connection, groupRepository);
+  const group = await fixtureGroups.createForOwner(String(owner._id), {
     name: 'Disposable cycle group',
   });
   group.members.push({
@@ -83,7 +84,6 @@ try {
     createdAt: new Date(),
   });
   await group.save();
-  await Group.collection.updateOne({ _id: group._id }, { $set: { financialProtocolVersion: 2 } });
   const app = await createDisposableCycleApp({
     connection: mongoose.connection,
     config: {
@@ -92,7 +92,7 @@ try {
       jwtSecret: randomBytes(32).toString('hex'),
     },
     repositories: {
-      groups: groupRepository,
+      groups: fixtureGroups,
       cycles: groupFinancialCycleRepository,
       expenses: groupExpenseRepository,
       settlements: settlementRepository,

@@ -11,6 +11,30 @@ async function signIn(page, email) {
   await expect(page).toHaveURL(/\/app\/groups/);
 }
 
+test('a group created in the disposable cycle workspace opens its cycle history', async ({
+  page,
+}) => {
+  await signIn(page, 'cycle-owner@test.invalid');
+  await page.getByRole('button', { name: 'Create group', exact: true }).click();
+  const form = page.getByRole('dialog', { name: 'Create group' });
+  await form.getByRole('textbox', { name: 'Group name' }).fill('Browser-created cycle group');
+  const responsePromise = page.waitForResponse((row) =>
+    /\/api\/groups\/[a-f0-9]{24}\/cycles\?limit=20$/.test(row.url()),
+  );
+  await form.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('heading', { name: 'Browser-created cycle group' })).toBeVisible();
+  const response = await responsePromise;
+  expect(response.status()).toBe(200);
+  const body = await response.json();
+  expect(body).toMatchObject({
+    status: 'ok',
+    apiVersion: 2,
+    data: { cycles: [], group: { currentCycleId: null, currentCycleState: null, epoch: 0 } },
+    pagination: { limit: 20, hasMore: false, nextAfter: null },
+  });
+  await expect(page.getByRole('button', { name: 'Open first cycle' })).toBeVisible();
+});
+
 test('disposable cycle UI restores a session, keeps keyboard access, and renders at four widths', async ({
   page,
   browser,

@@ -55,6 +55,7 @@ function Workspace({ groupId, routeCycleId }) {
   );
   const balances = useGroupResource(`${groupId}:${selectedId || 'none'}`, balanceLoad, revision);
   const group = groupResult.data;
+  const protocolInactive = history.error?.response?.data?.code === 'CYCLE_PROTOCOL_INACTIVE';
   const members = rosterResult.data?.members || [];
   const snapshotMembers = cycle
     ? members.filter((member) => cycle.memberIds.includes(member.id))
@@ -124,7 +125,14 @@ function Workspace({ groupId, routeCycleId }) {
         </Button>
       </header>
       <GroupFeedback {...groupResult} retry={groupResult.reload} />
-      <GroupFeedback {...history} retry={history.reload} />
+      {!protocolInactive && <GroupFeedback {...history} retry={history.reload} />}
+      {protocolInactive && (
+        <section className="group-panel" aria-labelledby="cycle-protocol-unavailable">
+          <h2 id="cycle-protocol-unavailable">Cycle workspace unavailable for this group</h2>
+          <p role="alert">{groupError(history.error)}</p>
+          <Link to="/app/groups">Return to all groups</Link>
+        </section>
+      )}
       {message && <Notice tone="success">{message}</Notice>}
       {busy && group && (
         <section className="group-recovery" aria-label="Financial recovery">

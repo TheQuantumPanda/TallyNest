@@ -6,7 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import { CycleWorkspace } from '../pages/CycleWorkspace';
 import { cyclesService } from '../services/cycles';
 import { groupsService } from '../services/groups';
-import { a, b, group, groupId, members, expense, balances, date } from './fixtures/groups';
+import { a, b, group, groupId, members, expense, balances, date, failure } from './fixtures/groups';
 
 vi.mock('../services/groups', async (importOriginal) => ({
   ...(await importOriginal()),
@@ -58,6 +58,7 @@ function show(path = `/app/groups/${groupId}`, memberId = a) {
     <AuthContext.Provider value={{ status: 'authenticated', user: { id: memberId, name: 'Asha' } }}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
+          <Route path="/app/groups" element={<p>Group list available</p>} />
           <Route path="/app/groups/:groupId" element={<CycleWorkspace />} />
           <Route path="/app/groups/:groupId/cycles/:cycleId" element={<CycleWorkspace />} />
         </Routes>
@@ -74,6 +75,17 @@ beforeEach(() => {
   cyclesService.balances.mockResolvedValue({ ...balances, cycleId });
   cyclesService.expenses.list.mockResolvedValue(paged([]));
   cyclesService.settlements.list.mockResolvedValue(paged([]));
+});
+
+it('explains a legacy group protocol 409 and offers safe navigation without a stale-version claim', async () => {
+  cyclesService.list.mockRejectedValue(failure(409, 'CYCLE_PROTOCOL_INACTIVE'));
+  const user = userEvent.setup();
+  show();
+  expect(await screen.findByRole('heading', { name: /Cycle workspace unavailable/ })).toBeVisible();
+  expect(screen.getByRole('alert')).toHaveTextContent('does not have the cycle protocol');
+  expect(screen.queryByText(/current version.*draft is retained/i)).not.toBeInTheDocument();
+  await user.click(screen.getByRole('link', { name: 'Return to all groups' }));
+  expect(screen.getByText('Group list available')).toBeVisible();
 });
 
 it('selects current and historical cycles without changing the group pointer', async () => {

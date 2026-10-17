@@ -37,6 +37,8 @@ export function groupError(error) {
     GROUP_FULL: 'This group has reached its member limit.',
     INVITATION_LIMIT: 'Invitation capacity reached. Revoke an unused link or wait for expiry.',
     INVITATION_UNAVAILABLE: 'This invitation is invalid, expired, revoked or exhausted.',
+    CYCLE_PROTOCOL_INACTIVE:
+      'This group does not have the cycle protocol. It cannot be opened in the disposable cycle workspace. Return to the group list and use a group created by the current cycle-test fixture; restart that fixture if its groups are stale.',
   };
   if (messages[code]) return messages[code];
   if (status === 401) return 'Your session has ended. Please sign in again.';

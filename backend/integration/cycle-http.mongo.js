@@ -300,6 +300,20 @@ test('ordinary app has no cycle routes and no browser-controlled activation', as
   });
   assert.equal(created.body.code, 'CYCLE_PROTOCOL_INACTIVE');
 });
+test('staged cycle history rejects an accessible legacy group with exact protocol error', async (t) => {
+  const request = await setup(t);
+  const legacy = await groupRepository.createForOwner(ownerA, {
+    name: 'Legacy fixture group',
+  });
+  const response = await request(`/groups/${legacy._id}/cycles?limit=20`);
+  assert.equal(response.status, 409);
+  assert.deepEqual(response.body, {
+    status: 'error',
+    message: 'Cycle protocol is inactive',
+    code: 'CYCLE_PROTOCOL_INACTIVE',
+  });
+  assert.equal((await Group.findById(legacy._id)).financialProtocolVersion, undefined);
+});
 test('cycle list/detail, owner-only opening, safe DTO and authoritative group precondition', async (t) => {
   const request = await setup(t);
   assert.equal((await request(path('/cycles'))).body.data.cycles.length, 0);
