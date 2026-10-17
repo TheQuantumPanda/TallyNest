@@ -45,8 +45,14 @@ async function assertReadable(row) {
   if (!row.cycleId)
     throw new HttpError(422, 'Missing financial cycle association', 'CYCLE_ASSOCIATION_INVALID');
 }
-const scopedExpense = (row) => ({ ...publicExpense(row), cycleId: String(row.cycleId) });
-const scopedSettlement = (row) => ({ ...publicSettlement(row), cycleId: String(row.cycleId) });
+const scopedExpense = (row) => ({
+  ...publicExpense(row),
+  cycleId: String(row.cycleId),
+});
+const scopedSettlement = (row) => ({
+  ...publicSettlement(row),
+  cycleId: String(row.cycleId),
+});
 export function createCycleHttpService({
   groups,
   cycles,
@@ -103,11 +109,17 @@ export function createCycleHttpService({
       if (query.cycleId) await cycleFor(groupId, query.cycleId);
       const result = await history.page(kind, user, groupId, query);
       for (const row of result.rows) {
-        try {
-          await row.validate();
-        } catch {
-          throw new HttpError(422, 'Financial data cannot be safely read', 'BALANCE_DATA_INVALID');
-        }
+        if (kind === 'cycles') {
+          try {
+            await row.validate();
+          } catch {
+            throw new HttpError(
+              422,
+              'Financial data cannot be safely read',
+              'BALANCE_DATA_INVALID',
+            );
+          }
+        } else await assertReadable(row);
         if (kind !== 'cycles' && !row.cycleId)
           throw new HttpError(
             422,
@@ -118,7 +130,9 @@ export function createCycleHttpService({
       const mapper =
         kind === 'cycles' ? publicCycle : kind === 'expenses' ? scopedExpense : scopedSettlement;
       return {
-        data: await envelope(user, groupId, { [kind]: result.rows.map(mapper) }),
+        data: await envelope(user, groupId, {
+          [kind]: result.rows.map(mapper),
+        }),
         pagination: result.pagination,
       };
     },
@@ -133,11 +147,13 @@ export function createCycleHttpService({
           ? await cycleFor(groupId, target)
           : await (kind === 'expenses' ? expenses : settlements).find(groupId, target);
       if (!row || (kind !== 'cycles' && !row.cycleId)) throw missing();
-      try {
-        await row.validate();
-      } catch {
-        throw new HttpError(422, 'Financial data cannot be safely read', 'BALANCE_DATA_INVALID');
-      }
+      if (kind === 'cycles') {
+        try {
+          await row.validate();
+        } catch {
+          throw new HttpError(422, 'Financial data cannot be safely read', 'BALANCE_DATA_INVALID');
+        }
+      } else await assertReadable(row);
       const key = kind === 'cycles' ? 'cycle' : kind === 'expenses' ? 'expense' : 'settlement';
       return envelope(user, groupId, {
         [key]: (kind === 'cycles'
@@ -175,7 +191,10 @@ export function createCycleHttpService({
           if (data.epoch !== undefined)
             throw new HttpError(400, 'Initial cycle has no epoch input', 'INVALID_REQUEST');
           // No current-state default: an empty request always means the first cycle, including retries.
-          result = await lifecycle.openFirst(user, groupId, { intent, groupVersion });
+          result = await lifecycle.openFirst(user, groupId, {
+            intent,
+            groupVersion,
+          });
         }
       } else {
         target = parse(id, target);
@@ -264,7 +283,10 @@ export function createCycleHttpService({
       const version = currentVersion(match, row);
       let data;
       if (action === 'update') {
-        const merged = { ...expenseInput(row), ...parse(groupExpensePatchSchema, input) };
+        const merged = {
+          ...expenseInput(row),
+          ...parse(groupExpensePatchSchema, input),
+        };
         if (merged.notes === null) delete merged.notes;
         data = validateAllocation(parse(groupExpenseInputSchema, merged));
         await registered([
@@ -331,7 +353,9 @@ export function createCycleHttpService({
       return envelope(user, groupId, {
         recovered: result.recovered,
         ...(group.currentCycleId
-          ? { cycle: publicCycle(await cycleFor(groupId, String(group.currentCycleId))) }
+          ? {
+              cycle: publicCycle(await cycleFor(groupId, String(group.currentCycleId))),
+            }
           : {}),
       });
     },

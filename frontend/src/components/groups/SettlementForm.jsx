@@ -5,7 +5,17 @@ import { Field } from '../ui/Field';
 import { groupSettlementsService } from '../../services/groupSettlements';
 import { FREEZE_WARNING, capacity } from '../../utils/groups';
 import { positiveMinor, decimalAmount, formatINR } from '../../utils/transactions';
-export function SettlementForm({ group, balances, members, userId, suggestion, ...props }) {
+export function SettlementForm({
+  group,
+  cycleId,
+  frozenCycle = group.settlementMode,
+  service = groupSettlementsService,
+  balances,
+  members,
+  userId,
+  suggestion,
+  ...props
+}) {
   const [acknowledged, setAcknowledged] = useState(false),
     debt = capacity(
       balances.members.find((m) => m.user === userId),
@@ -33,7 +43,7 @@ export function SettlementForm({ group, balances, members, userId, suggestion, .
           ))
     )
       errors.amount = 'Amount exceeds available debt or credit after pending reservations.';
-    if (!group.settlementMode && !acknowledged)
+    if (!frozenCycle && !acknowledged)
       errors.acknowledgement = 'Acknowledge the permanent expense freeze before proposing.';
     return Object.keys(errors).length
       ? { errors }
@@ -60,11 +70,15 @@ export function SettlementForm({ group, balances, members, userId, suggestion, .
       }}
       idempotent
       validate={validate}
-      submit={(data, _row, key) => groupSettlementsService.create(group.id, data, key)}
+      submit={(data, _row, key) =>
+        cycleId ? service.create(group.id, cycleId, data, key) : service.create(group.id, data, key)
+      }
       warning={
-        group.settlementMode
+        frozenCycle
           ? 'Only recipient-confirmed records affect balances. This creates a proposal, never a payment.'
-          : FREEZE_WARNING
+          : cycleId
+            ? 'The first valid proposal permanently freezes expense modifications in this cycle, including if the proposal is rejected. Other cycles remain separate. No bank payment occurs.'
+            : FREEZE_WARNING
       }
     >
       {({ values, errors, set, uncertain }) => (
@@ -102,14 +116,16 @@ export function SettlementForm({ group, balances, members, userId, suggestion, .
             error={errors.amount}
             onChange={(e) => set('amount', e.target.value)}
           />
-          {!group.settlementMode && (
+          {!frozenCycle && (
             <label className="group-check">
               <input
                 type="checkbox"
                 checked={acknowledged}
                 onChange={(e) => setAcknowledged(e.target.checked)}
               />
-              I understand that this permanently freezes shared expense modifications.
+              {cycleId
+                ? 'I understand this permanently freezes shared expense modifications in this cycle.'
+                : 'I understand that this permanently freezes shared expense modifications.'}
             </label>
           )}
           {errors.acknowledgement && (

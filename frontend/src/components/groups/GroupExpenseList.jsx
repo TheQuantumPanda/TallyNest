@@ -4,19 +4,31 @@ import { useGroupPage } from '../../hooks/useGroupData';
 import { GroupFeedback, GroupPageMore } from './GroupFeedback';
 import { Button } from '../ui/Button';
 import { formatINR, categoryLabel, displayDate } from '../../utils/transactions';
-export function GroupExpenseList({ group, members, userId, revision, select, disabled }) {
+export function GroupExpenseList({
+  group,
+  cycleId,
+  service = groupExpensesService,
+  members,
+  userId,
+  revision,
+  select,
+  disabled,
+}) {
   const load = useCallback(
-      (query, signal) => groupExpensesService.list(group.id, query, signal),
-      [group.id],
+      (query, signal) =>
+        cycleId
+          ? service.list(group.id, cycleId, query, signal)
+          : service.list(group.id, query, signal),
+      [group.id, cycleId, service],
     ),
-    page = useGroupPage(group.id, load, revision);
+    page = useGroupPage(`${group.id}:${cycleId || 'legacy'}`, load, revision);
   const name = (id) => members.find((m) => m.id === id)?.name || id;
   return (
     <section className="group-panel">
       <div className="group-section-heading">
         <div>
           <h2>Shared expense ledger</h2>
-          <p>Recorded obligations · INR · UTC dates</p>
+          <p>Recorded obligations · INR · UTC dates{cycleId ? ' · Selected cycle only' : ''}</p>
         </div>
         <Button
           disabled={disabled || group.settlementMode || group.financialBusy || !members.length}
@@ -28,7 +40,9 @@ export function GroupExpenseList({ group, members, userId, revision, select, dis
       <GroupFeedback {...page} retry={page.reload} />
       {group.settlementMode && (
         <p className="group-policy">
-          Settlement mode is permanent. Expense creation, editing and deletion are frozen.
+          {cycleId
+            ? 'This cycle is frozen or closed. Its expenses are permanently read-only.'
+            : 'Settlement mode is permanent. Expense creation, editing and deletion are frozen.'}
         </p>
       )}
       {!page.loading && !page.error && !page.rows.length && (

@@ -4,7 +4,15 @@ import { GroupSelect } from './GroupFeedback';
 import { groupExpensesService } from '../../services/groupExpenses';
 import { expenseForm, expenseValues, expenseCategories } from '../../utils/groups';
 import { formatINR } from '../../utils/transactions';
-export function GroupExpenseForm({ groupId, expense, members, userId, ...props }) {
+export function GroupExpenseForm({
+  groupId,
+  cycleId,
+  expense,
+  members,
+  userId,
+  service = groupExpensesService,
+  ...props
+}) {
   return (
     <RecordForm
       {...props}
@@ -13,14 +21,29 @@ export function GroupExpenseForm({ groupId, expense, members, userId, ...props }
       initial={expenseValues(expense, members, userId)}
       record={expense}
       idempotent={!expense}
-      validate={(values, base) => expenseForm(values, members, base)}
-      fetchLatest={expense ? () => groupExpensesService.get(groupId, expense.id) : undefined}
+      validate={(values, base) => {
+        const result = expenseForm(values, members, base);
+        return result.data && cycleId && !expense
+          ? { ...result, data: { ...result.data, cycleId } }
+          : result;
+      }}
+      fetchLatest={
+        expense
+          ? () => service.get(groupId, expense.id).then((value) => value.value || value)
+          : undefined
+      }
       submit={(data, row, key) =>
         expense
-          ? groupExpensesService.update(groupId, row, data)
-          : groupExpensesService.create(groupId, data, key)
+          ? service.update(groupId, row, data)
+          : cycleId
+            ? service.create(groupId, cycleId, data, key)
+            : service.create(groupId, data, key)
       }
-      warning="The first expense permanently protects this group's history: it prevents group deletion and member departure. Allocations are obligations, not bank payments."
+      warning={
+        cycleId
+          ? 'This expense belongs only to the selected open cycle. Freezing the cycle permanently locks its expense history; no payment is executed.'
+          : "The first expense permanently protects this group's history: it prevents group deletion and member departure. Allocations are obligations, not bank payments."
+      }
     >
       {({ values, errors, set }) => {
         const preview = expenseForm(values, members, expense);

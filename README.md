@@ -32,6 +32,10 @@ Step 3E adds a versioned offline migration **rehearsal only** for disposable loc
 databases, with encrypted backup/restore and exact reconciliation. See the
 [Step 3E specification](docs/phase-5-step-3e.md) and
 [cutover runbook](docs/runbooks/settlement-cycle-cutover.md); public cycle activity remains disabled.
+Step 3F adds a disposable-test-only version-2 HTTP contract, and Step 3G adds a
+matching test-only cycle frontend. Neither is active in the normal application;
+see the [staged API](docs/phase-5-step-3f.md) and
+[cycle frontend review guide](docs/phase-5-step-3g.md).
 
 ## Run locally
 

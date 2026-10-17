@@ -4,12 +4,24 @@ import { useGroupPage } from '../../hooks/useGroupData';
 import { GroupFeedback, GroupPageMore } from './GroupFeedback';
 import { Button } from '../ui/Button';
 import { formatINR, displayDate } from '../../utils/transactions';
-export function SettlementList({ groupId, members, userId, revision, select, disabled }) {
+export function SettlementList({
+  groupId,
+  cycleId,
+  service = groupSettlementsService,
+  members,
+  userId,
+  revision,
+  select,
+  disabled,
+}) {
   const load = useCallback(
-      (query, signal) => groupSettlementsService.list(groupId, query, signal),
-      [groupId],
+      (query, signal) =>
+        cycleId
+          ? service.list(groupId, cycleId, query, signal)
+          : service.list(groupId, query, signal),
+      [groupId, cycleId, service],
     ),
-    page = useGroupPage(groupId, load, revision),
+    page = useGroupPage(`${groupId}:${cycleId || 'legacy'}`, load, revision),
     [filter, setFilter] = useState('all');
   const name = (id) => members.find((m) => m.id === id)?.name || id;
   const rows = page.rows.filter(

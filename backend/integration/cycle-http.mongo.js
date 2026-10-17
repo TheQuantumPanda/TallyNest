@@ -104,7 +104,9 @@ beforeEach(async () => {
       passwordHash,
     })),
   );
-  const group = await groupRepository.createForOwner(ownerA, { name: 'HTTP cycle test' });
+  const group = await groupRepository.createForOwner(ownerA, {
+    name: 'HTTP cycle test',
+  });
   group.members.push({ user: ownerB, role: 'member', createdAt: new Date() });
   await group.save();
   await Group.collection.updateOne({ _id: group._id }, { $set: { financialProtocolVersion: 2 } });
@@ -172,7 +174,11 @@ async function setup(t, fault, normal = false, independent = false) {
   for (const [i, user] of [ownerA, ownerB, ownerC].entries()) {
     const response = await fetch(url + '/auth/login', {
       method: 'POST',
-      headers: { Origin: origin, 'X-CSRF-Protection': '1', 'Content-Type': 'application/json' },
+      headers: {
+        Origin: origin,
+        'X-CSRF-Protection': '1',
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         email: `${i}@test.invalid`,
         password: 'Disposable test password 123!',
@@ -258,7 +264,12 @@ async function settle(request) {
   const proposed = await request(path('/settlements'), {
     method: 'POST',
     user: ownerB,
-    body: { cycleId: String(cycle._id), recipient: ownerA, amountMinor: 5000, currency: 'INR' },
+    body: {
+      cycleId: String(cycle._id),
+      recipient: ownerA,
+      amountMinor: 5000,
+      currency: 'INR',
+    },
     headers: { 'Idempotency-Key': randomUUID() },
   });
   assert.equal(proposed.status, 201, JSON.stringify(proposed.body));
@@ -267,7 +278,9 @@ async function settle(request) {
 
 test('ordinary app has no cycle routes and no browser-controlled activation', async (t) => {
   const request = await setup(t, undefined, true);
-  const result = await request(path('/cycles'), { headers: { 'X-Cycle-Protocol': '2' } });
+  const result = await request(path('/cycles'), {
+    headers: { 'X-Cycle-Protocol': '2' },
+  });
   assert.equal(result.status, 404);
   const created = await request(path('/expenses'), {
     method: 'POST',
@@ -329,7 +342,10 @@ test('authentication, CSRF, origin, query operators, protected input and foreign
         await request(path('/cycles'), {
           method: 'POST',
           body: {},
-          headers: { 'If-Match': tag(group), ...(key ? { 'Idempotency-Key': key } : {}) },
+          headers: {
+            'If-Match': tag(group),
+            ...(key ? { 'Idempotency-Key': key } : {}),
+          },
         })
       ).status,
       400,
@@ -365,8 +381,12 @@ test('lifecycle identical replay preserves original input; changed key payload c
   assert.equal(replay.status, 200);
   assert.equal(replay.body.data.replayed, true);
   assert.equal(
-    (await request(path(`/cycles/${cycle._id}/freeze`), { ...options, body: { epoch: 2 } })).body
-      .code,
+    (
+      await request(path(`/cycles/${cycle._id}/freeze`), {
+        ...options,
+        body: { epoch: 2 },
+      })
+    ).body.code,
     'IDEMPOTENCY_CONFLICT',
   );
   assert.equal(
@@ -461,15 +481,25 @@ test('explicit cycle selection, invalid amounts, participant snapshot and group 
   for (const amountMinor of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])
     assert.equal((await add(request, { ...expense(), amountMinor })).status, 400);
   assert.equal(
-    (await add(request, { ...expense(), split: { method: 'equal', participants: [ownerC] } }))
-      .status,
+    (
+      await add(request, {
+        ...expense(),
+        split: { method: 'equal', participants: [ownerC] },
+      })
+    ).status,
     409,
   );
-  const second = await groupRepository.createForOwner(ownerA, { name: 'Other group' });
+  const second = await groupRepository.createForOwner(ownerA, {
+    name: 'Other group',
+  });
   assert.equal((await request(`/groups/${second._id}/cycles/${cycle._id}`)).status, 409);
   const original = await add(request);
   assert.equal(
-    (await request(path(`/expenses/${original.body.data.expense.id}`), { user: ownerC })).status,
+    (
+      await request(path(`/expenses/${original.body.data.expense.id}`), {
+        user: ownerC,
+      })
+    ).status,
     404,
   );
 });
@@ -482,6 +512,13 @@ test('settlement capacity, recipient-only decision, pending close block, exact h
   assert.equal(created.status, 201);
   const oldCycle = created.body.data.expense.cycleId;
   const proposal = await settle(request);
+  const pendingHistory = await request(path(`/settlements?cycleId=${oldCycle}`));
+  assert.equal(pendingHistory.status, 200, JSON.stringify(pendingHistory.body));
+  assert.equal(pendingHistory.body.data.settlements[0].id, proposal.body.data.settlement.id);
+  assert.equal(
+    (await request(path(`/settlements/${proposal.body.data.settlement.id}`))).status,
+    200,
+  );
   assert.equal((await transition(request, 'close')).body.code, 'CYCLE_PENDING_SETTLEMENTS');
   assert.equal((await add(request)).body.code, 'EXPENSES_FROZEN');
   const pendingCycle = (await state()).cycle;
@@ -497,7 +534,11 @@ test('settlement capacity, recipient-only decision, pending close block, exact h
   const excessive = await request(path('/settlements'), {
     method: 'POST',
     user: ownerB,
-    body: { cycleId: String(pendingCycle._id), recipient: ownerA, amountMinor: 1 },
+    body: {
+      cycleId: String(pendingCycle._id),
+      recipient: ownerA,
+      amountMinor: 1,
+    },
     headers: { 'Idempotency-Key': randomUUID() },
   });
   assert.equal(excessive.body.code, 'SETTLEMENT_EXCESS');
@@ -519,6 +560,9 @@ test('settlement capacity, recipient-only decision, pending close block, exact h
     headers: { 'If-Match': proposal.etag },
   });
   assert.equal(confirmed.status, 200, JSON.stringify(confirmed.body));
+  const confirmedHistory = await request(path(`/settlements?cycleId=${oldCycle}`));
+  assert.equal(confirmedHistory.status, 200, JSON.stringify(confirmedHistory.body));
+  assert.equal(confirmedHistory.body.data.settlements[0].status, 'confirmed');
   assert.equal(
     (
       await request(path(`/settlements/${target}/confirm`), {
@@ -593,10 +637,19 @@ test('injected applying interruption recovers fixed expense and does not expose 
   assert.equal((await add(request, expense(), key)).status, 500);
   const before = await GroupExpense.findOne();
   assert.equal(
-    (await request(path('/financial-recovery'), { user: ownerB, method: 'POST', body: {} })).status,
+    (
+      await request(path('/financial-recovery'), {
+        user: ownerB,
+        method: 'POST',
+        body: {},
+      })
+    ).status,
     403,
   );
-  const recovered = await request(path('/financial-recovery'), { method: 'POST', body: {} });
+  const recovered = await request(path('/financial-recovery'), {
+    method: 'POST',
+    body: {},
+  });
   assert.equal(recovered.status, 200, JSON.stringify(recovered.body));
   assert.equal(recovered.body.data.recovered, true);
   assert.equal(recovered.body.data.cycle.etag, tag((await state()).cycle));
@@ -623,7 +676,13 @@ test('maintenance is enforced after construction; schema/index drift fails close
   await Group.collection.updateOne(
     { _id: new mongoose.Types.ObjectId(groupId) },
     {
-      $set: { cycleMigration: { version: 1, runId: new mongoose.Types.ObjectId(), state: 'held' } },
+      $set: {
+        cycleMigration: {
+          version: 1,
+          runId: new mongoose.Types.ObjectId(),
+          state: 'held',
+        },
+      },
     },
   );
   assert.equal((await request(path('/cycles'))).body.code, 'CYCLE_MIGRATION_MAINTENANCE');
@@ -681,7 +740,10 @@ test('independent HTTP workers: interrupted explicit freeze recovers and delayed
   const inFlight = transition(first, 'freeze');
   try {
     await ready;
-    const recovered = await second(path('/financial-recovery'), { method: 'POST', body: {} });
+    const recovered = await second(path('/financial-recovery'), {
+      method: 'POST',
+      body: {},
+    });
     assert.equal(recovered.status, 200, JSON.stringify(recovered.body));
     assert.equal((await transition(second, 'close')).status, 200);
     await open(second);
@@ -775,7 +837,12 @@ test('verified migrated Cycle 1 receipt accepts a legacy creation hash only with
   );
   await GroupFinancialCycle.collection.updateOne(
     { _id: row.cycleId },
-    { $set: { migrationVersion: 1, migrationRunId: new mongoose.Types.ObjectId() } },
+    {
+      $set: {
+        migrationVersion: 1,
+        migrationRunId: new mongoose.Types.ObjectId(),
+      },
+    },
   );
   const replay = await request(path('/expenses'), {
     method: 'POST',
@@ -798,7 +865,11 @@ test('invitation admission only at closed boundary, new snapshot never rewrites 
   assert.equal(invitation.status, 201, JSON.stringify(invitation.body));
   const token = invitation.body.data.token;
   const accept = () =>
-    request(`/invitations/${token}/accept`, { user: ownerC, method: 'POST', body: {} });
+    request(`/invitations/${token}/accept`, {
+      user: ownerC,
+      method: 'POST',
+      body: {},
+    });
   assert.equal((await accept()).status, 409);
   assert.equal((await transition(request, 'freeze')).status, 200);
   assert.equal((await accept()).status, 409);
@@ -851,7 +922,9 @@ test('closed-cycle expense edits/deletion and decisions cannot bypass immutable 
     ).status,
     400,
   );
-  const other = await groupRepository.createForOwner(ownerA, { name: 'Foreign version 2' });
+  const other = await groupRepository.createForOwner(ownerA, {
+    name: 'Foreign version 2',
+  });
   await Group.collection.updateOne({ _id: other._id }, { $set: { financialProtocolVersion: 2 } });
   assert.equal(
     (await request(`/groups/${other._id}/cycles/${created.body.data.expense.cycleId}`)).status,
@@ -914,7 +987,9 @@ test('staged readiness identifies inconsistent pointer and protocol versions wit
   const { assertCycleGroupConsistency } = await import('../src/staged/readiness.js');
   const request = await setup(t);
   await open(request);
-  const before = await Group.collection.findOne({ _id: new mongoose.Types.ObjectId(groupId) });
+  const before = await Group.collection.findOne({
+    _id: new mongoose.Types.ObjectId(groupId),
+  });
   await Group.collection.updateOne({ _id: before._id }, { $set: { currentCycleState: 'frozen' } });
   await assert.rejects(assertCycleGroupConsistency(mongoose.connection.db), {
     code: 'CYCLE_POINTER_INVALID',
