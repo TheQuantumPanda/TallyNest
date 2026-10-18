@@ -25,17 +25,20 @@ fields; the existing permanent settlement freeze remains in force. See
 Step 3C adds an internal-only cycle-aware financial-write coordinator and
 disposable-database concurrency tests. It does not enable multi-cycle activity
 through the API; see [the Step 3C protocol](docs/phase-5-step-3c.md).
-Step 3D adds internal owner-authorized cycle freeze, exact zero-balance closure,
-next-cycle opening and durable recovery. These remain inactive for public APIs;
-see [the Step 3D lifecycle specification](docs/phase-5-step-3d.md).
+Step 3D adds owner-authorized cycle freeze, exact zero-balance closure,
+next-cycle opening and durable recovery; normal activation is restricted to the
+fresh-v2 schema profile described in Step 3L.
 Step 3E adds a versioned offline migration **rehearsal only** for disposable local
 databases, with encrypted backup/restore and exact reconciliation. See the
 [Step 3E specification](docs/phase-5-step-3e.md) and
-[cutover runbook](docs/runbooks/settlement-cycle-cutover.md); public cycle activity remains disabled.
-Step 3F adds a disposable-test-only version-2 HTTP contract, and Step 3G adds a
-matching test-only cycle frontend. Neither is active in the normal application;
-see the [staged API](docs/phase-5-step-3f.md) and
-[cycle frontend review guide](docs/phase-5-step-3g.md).
+[cutover runbook](docs/runbooks/settlement-cycle-cutover.md); legacy-data migration
+and held-database release remain disabled.
+Step 3F adds a versioned cycle HTTP contract and Step 3G adds its cycle workspace.
+Step 3L connects those contracts to normal authenticated application startup for
+fresh-v2 databases only. Normal startup first performs a read-only full readiness
+check; it does not install or repair schema. The standard `createApp()` factory
+still has no cycle routes unless the trusted server composition injects them after
+that readiness gate. See the [Step 3L integration report](docs/phase-5-step-3l.md).
 The local disposable Chromium gate is `npm run verify:browser`; see the
 [Step 3H release-readiness report](docs/phase-5-step-3h.md). Public cycle
 activation remains blocked pending a separately reviewed cutover.
@@ -45,8 +48,10 @@ do not release its maintenance hold or authorize public activation.
 The [Step 3K fresh-v2 foundation](docs/phase-5-step-3k.md) adds an explicit
 disposable schema setup command and read-only startup gate. Normal startup now
 requires that exact fresh schema; it does not initialize an existing database.
-New groups start at protocol 2 without a cycle, while public cycle routes and
-the normal cycle workspace remain inactive.
+New groups start at protocol 2 without a cycle. The normal authenticated group
+workspace now uses cycle APIs; old legacy databases are rejected at startup and
+are never upgraded automatically. The disposable setup restriction remains in
+force: the checked-in installer only permits a uniquely named local test database.
 
 ## Run locally
 
@@ -94,9 +99,9 @@ validators on startup. For a new **disposable local test** database, first run
 `npm run setup:cycles:fresh:test --prefix backend -- --database <unique-test-name>`
 with a name matching `tallynest_fresh_v2_test_<13-digit timestamp>_<12 hex>` and
 set `MONGO_URI` to `mongodb://127.0.0.1:27017/<unique-test-name>`. This CLI does
-not accept an existing development or production database. The normal group UI's
-financial actions remain unavailable for these v2 groups until Milestone 2. `.env`
-is ignored by Git; never commit real credentials.
+not accept an existing development or production database. The normal group UI
+uses the cycle-aware API for these fresh-v2 groups. `.env` is ignored by Git;
+never commit real credentials.
 
 `npm run setup:env` creates `.env` from the example if absent. It preserves existing
 nonempty settings, generates a signing secret only when missing or empty, adds the
@@ -106,6 +111,23 @@ the secret. Use independently generated secrets in each environment. `JWT_SECRET
 must contain 64 hexadecimal characters with at least eight distinct digits; this
 format check rejects obvious placeholders but cannot establish actual entropy.
 `JWT_TTL_SECONDS` defaults to 900 and must be between 60 and 1800 seconds.
+
+For a complete disposable fresh-v2 local session, create a uniquely named database
+and use that URI only in the backend terminal. Do not point setup at an existing
+database:
+
+```bash
+docker compose up -d --wait mongodb
+FRESH_TEST_DB="tallynest_fresh_v2_test_$(date +%s%3N)_$(openssl rand -hex 6)"
+npm run setup:cycles:fresh:test --prefix backend -- --database "$FRESH_TEST_DB"
+MONGO_URI="mongodb://127.0.0.1:27017/$FRESH_TEST_DB" npm run dev --prefix backend
+```
+
+In another terminal run `npm run dev --prefix frontend`. Register a test account
+through `/register`; group creation and cycle lifecycle then use the normal app.
+Stop both dev servers with Ctrl+C. The generated test database remains isolated
+from any existing local database; remove only that exact disposable database after
+stopping both servers if cleanup is desired.
 
 In another terminal:
 
@@ -720,10 +742,11 @@ records; historical generated transactions remain after schedule deletion.
 [Implementation and verification](docs/phase-5-step-2a.md) addresses audit H1
 without changing the original audit findings. No new local configuration is needed.
 
-### Staged cycle HTTP contracts (Phase 5, Step 3F)
+### Cycle API and workspace (Phase 5, Steps 3F–3L)
 
 The [staged HTTP specification](docs/phase-5-step-3f.md) documents the separate
 version-2 cycle, shared expense, settlement, balance and recovery contracts.
-These routes are constructed only by disposable authenticated integration fixtures;
-ordinary application startup does not register or activate them. Legacy financial
-locks and response envelopes remain unchanged. No migration hold is released.
+The normal server registers them only after full read-only fresh-v2 schema
+readiness. The exported `createApp()` default remains cycle-route-free. Legacy
+financial records remain under legacy behavior and are never upgraded by request.
+No migration hold is released.

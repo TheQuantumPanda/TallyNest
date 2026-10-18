@@ -163,12 +163,20 @@ function Workspace({ groupId, routeCycleId }) {
             revision={revision}
           />
           {!currentId && owner && (
-            <Button
-              disabled={busy}
-              onClick={(event) => setTransition({ action: 'first', trigger: event.currentTarget })}
-            >
-              Open first cycle
-            </Button>
+            <>
+              <Notice tone="info">
+                You may create an invitation link now, but a new member can join only between cycles
+                after a cycle is closed. This preserves each cycle’s fixed member snapshot.
+              </Notice>
+              <Button
+                disabled={busy}
+                onClick={(event) =>
+                  setTransition({ action: 'first', trigger: event.currentTarget })
+                }
+              >
+                Open first cycle
+              </Button>
+            </>
           )}
           {cycle && (
             <section className="group-panel cycle-current">

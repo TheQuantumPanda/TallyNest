@@ -68,6 +68,12 @@ export function createCycleHttpService({
     const group = await requireGroupMember(groups, user, groupId);
     if (group.financialProtocolVersion !== 2)
       throw new HttpError(409, 'Cycle protocol is inactive', 'CYCLE_PROTOCOL_INACTIVE');
+    if (group.cycleMigration)
+      throw new HttpError(
+        503,
+        'Group is held for financial maintenance',
+        'CYCLE_MIGRATION_MAINTENANCE',
+      );
     return group;
   }
   async function cycleFor(groupId, cycleId) {

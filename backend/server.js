@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { createApp } from './app.js';
 import { loadEnv } from './src/config/env.js';
 import { connectDB, disconnectDB } from './src/config/db.js';
+import { createCycleHttpComposition } from './src/services/cycle-http.composition.js';
 
 let server;
 let stopRecurringJob;
@@ -49,7 +50,8 @@ async function start() {
       return;
     }
 
-    server = createServer(createApp(config, { freshV2Groups: true }));
+    const cycleApi = createCycleHttpComposition(config, mongoose.connection.db);
+    server = createServer(createApp(config, { freshV2Groups: true, cycleRoutes: cycleApi.routes }));
     await new Promise((resolve, reject) => {
       server.once('error', reject);
       server.listen(config.port, () => {

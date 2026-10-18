@@ -150,13 +150,13 @@ it('validates cycle-only balances with exact zero-sum', async () => {
   await expect(cyclesService.balances(groupId, cycleId)).rejects.toThrow('Invalid cycle balances');
 });
 
-it('never exposes cycle UI through the normal production route tree', async () => {
+it('uses the cycle workspace in the normal authenticated group route tree', async () => {
   const source = await import('../App');
   expect(source.default).toBeTypeOf('function');
   const fs = await import('node:fs/promises');
   const app = await fs.readFile('src/App.jsx', 'utf8');
   const main = await fs.readFile('src/main.jsx', 'utf8');
-  expect(app).not.toContain('CycleWorkspace');
+  expect(app).toContain('CycleWorkspace');
   expect(main).not.toContain('cycle-test');
 });
 

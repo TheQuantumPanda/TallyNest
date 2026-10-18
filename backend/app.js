@@ -53,6 +53,7 @@ export function createApp(
     groupExpenseRepository,
     settlementRepository,
     groupBalanceRepository,
+    cycleRoutes,
   } = {},
 ) {
   const app = express();
@@ -64,8 +65,15 @@ export function createApp(
       origin: clientOrigin,
       credentials: true,
       methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'X-CSRF-Protection', 'If-Match', 'Idempotency-Key'],
-      exposedHeaders: ['ETag'],
+      allowedHeaders: [
+        'Content-Type',
+        'X-CSRF-Protection',
+        'If-Match',
+        'If-Group-Match',
+        'If-Cycle-Match',
+        'Idempotency-Key',
+      ],
+      exposedHeaders: ['ETag', 'X-Group-ETag'],
     }),
   );
   app.use(express.json({ limit: '100kb' }));
@@ -173,6 +181,7 @@ export function createApp(
       cookieName: nodeEnv === 'production' ? '__Host-sfm_access' : 'sfm_access',
     }),
   );
+  if (cycleRoutes) app.use('/api/groups', cycleRoutes);
   app.use(
     '/api/groups',
     createGroupRoutes(

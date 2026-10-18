@@ -8,6 +8,7 @@ import {
   manifestValidator,
   sameDefinition,
 } from './fresh-cycle-schema.js';
+import { HttpError } from '../utils/httpError.js';
 
 const fail = (code) => {
   throw new Error(code);
@@ -183,6 +184,23 @@ export async function assertFreshCycleReadiness(db) {
   for (const spec of freshCollections) await assertCollection(db, rows.get(spec.name), spec);
   await inspectFinancialState(db);
   return { profile: FRESH_PROFILE, version: FRESH_PROFILE_VERSION };
+}
+
+// Per-request check stays narrow. Full metadata and association verification runs before listen;
+// this catches a maintenance hold added later without repeatedly scanning financial history.
+export async function assertFreshCycleRequestReadiness(db) {
+  const document = await db
+    .collection(FRESH_MANIFEST_COLLECTION)
+    .findOne({ _id: FRESH_MANIFEST_ID });
+  if (
+    !document ||
+    document.profile !== FRESH_PROFILE ||
+    document.version !== FRESH_PROFILE_VERSION ||
+    document.state !== 'ready'
+  )
+    throw new HttpError(503, 'Cycle APIs are unavailable', 'FRESH_SETUP_INCOMPLETE');
+  if (await db.collection('cyclemigrationruns').findOne({ offlineHeld: true }))
+    throw new HttpError(503, 'Cycle APIs are unavailable', 'FRESH_MIGRATION_HELD');
 }
 
 // Explicit setup only. The caller must validate the disposable target before invoking this.

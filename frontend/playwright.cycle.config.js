@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: '*.e2e.js',
+  testMatch: 'cycles.e2e.js',
   workers: 1,
   fullyParallel: false,
   timeout: 120_000,

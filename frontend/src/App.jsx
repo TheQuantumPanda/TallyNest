@@ -26,8 +26,8 @@ const RecurringPage = lazy(() =>
 const GroupsPage = lazy(() =>
   import('./pages/GroupsPage').then((module) => ({ default: module.GroupsPage })),
 );
-const GroupWorkspace = lazy(() =>
-  import('./pages/GroupWorkspace').then((module) => ({ default: module.GroupWorkspace })),
+const CycleWorkspace = lazy(() =>
+  import('./pages/CycleWorkspace').then((module) => ({ default: module.CycleWorkspace })),
 );
 const InvitationLanding = lazy(() =>
   import('./pages/InvitationLanding').then((module) => ({ default: module.InvitationLanding })),
@@ -86,7 +86,15 @@ export default function App() {
           path="groups/:groupId"
           element={
             <Suspense fallback={<p role="status">Opening group…</p>}>
-              <GroupWorkspace />
+              <CycleWorkspace />
+            </Suspense>
+          }
+        />
+        <Route
+          path="groups/:groupId/cycles/:cycleId"
+          element={
+            <Suspense fallback={<p role="status">Opening group cycle…</p>}>
+              <CycleWorkspace />
             </Suspense>
           }
         />

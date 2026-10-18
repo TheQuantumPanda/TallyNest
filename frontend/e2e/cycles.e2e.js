@@ -297,6 +297,16 @@ test('disposable cycle UI restores a session, keeps keyboard access, and renders
     .getByRole('button', { name: 'Save' })
     .click();
   await page.getByRole('button', { name: 'Refresh records' }).click();
+  // This staged fixture can leave the fixed operation reserved after an ambiguous
+  // proposal outcome. Exercise the explicit recovery path before deciding it.
+  const recovery = page.getByRole('button', { name: 'Recover pending operation' });
+  await expect(recovery).toBeVisible();
+  await recovery.click();
+  await expect(
+    page.getByText(/original operation was reconciled|no completed operation was recovered/i),
+  ).toBeVisible();
+  await expect(recovery).toHaveCount(0);
+  await page.getByRole('button', { name: 'Refresh records' }).click();
   await page.getByRole('button', { name: 'Confirm settlement' }).click();
   await page
     .getByRole('dialog', { name: 'Confirm settlement' })
