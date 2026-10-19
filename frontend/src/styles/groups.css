@@ -13,13 +13,13 @@
 .group-muted,
 .group-section-heading p {
   color: #a5b1c3;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.8;
 }
 .group-back {
   display: inline-block;
   color: #a9e5d8;
-  font-size: 12px;
+  font-size: 14px;
   margin-bottom: 24px;
 }
 .group-grid {
@@ -56,7 +56,7 @@
 }
 .group-card p {
   color: #a5b1c3;
-  font-size: 12px;
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 .group-card-footer {
@@ -68,7 +68,7 @@
   border-top: 1px solid #2c3542;
   margin-top: 25px;
   padding-top: 18px;
-  font-size: 11px;
+  font-size: 14px;
 }
 .group-section-heading {
   display: flex;
@@ -98,7 +98,7 @@
   align-items: center;
 }
 .group-actions .button {
-  font-size: 11px;
+  font-size: 14px;
   padding: 10px 14px;
 }
 .group-state {
@@ -107,7 +107,7 @@
   gap: 14px;
   flex-wrap: wrap;
   color: #b4ddcf;
-  font-size: 11px;
+  font-size: 14px;
   margin: 0 0 20px;
 }
 .group-policy,
@@ -117,7 +117,7 @@
   border-radius: 10px;
   padding: 17px 20px;
   color: #dfceb7;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.8;
   margin-bottom: 20px;
 }
@@ -141,7 +141,7 @@
   border-radius: 9px;
   min-height: 44px;
   padding: 11px 17px;
-  font-size: 12px;
+  font-size: 14px;
   text-transform: capitalize;
 }
 .group-tabs button[aria-current],
@@ -178,13 +178,13 @@
 .group-identity {
   display: block;
   color: #a3b0c3;
-  font-size: 10px;
+  font-size: 14px;
   margin-top: 8px;
   overflow-wrap: anywhere;
 }
 .group-identity {
   font-family: monospace;
-  font-size: 10px;
+  font-size: 14px;
   letter-spacing: 0.1px;
 }
 .group-amount {
@@ -206,7 +206,7 @@
 .group-empty p {
   max-width: 460px;
   margin: 0 auto 24px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .group-more {
   display: flex;
@@ -230,14 +230,14 @@
 }
 .group-expense-heading p {
   color: #a5b1c3;
-  font-size: 11px;
+  font-size: 14px;
   margin-top: 9px;
   overflow-wrap: anywhere;
 }
 .group-expense details {
   margin: 20px 0;
   color: #b8c9d4;
-  font-size: 12px;
+  font-size: 14px;
 }
 .group-expense summary {
   cursor: pointer;
@@ -248,7 +248,7 @@
 .group-expense dl,
 .group-positions dl {
   margin: 12px 0 0;
-  font-size: 11px;
+  font-size: 14px;
 }
 .group-expense dl > div,
 .group-positions dl > div {
@@ -299,7 +299,7 @@
   overflow-wrap: anywhere;
 }
 .group-status {
-  font-size: 10px;
+  font-size: 14px;
   white-space: nowrap;
   background: #27363b;
   color: #c3e1d4;
@@ -328,7 +328,7 @@
   flex-wrap: wrap;
   border-top: 1px solid #2d3945;
   padding: 20px 0;
-  font-size: 12px;
+  font-size: 14px;
 }
 .group-suggestions li span,
 .group-suggestions li strong {
@@ -336,7 +336,7 @@
   max-width: 100%;
 }
 .group-overview-note p {
-  font-size: 12px;
+  font-size: 14px;
   color: #aebdce;
   max-width: 680px;
   margin: 14px 0 24px;
@@ -350,7 +350,7 @@
 }
 .group-proposal-bar p {
   color: #a9b5c7;
-  font-size: 11px;
+  font-size: 14px;
 }
 .group-recovery .button {
   margin-top: 15px;
@@ -362,7 +362,7 @@
   border: 1px solid #35404c;
   border-radius: 10px;
   padding: 17px;
-  font-size: 11px;
+  font-size: 14px;
 }
 .group-participant {
   padding: 12px 0;
@@ -375,7 +375,7 @@
   gap: 12px;
   align-items: center;
   min-height: 44px;
-  font-size: 12px;
+  font-size: 14px;
   color: #d0dedf;
   overflow-wrap: anywhere;
 }
@@ -400,7 +400,7 @@
   justify-content: space-between;
   gap: 15px;
   padding-top: 12px;
-  font-size: 11px;
+  font-size: 14px;
 }
 .split-preview span,
 .split-preview strong {
@@ -409,7 +409,7 @@
 }
 .split-preview .group-muted {
   display: block;
-  font-size: 10px;
+  font-size: 14px;
 }
 .group-review {
   margin: 20px 0;
@@ -418,7 +418,7 @@
   padding: 17px;
 }
 .group-review pre {
-  font-size: 11px;
+  font-size: 14px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   max-height: 240px;
@@ -433,7 +433,7 @@
   margin: 20px 0;
 }
 .group-link p {
-  font-size: 11px;
+  font-size: 14px;
   color: #b8d9d0;
   margin: 12px 0 20px;
 }
@@ -452,7 +452,7 @@
   color: #d8e8e7;
   min-height: 44px;
   padding: 11px 12px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .group-feedback {
   margin: 20px 0;
@@ -471,14 +471,14 @@
   margin: 20px 0;
 }
 .group-invitation p {
-  font-size: 13px;
+  font-size: 14px;
   color: #b2c1d0;
   margin: 15px 0;
 }
 .group-invitation a {
   display: block;
   color: #b4e4d6;
-  font-size: 12px;
+  font-size: 14px;
   margin-top: 24px;
 }
 @media (max-width: 1000px) {
@@ -504,7 +504,7 @@
   }
   .group-tabs button {
     padding: 11px 12px;
-    font-size: 11px;
+    font-size: 14px;
   }
   .group-positions article {
     padding: 20px 15px;
@@ -531,7 +531,7 @@
   }
 }
 .group-record-review {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.7;
 }
 .group-record-review dl > div {

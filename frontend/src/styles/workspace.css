@@ -34,7 +34,7 @@
 }
 .workspace-label {
   display: block;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 650;
   color: #929aac;
   letter-spacing: 1.7px;
@@ -52,7 +52,7 @@
   min-height: 44px;
   padding: 12px 14px;
   color: #a3abbd;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 550;
   border: 1px solid transparent;
 }
@@ -84,13 +84,13 @@
   gap: 12px;
   padding: 13px 14px;
   color: #8a93a7;
-  font-size: 12px;
+  font-size: 14px;
 }
 .planned-navigation > div > svg:last-child {
   margin-left: auto;
 }
 .planned-navigation > p {
-  font-size: 9px;
+  font-size: 12px;
   color: #8992a4;
   margin: 12px 14px;
 }
@@ -107,7 +107,7 @@
   border: 1px solid #313645;
   background: linear-gradient(140deg, #202734, #1a1e2a);
   color: #bcc5d4;
-  font-size: 11px;
+  font-size: 14px;
 }
 .sidebar-note > svg {
   color: #aba7da;
@@ -115,7 +115,7 @@
 .sidebar-note small {
   display: block;
   color: #939eb3;
-  font-size: 10px;
+  font-size: 14px;
   margin-top: 7px;
 }
 .sidebar-account {
@@ -127,7 +127,7 @@
 }
 .sidebar-account > span:last-child {
   min-width: 0;
-  font-size: 11px;
+  font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -135,7 +135,7 @@
 }
 .sidebar-account small {
   display: block;
-  font-size: 9px;
+  font-size: 12px;
   color: #98a1b3;
   margin-top: 4px;
   overflow: hidden;
@@ -150,7 +150,7 @@
   height: 34px;
   border-radius: 10px;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 14px;
   color: #c9bbea;
   background: #9380cb1f;
   border: 1px solid #a896ce26;
@@ -159,7 +159,7 @@
   width: 100%;
   min-height: 36px;
   padding: 8px 12px;
-  font-size: 10px;
+  font-size: 14px;
   margin-top: 17px;
   justify-content: flex-start;
   border-color: transparent;
@@ -184,7 +184,7 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  font-size: 11px;
+  font-size: 14px;
   color: #a2abbc;
 }
 .header-heading strong {
@@ -206,7 +206,7 @@
   align-items: center;
   gap: 7px;
   color: #a5bcb5;
-  font-size: 10px;
+  font-size: 14px;
 }
 .session-label svg {
   color: #83e5d5;
@@ -241,12 +241,12 @@
 }
 .page-heading p {
   color: #a0a9bc;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.8;
   margin-top: 10px;
 }
 .page-heading .eyebrow {
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1.8px;
 }
 .workspace-pill {
@@ -254,7 +254,7 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1px;
   border: 1px solid #363d49;
   border-radius: 30px;
@@ -301,7 +301,7 @@
 }
 .small-label {
   color: #b1d3c9;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1.3px;
 }
 .welcome-hero h2 {
@@ -318,7 +318,7 @@
   color: #9ce6d6;
 }
 .welcome-hero > p {
-  font-size: 11px;
+  font-size: 14px;
   color: #b1c0c8;
   line-height: 1.9;
   max-width: 270px;
@@ -330,7 +330,7 @@
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 650;
   color: #bbeedf;
   margin-top: 19px;
@@ -347,7 +347,7 @@
   border-top: 1px solid #8ad0b924;
   padding-top: 15px;
   margin-top: 26px;
-  font-size: 8px;
+  font-size: 12px;
   color: #b6c7ca;
   position: relative;
   z-index: 1;
@@ -407,7 +407,7 @@
   justify-content: space-between;
   align-items: center;
   color: #afb8cc;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1.5px;
 }
 .section-label svg {
@@ -433,7 +433,7 @@
 }
 .account-summary > p {
   color: #a5aec1;
-  font-size: 11px;
+  font-size: 14px;
   margin-top: 8px;
 }
 .summary-state {
@@ -441,7 +441,7 @@
   align-items: center;
   gap: 8px;
   color: #a8dece;
-  font-size: 10px;
+  font-size: 14px;
   margin-top: 22px;
 }
 .summary-state svg {
@@ -454,7 +454,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  font-size: 10px;
+  font-size: 14px;
   color: #bdc5d4;
   border-top: 1px solid #343948;
   margin-top: auto;
@@ -479,7 +479,7 @@
   font-weight: 600;
 }
 .section-heading > span {
-  font-size: 8px;
+  font-size: 12px;
   color: #949db0;
   letter-spacing: 1.1px;
 }
@@ -498,7 +498,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11px;
+  font-size: 14px;
   color: #9aa4b8;
 }
 .roadmap-top > span {
@@ -508,12 +508,12 @@
   color: #83e5d5;
 }
 .roadmap-card h3 {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   margin-top: 19px;
 }
 .roadmap-card p {
-  font-size: 10px;
+  font-size: 14px;
   color: #a3acbf;
   line-height: 1.8;
   margin-top: 9px;
@@ -521,7 +521,7 @@
 }
 .roadmap-status {
   display: inline-block;
-  font-size: 7px;
+  font-size: 12px;
   letter-spacing: 1px;
   color: #b5b2d0;
   background: #a49cc710;
@@ -542,7 +542,7 @@
   padding: 19px 0;
   margin-top: 9px;
   color: #939fb3;
-  font-size: 10px;
+  font-size: 14px;
   line-height: 1.7;
 }
 .workspace-note svg {
@@ -555,7 +555,7 @@
   padding: 18px 44px;
   border-top: 1px solid #242a38;
   color: #919bae;
-  font-size: 9px;
+  font-size: 12px;
 }
 .profile-card {
   max-width: 750px;
@@ -581,7 +581,7 @@
   overflow-wrap: anywhere;
 }
 .profile-intro p {
-  font-size: 11px;
+  font-size: 14px;
   color: #a8b2c6;
   margin-top: 7px;
 }
@@ -594,7 +594,7 @@
   gap: 20px;
   padding: 22px 0;
   border-bottom: 1px solid #303647;
-  font-size: 12px;
+  font-size: 14px;
 }
 .profile-details dt {
   color: #9ea8be;
@@ -615,18 +615,18 @@
   color: #a6dbcf;
 }
 .profile-security h3 {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
 }
 .profile-security p {
   color: #a4b3c1;
-  font-size: 11px;
+  font-size: 14px;
   margin-top: 7px;
   line-height: 1.8;
 }
 .account-footnote {
   color: #a0aabe;
-  font-size: 11px;
+  font-size: 14px;
   margin-top: 24px;
   line-height: 1.8;
 }
@@ -665,7 +665,7 @@
   border-radius: 8px;
   color: #0f111a;
   background: #83e5d5;
-  font-size: 13px;
+  font-size: 14px;
 }
 .skip-link:focus-visible {
   width: auto;

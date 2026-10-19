@@ -40,7 +40,7 @@ test('keyboard lifecycle, reduced motion, narrow zoom, and explicit recovery aft
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await signIn(page, 'cycle-owner@test.invalid');
-  await expect(page.locator('.group-card').first()).toHaveCSS('transition-duration', '1e-05s');
+  await expect(page.locator('.group-card').first()).toHaveCSS('transition-duration', '0s');
   await page.getByRole('button', { name: 'Create group', exact: true }).click();
   const newGroup = page.getByRole('dialog', { name: 'Create group' });
   await newGroup.getByRole('textbox', { name: 'Group name' }).fill('Browser recovery group');
@@ -296,16 +296,25 @@ test('disposable cycle UI restores a session, keeps keyboard access, and renders
     .getByRole('dialog', { name: 'Propose settlement' })
     .getByRole('button', { name: 'Save' })
     .click();
+  await expect(memberPage.getByRole('dialog', { name: 'Propose settlement' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Refresh records' }).click();
-  // This staged fixture can leave the fixed operation reserved after an ambiguous
-  // proposal outcome. Exercise the explicit recovery path before deciding it.
+  // A completed proposal needs no recovery. If the fixture leaves an ambiguous
+  // reservation, use the explicit authorized recovery before deciding it.
   const recovery = page.getByRole('button', { name: 'Recover pending operation' });
-  await expect(recovery).toBeVisible();
-  await recovery.click();
-  await expect(
-    page.getByText(/original operation was reconciled|no completed operation was recovered/i),
-  ).toBeVisible();
-  await expect(recovery).toHaveCount(0);
+  await expect
+    .poll(
+      async () =>
+        (await recovery.isVisible()) ||
+        (await page.getByRole('button', { name: 'Confirm settlement' }).isVisible()),
+    )
+    .toBe(true);
+  if (await recovery.isVisible()) {
+    await recovery.click();
+    await expect(
+      page.getByText(/original operation was reconciled|no completed operation was recovered/i),
+    ).toBeVisible();
+    await expect(recovery).toHaveCount(0);
+  }
   await page.getByRole('button', { name: 'Refresh records' }).click();
   await page.getByRole('button', { name: 'Confirm settlement' }).click();
   await page

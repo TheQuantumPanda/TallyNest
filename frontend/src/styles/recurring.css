@@ -25,7 +25,7 @@
 }
 .recurring-toolbar p {
   color: #a4aebe;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.8;
   margin-left: auto;
 }
@@ -56,7 +56,7 @@
   display: flex;
   gap: 6px;
   align-items: center;
-  font-size: 11px;
+  font-size: 14px;
   color: #c0c8d7;
   line-height: 1.6;
 }
@@ -67,7 +67,7 @@
   color: #a2e4d6;
 }
 .recurring-status {
-  font-size: 10px;
+  font-size: 14px;
   color: #a2e4d6;
   border: 1px solid #83e5d533;
   background: #83e5d50a;
@@ -104,7 +104,7 @@
   letter-spacing: -0.7px;
 }
 .recurring-amount > span {
-  font-size: 11px;
+  font-size: 14px;
   color: #a2adbf;
 }
 .recurring-dates {
@@ -114,13 +114,13 @@
 }
 .recurring-dates dt {
   color: #a2adbf;
-  font-size: 10px;
+  font-size: 14px;
   margin-bottom: 6px;
 }
 .recurring-dates dd {
   margin: 0;
   color: #d5dce8;
-  font-size: 12px;
+  font-size: 14px;
   overflow-wrap: anywhere;
   line-height: 1.7;
 }
@@ -139,7 +139,7 @@
   background: none;
   border: 0;
   padding: 13px 0;
-  font-size: 11px;
+  font-size: 14px;
   min-height: 46px;
 }
 .recurring-card-actions button:hover {
@@ -147,7 +147,7 @@
 }
 .recurring-reserved {
   color: #edbb98;
-  font-size: 11px;
+  font-size: 14px;
   margin-bottom: 16px;
   line-height: 1.8;
 }
@@ -166,7 +166,7 @@
   font-weight: 550;
 }
 .recurring-empty p {
-  font-size: 12px;
+  font-size: 14px;
   color: #a2adbf;
   line-height: 1.8;
   margin-top: 8px;
@@ -201,10 +201,10 @@
   font-weight: 550;
 }
 .recurring-processing .eyebrow {
-  font-size: 9px;
+  font-size: 12px;
 }
 .recurring-processing p {
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.8;
   color: #a2adbf;
   max-width: 600px;
@@ -228,7 +228,7 @@
 }
 .recurring-process-result dt {
   color: #a2adbf;
-  font-size: 10px;
+  font-size: 14px;
 }
 .recurring-process-result dd {
   font-size: 22px;
@@ -244,12 +244,12 @@
   padding: 0 3px;
 }
 .recurring-history h2 {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 }
 .recurring-history p {
   color: #a2adbf;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.8;
   margin-top: 7px;
   max-width: 580px;
@@ -275,7 +275,7 @@
 }
 .recurring-guidance {
   color: #adb8ca;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.8;
   margin-bottom: 17px;
 }

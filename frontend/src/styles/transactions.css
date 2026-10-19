@@ -33,7 +33,7 @@
   gap: 9px;
   align-items: center;
   color: #c4cdd9;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
 }
 .text-button {
@@ -41,7 +41,7 @@
   border: 0;
   color: #a6e6da;
   padding: 7px 0;
-  font-size: 11px;
+  font-size: 14px;
 }
 .text-button:disabled {
   color: #909bad;
@@ -59,7 +59,7 @@
 }
 .filter-grid label {
   display: block;
-  font-size: 10px;
+  font-size: 14px;
   color: #aeb8ca;
   margin-bottom: 8px;
 }
@@ -68,7 +68,7 @@
 .transaction-dialog select,
 .transaction-dialog textarea {
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   width: 100%;
   min-width: 0;
   border: 1px solid #353c4b;
@@ -109,7 +109,7 @@
 }
 .filter-footnote {
   color: #939fb2;
-  font-size: 9px;
+  font-size: 12px;
   margin-top: 14px;
 }
 .active-filters {
@@ -127,7 +127,7 @@
   border-radius: 6px;
   color: #bde9df;
   background: #83e5d50a;
-  font-size: 10px;
+  font-size: 14px;
   padding: 6px 9px;
   max-width: 100%;
 }
@@ -153,7 +153,7 @@
 }
 .ledger-heading span {
   display: block;
-  font-size: 10px;
+  font-size: 14px;
   color: #99a6b8;
   margin-top: 6px;
 }
@@ -165,7 +165,7 @@
 .transaction-table th {
   background: #11151e;
   color: #a6b0c2;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.5px;
   font-weight: 600;
   padding: 15px 14px;
@@ -190,7 +190,7 @@
 .transaction-table td {
   padding: 20px 14px;
   border-bottom: 1px solid #282f3d;
-  font-size: 11px;
+  font-size: 14px;
 }
 .transaction-table tr:last-child td {
   border-bottom: 0;
@@ -231,7 +231,7 @@
   padding: 3px 0;
   text-align: left;
   color: #e5eaf2;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
   overflow-wrap: anywhere;
   line-height: 1.6;
@@ -245,7 +245,7 @@
   align-items: center;
   gap: 5px;
   color: #b2bdcb;
-  font-size: 9px;
+  font-size: 12px;
   margin-top: 4px;
 }
 .transaction-type.income {
@@ -255,14 +255,14 @@
   background: #242b37;
   border: 1px solid #333c4a;
   color: #c3ccdc;
-  font-size: 9px;
+  font-size: 12px;
   padding: 5px 8px;
   display: inline-block;
   border-radius: 5px;
   overflow-wrap: anywhere;
 }
 .transaction-amount {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.2px;
@@ -273,7 +273,7 @@
 }
 .currency-label {
   display: block;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 500;
   color: #9daabd;
   margin-top: 5px;
@@ -309,11 +309,11 @@
 }
 .ledger-footer > span {
   color: #a1aec0;
-  font-size: 10px;
+  font-size: 14px;
 }
 .ledger-footer .button {
   min-height: 40px;
-  font-size: 11px;
+  font-size: 14px;
   padding: 9px 16px;
 }
 .ledger-privacy {
@@ -322,7 +322,7 @@
   align-items: center;
   justify-content: center;
   color: #98a7b8;
-  font-size: 10px;
+  font-size: 14px;
   padding: 24px 0 6px;
 }
 .transaction-empty {
@@ -349,7 +349,7 @@
   max-width: 350px;
   margin: 12px auto 23px;
   color: #a3aec1;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.8;
 }
 .ledger-error {
@@ -384,6 +384,10 @@
   display: none;
 }
 .transaction-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  overflow-y: auto;
   width: min(580px, calc(100vw - 32px));
   max-height: calc(100dvh - 40px);
   padding: 28px;
@@ -411,12 +415,12 @@
   margin-top: 10px;
 }
 .dialog-heading .eyebrow {
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 1.6px;
 }
 .dialog-description,
 .delete-description {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.8;
   color: #afbacb;
   margin-bottom: 22px;
@@ -447,10 +451,10 @@
   min-height: 84px;
 }
 .transaction-form label {
-  font-size: 11px;
+  font-size: 14px;
 }
 .transaction-form .field-hint {
-  font-size: 10px;
+  font-size: 14px;
   line-height: 1.6;
 }
 .type-selector {
@@ -472,7 +476,7 @@
   border-radius: 7px;
   color: #b2bed0;
   background: transparent;
-  font-size: 12px;
+  font-size: 14px;
 }
 .type-selector button[aria-pressed='true'] {
   background: #83e5d50e;
@@ -502,10 +506,10 @@
   background: #d3b48b09;
 }
 .discard-notice h3 {
-  font-size: 13px;
+  font-size: 14px;
 }
 .discard-notice p {
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.7;
   margin-top: 8px;
   color: #d1c4b6;
@@ -535,7 +539,7 @@
   gap: 18px;
   padding: 19px 0;
   border-bottom: 1px solid #303a48;
-  font-size: 12px;
+  font-size: 14px;
 }
 .transaction-details dt {
   color: #a5b3c7;
@@ -604,12 +608,12 @@
     gap: 13px;
     flex-wrap: wrap;
     margin-top: 12px;
-    font-size: 10px;
+    font-size: 14px;
     color: #bac5d5;
   }
   .card-middle .transaction-type {
     margin: 0;
-    font-size: 10px;
+    font-size: 14px;
   }
   .card-bottom {
     display: flex;
@@ -620,7 +624,7 @@
   }
   .card-bottom time {
     color: #a8b6ca;
-    font-size: 10px;
+    font-size: 14px;
   }
   .transaction-actions .icon-button {
     width: 44px;
@@ -665,12 +669,12 @@
     line-height: 1.7;
   }
   .transaction-dialog {
-    width: 100%;
-    max-width: 100%;
-    margin: auto 0 0;
-    max-height: 94dvh;
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    margin: auto;
+    max-height: calc(100dvh - 24px);
     padding: 25px 20px;
-    border-radius: 18px 18px 0 0;
+    border-radius: 18px;
   }
   .transaction-form-grid {
     grid-template-columns: 1fr;

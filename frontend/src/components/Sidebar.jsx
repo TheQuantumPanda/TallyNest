@@ -71,7 +71,7 @@ export function Sidebar({ onClose, onLogout, loggingOut }) {
           <AccountAvatar name={user.name} />
           <span>
             {user.name}
-            <small>{user.email}</small>
+            <small title={user.email}>{user.email}</small>
           </span>
         </div>
         <Button variant="ghost" onClick={onLogout} loading={loggingOut} className="logout-button">

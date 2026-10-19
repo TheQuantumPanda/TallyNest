@@ -1,0 +1,103 @@
+:root {
+  --motion-fast: 150ms;
+  --motion-normal: 200ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+.input-wrap input,
+.transaction-dialog select,
+.transaction-dialog textarea,
+.transaction-filters input,
+.transaction-filters select {
+  font-size: 16px;
+}
+.button {
+  font-size: 14px;
+  min-height: 44px;
+}
+.header-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: #e2e6ec;
+}
+.header-account {
+  min-width: 0;
+}
+.header-email {
+  max-width: min(28vw, 320px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.sidebar-account small {
+  font-size: 14px;
+  color: #c3ccdc;
+}
+.profile-details dd,
+.profile-intro h2,
+.dialog-heading h2 {
+  overflow-wrap: anywhere;
+}
+button,
+a,
+.input-wrap {
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+.button:active:not(:disabled),
+.icon-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.transaction-dialog[open] {
+  animation: dialog-enter var(--motion-normal) var(--motion-ease);
+}
+.transaction-dialog[open]::backdrop {
+  animation: backdrop-enter var(--motion-normal) var(--motion-ease);
+}
+.notice {
+  animation: backdrop-enter var(--motion-fast) var(--motion-ease);
+}
+@keyframes dialog-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (max-width: 600px) {
+  .header-email {
+    max-width: 32vw;
+  }
+  .header-account {
+    gap: 8px;
+  }
+  .session-label {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

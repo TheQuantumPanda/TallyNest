@@ -100,7 +100,13 @@ export function AppLayout() {
             <span className="session-label">
               <ShieldCheck size={15} aria-hidden="true" /> Signed in
             </span>
-            <Link to="/app/account" aria-label="View my account">
+            <Link
+              to="/app/account"
+              className="header-identity"
+              aria-label="View my account"
+              title={user.email}
+            >
+              <span className="header-email">{user.email}</span>
               <AccountAvatar name={user.name} />
             </Link>
           </div>

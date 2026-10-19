@@ -29,7 +29,7 @@
 }
 .auth-subtitle {
   color: #a6adbd;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.8;
   margin-top: 13px;
   margin-bottom: 29px;
@@ -41,7 +41,7 @@
 }
 .field label {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
   color: #d4d8e1;
   margin-bottom: 9px;
@@ -63,7 +63,7 @@
   min-width: 0;
   border: 0;
   padding: 14px;
-  font-size: 13px;
+  font-size: 14px;
   color: #f0f1f5;
   background: transparent;
   border-radius: 9px;
@@ -96,7 +96,7 @@
 .field-hint,
 .field-error {
   margin-top: 7px;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.6;
 }
 .field-hint {
@@ -115,7 +115,7 @@
 .auth-switch {
   text-align: center;
   margin-top: 25px;
-  font-size: 12px;
+  font-size: 14px;
   color: #9ca5b7;
 }
 .auth-switch a {
@@ -132,7 +132,7 @@
   align-items: center;
   gap: 7px;
   color: #939bad;
-  font-size: 10px;
+  font-size: 14px;
   margin-top: 42px;
 }
 .auth-footer {
@@ -140,7 +140,7 @@
   justify-content: space-between;
   gap: 15px;
   color: #929aac;
-  font-size: 10px;
+  font-size: 14px;
   padding: 8px 0;
 }
 .auth-story {

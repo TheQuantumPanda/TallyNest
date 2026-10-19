@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export function Dialog({
@@ -28,7 +29,7 @@ export function Dialog({
       target?.focus();
     };
   }, [returnFocus]);
-  return (
+  return createPortal(
     <dialog
       ref={ref}
       className="transaction-dialog"
@@ -66,6 +67,7 @@ export function Dialog({
         </button>
       </header>
       {children}
-    </dialog>
+    </dialog>,
+    document.body,
   );
 }

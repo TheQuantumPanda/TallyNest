@@ -24,7 +24,7 @@
   gap: 14px;
 }
 .period-control label {
-  font-size: 11px;
+  font-size: 14px;
   color: #aeb9cb;
 }
 .period-control select {
@@ -33,12 +33,12 @@
   border: 1px solid #3b4658;
   border-radius: 8px;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   min-height: 44px;
   padding: 10px 14px;
 }
 .reporting-note {
-  font-size: 9px;
+  font-size: 12px;
   color: #9faec0;
   margin-left: auto;
 }
@@ -49,7 +49,7 @@
 .dashboard-period-label {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 14px;
   color: #a3b1c4;
   gap: 12px;
   margin: 0 0 15px;
@@ -75,7 +75,7 @@
   background: #1b2a2b;
 }
 .dashboard-summary-card > span {
-  font-size: 11px;
+  font-size: 14px;
   color: #c0cbd9;
 }
 .dashboard-summary-card strong {
@@ -92,12 +92,12 @@
   color: #ace9d9;
 }
 .dashboard-summary-card p {
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.7;
   color: #aab9c9;
 }
 .balance-clarification {
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.8;
   color: #9daabc;
   margin: 13px 2px 24px;
@@ -112,12 +112,12 @@
   margin-bottom: 22px;
 }
 .income-comparison h2 {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 650;
   margin-bottom: 8px;
 }
 .income-comparison p {
-  font-size: 10px;
+  font-size: 14px;
   color: #a4b4c8;
   line-height: 1.7;
   overflow-wrap: anywhere;
@@ -134,7 +134,7 @@
   align-items: center;
 }
 .comparison-bars span {
-  font-size: 9px;
+  font-size: 12px;
   display: flex;
   gap: 5px;
   color: #bac7d8;
@@ -155,7 +155,7 @@
 }
 .comparison-bars strong {
   text-align: right;
-  font-size: 10px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
   max-width: 180px;
@@ -187,13 +187,13 @@
 .dashboard-section-heading p {
   margin-top: 7px;
   color: #9eadc1;
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.6;
 }
 .chart-key {
   display: flex;
   gap: 12px;
-  font-size: 9px;
+  font-size: 12px;
   color: #c0cbd9;
   flex-wrap: wrap;
 }
@@ -223,7 +223,7 @@
   border-radius: 8px;
   padding: 14px;
   color: #eff3f8;
-  font-size: 11px;
+  font-size: 14px;
 }
 .chart-tooltip p {
   display: flex;
@@ -238,7 +238,7 @@
   margin-top: 18px;
 }
 .cash-data summary {
-  font-size: 10px;
+  font-size: 14px;
   color: #b2dbd2;
   cursor: pointer;
   min-height: 32px;
@@ -246,7 +246,7 @@
 .cash-data table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 9px;
+  font-size: 12px;
   table-layout: fixed;
 }
 .cash-data th,
@@ -271,7 +271,7 @@
   display: grid;
   place-items: center;
   min-height: 160px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.9;
   color: #aab9cc;
   text-align: center;
@@ -290,7 +290,7 @@
 }
 .spending-center > span {
   display: block;
-  font-size: 9px;
+  font-size: 12px;
   color: #a9b6c7;
   margin-bottom: 8px;
 }
@@ -312,7 +312,7 @@
   grid-template-columns: 7px minmax(0, 1fr) minmax(0, 1.2fr);
   gap: 8px;
   align-items: start;
-  font-size: 10px;
+  font-size: 14px;
   color: #bcc9da;
 }
 .category-swatch {
@@ -354,7 +354,7 @@
   background: #bcb2a8;
 }
 .spending-legend strong {
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 550;
   display: block;
   overflow-wrap: anywhere;
@@ -364,7 +364,7 @@
 }
 .spending-legend small {
   color: #9facbe;
-  font-size: 9px;
+  font-size: 12px;
   display: block;
   margin-top: 4px;
 }
@@ -376,14 +376,14 @@
   flex-direction: column;
   gap: 15px;
   color: #a7b8c9;
-  font-size: 11px;
+  font-size: 14px;
   text-align: center;
 }
 .recent-panel .dashboard-section-heading > a {
   display: flex;
   gap: 8px;
   align-items: center;
-  font-size: 10px;
+  font-size: 14px;
   color: #b8e3d6;
   min-height: 30px;
 }
@@ -425,19 +425,19 @@
 }
 .recent-panel li > div > strong {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 550;
   overflow-wrap: anywhere;
 }
 .recent-panel li span:not(.recent-symbol) {
   display: block;
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.7;
   color: #9daec4;
   margin-top: 5px;
 }
 .recent-panel li > b {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
@@ -471,7 +471,7 @@
 }
 .dashboard-empty p {
   color: #a9bdc9;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.8;
   margin-top: 9px;
 }
@@ -584,7 +584,7 @@
     height: 230px;
   }
   .cash-data table {
-    font-size: 8px;
+    font-size: 12px;
   }
   .dashboard-empty {
     flex-wrap: wrap;
@@ -623,7 +623,7 @@
   }
   .recent-panel li > b {
     max-width: 42%;
-    font-size: 11px;
+    font-size: 14px;
   }
   .dashboard-skeleton {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -673,6 +673,6 @@
   align-items: center;
   gap: 8px;
   color: #b6e6d8;
-  font-size: 11px;
+  font-size: 14px;
   min-height: 44px;
 }
