@@ -289,7 +289,9 @@ function Workspace({ groupId, routeCycleId }) {
               )}
               {tab === 'balances' && (
                 <>
-                  <GroupFeedback {...balances} retry={balances.reload} />
+                  {balances.error?.response?.data?.code !== 'CYCLE_MEMBERSHIP_CHANGED' && (
+                    <GroupFeedback {...balances} retry={balances.reload} />
+                  )}
                   {balances.error?.response?.data?.code === 'CYCLE_MEMBERSHIP_CHANGED' && (
                     <Notice tone="info">
                       You joined after this cycle’s member snapshot and cannot view its detailed

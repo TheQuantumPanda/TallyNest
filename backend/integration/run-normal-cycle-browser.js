@@ -9,6 +9,8 @@ if (process.env.MONGO_URI && process.env.MONGO_URI !== 'mongodb://127.0.0.1:2701
 const backend = fileURLToPath(new URL('../', import.meta.url));
 const frontend = fileURLToPath(new URL('../../frontend/', import.meta.url));
 const database = `tallynest_fresh_v2_test_${Date.now()}_${randomBytes(6).toString('hex')}`;
+const jwtSecret = randomBytes(32).toString('hex');
+let serviceOutput = '';
 const password = `Browser-${randomBytes(18).toString('base64url')}!9a`;
 const uri = `mongodb://127.0.0.1:27017/${database}`;
 const pattern = /^tallynest_fresh_v2_test_\d{13}_[a-f0-9]{12}$/;
@@ -48,13 +50,16 @@ async function waitFor(url) {
 }
 async function stop(child) {
   if (!child || child.exitCode !== null) return;
-  child.kill('SIGINT');
-  await Promise.race([
-    new Promise((resolve) => child.once('exit', resolve)),
-    new Promise((resolve) => setTimeout(resolve, 12000)),
-  ]);
-  if (child.exitCode === null) child.kill('SIGKILL');
+  await new Promise((resolve) => {
+    const timeout = setTimeout(() => child.kill('SIGKILL'), 12000);
+    child.once('exit', () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+    child.kill('SIGINT');
+  });
 }
+
 async function setup() {
   const { MongoClient } = mongoose.mongo;
   const client = new MongoClient(uri, { serverSelectionTimeoutMS: 10000 });
@@ -96,11 +101,16 @@ try {
       NODE_ENV: 'test',
       PORT: '5500',
       MONGO_URI: uri,
-      JWT_SECRET: randomBytes(32).toString('hex'),
+      JWT_SECRET: jwtSecret,
       CLIENT_ORIGIN: 'http://localhost:5173',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  for (const stream of [api.stdout, api.stderr]) {
+    stream.on('data', (chunk) => {
+      serviceOutput += chunk.toString();
+    });
+  }
   await waitForLine(api, /TallyNest API listening on port 5500/, 'Normal API did not start');
   vite = spawn(
     fileURLToPath(new URL('../../frontend/node_modules/.bin/vite', import.meta.url)),
@@ -108,16 +118,21 @@ try {
     {
       cwd: frontend,
       env: { ...process.env, VITE_API_URL: 'http://localhost:5500/api' },
-      stdio: 'ignore',
+      stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
+  await waitForLine(vite, /http:\/\/localhost:5173\//, 'Owned normal Vite did not start');
   await waitFor('http://localhost:5173');
   const tests = spawn(
     fileURLToPath(new URL('../../frontend/node_modules/.bin/playwright', import.meta.url)),
     ['test', '--config', 'playwright.normal.config.js'],
     {
       cwd: frontend,
-      env: { ...process.env, TALLYNEST_NORMAL_E2E_PASSWORD: password },
+      env: {
+        ...process.env,
+        TALLYNEST_NORMAL_E2E_PASSWORD: password,
+        TALLYNEST_NORMAL_E2E_MONGO_URI: uri,
+      },
       stdio: 'inherit',
     },
   );
@@ -129,6 +144,24 @@ try {
 } finally {
   await stop(vite);
   await stop(api);
+  if (!serviceOutput.includes('TallyNest API listening')) {
+    failed = true;
+    process.stderr.write('Normal server log capture was not verified\n');
+  }
+  if (
+    [password, jwtSecret, 'Normal interrupted operation', 'Browser equal split'].some((value) =>
+      serviceOutput.includes(value),
+    ) ||
+    /sfm_access=|passwordHash|(?:owner|member|joiner)-[a-f0-9-]{36}@|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.test(
+      serviceOutput,
+    )
+  ) {
+    failed = true;
+    process.stderr.write('Normal server logs contained sensitive test data\n');
+  } else
+    process.stdout.write(
+      'Verified normal server logs exclude test secrets and financial payloads\n',
+    );
   try {
     await cleanup();
   } catch (error) {

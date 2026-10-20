@@ -167,6 +167,53 @@ test('normal server refuses an uninitialized database before listening or creati
   }
 });
 
+test('normal server refuses legacy, schema-drifted and held databases without repair', async (t) => {
+  for (const scenario of ['legacy', 'schema drift', 'maintenance hold']) {
+    await t.test(scenario, async () => {
+      const database = name();
+      const connection = await client(database);
+      try {
+        const db = connection.db();
+        if (scenario === 'legacy') {
+          await db.collection('groups').insertOne({ name: 'Disposable legacy record' });
+        } else {
+          await installFreshCycleSchema(db);
+          if (scenario === 'schema drift') {
+            await db.command({ collMod: 'groups', validator: {} });
+          } else {
+            await db
+              .collection(FRESH_MANIFEST_COLLECTION)
+              .updateOne({}, { $set: { state: 'initializing' } });
+          }
+        }
+        await rejectsUnchanged(db, /Startup failed/, async () => {
+          try {
+            await run(process.execPath, ['server.js'], {
+              cwd: process.cwd(),
+              timeout: 20000,
+              env: {
+                ...process.env,
+                NODE_ENV: 'test',
+                MONGO_URI: `${base}/${database}`,
+                JWT_SECRET: secret,
+                CLIENT_ORIGIN: origin,
+                PORT: '49999',
+              },
+            });
+          } catch (error) {
+            assert.equal(error.code, 1);
+            assert.doesNotMatch(error.stdout, /API listening/);
+            assert.ok(!error.stderr.includes(secret));
+            throw error;
+          }
+        });
+      } finally {
+        await connection.close();
+      }
+    });
+  }
+});
+
 test('fresh setup rejects unknown, existing, held and altered checkpoint state without writes', async () => {
   for (const fixture of [
     async (db) => db.createCollection('unrelated'),
