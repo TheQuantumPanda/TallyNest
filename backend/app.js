@@ -1,3 +1,4 @@
+import { proxyIngress } from './src/middleware/proxy-ingress.middleware.js';
 import { createGroupFinancialService } from './src/services/group-financial.service.js';
 import { createSettlementService } from './src/services/settlement.service.js';
 import { createGroupExpenseService } from './src/services/group-expense.service.js';
@@ -34,6 +35,8 @@ export function createApp(
     clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
     jwtSecret = process.env.JWT_SECRET,
     jwtTtlSeconds = 900,
+    proxySharedSecret,
+    trustProxyHops = 0,
   } = {},
   {
     repository,
@@ -59,7 +62,11 @@ export function createApp(
   const app = express();
   app.set('env', nodeEnv);
   app.disable('x-powered-by');
+  if (![0, 2].includes(trustProxyHops) || (trustProxyHops === 2) !== !!proxySharedSecret)
+    throw new Error('Proxy trust requires protected two-hop ingress');
+  app.set('trust proxy', trustProxyHops || false);
   app.use(helmet());
+  if (proxySharedSecret) app.use(proxyIngress(proxySharedSecret));
   app.use(
     cors({
       origin: clientOrigin,

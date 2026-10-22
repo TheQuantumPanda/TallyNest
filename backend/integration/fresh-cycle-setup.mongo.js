@@ -554,8 +554,15 @@ test(
         privileges: [
           {
             resource: { db: database, collection: '' },
-            actions: ['find', 'listCollections', 'listIndexes'],
+            actions: ['listCollections'],
           },
+          ...[FRESH_MANIFEST_COLLECTION, ...freshCollections.map(({ name }) => name)].map(
+            (collection) => ({
+              resource: { db: database, collection },
+              actions: ['find', 'listIndexes'],
+            }),
+          ),
+          { resource: { db: database, collection: 'cyclemigrationruns' }, actions: ['find'] },
           ...freshCollections.map(({ name: collection }) => ({
             resource: { db: database, collection },
             actions: ['insert', 'update', 'remove'],
@@ -574,9 +581,27 @@ test(
         roles: [],
       });
       await db.command({
+        createRole: 'setup',
+        privileges: [
+          { resource: { db: database, collection: '' }, actions: ['listCollections'] },
+          ...[FRESH_MANIFEST_COLLECTION, ...freshCollections.map(({ name }) => name)].map(
+            (collection) => ({
+              resource: { db: database, collection },
+              actions: ['find', 'listIndexes', 'createCollection', 'createIndex'],
+            }),
+          ),
+          { resource: { db: database, collection: 'cyclemigrationruns' }, actions: ['find'] },
+          {
+            resource: { db: database, collection: FRESH_MANIFEST_COLLECTION },
+            actions: ['insert', 'update'],
+          },
+        ],
+        roles: [],
+      });
+      await db.command({
         createUser: 'setup',
         pwd: setupPassword,
-        roles: [{ role: 'dbOwner', db: database }],
+        roles: [{ role: 'setup', db: database }],
       });
       await db.command({
         createUser: 'runtime',
@@ -611,6 +636,21 @@ test(
         );
         await assert.rejects(
           limited.db().command({ collMod: 'groups', validationAction: 'warn' }),
+          (error) => error.code === 13,
+        );
+        await assert.rejects(
+          limited.db().collection('groups').drop(),
+          (error) => error.code === 13,
+        );
+        await assert.rejects(
+          limited.db().collection('forbidden').insertOne({ generated: true }),
+          (error) => error.code === 13,
+        );
+        await assert.rejects(
+          limited
+            .db()
+            .collection(FRESH_MANIFEST_COLLECTION)
+            .updateOne({}, { $set: { state: 'initializing' } }),
           (error) => error.code === 13,
         );
       } finally {

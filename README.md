@@ -251,6 +251,13 @@ must also serve `index.html` for React routes such as `/app/account` on hard rel
 Configure the backend's exact HTTPS `CLIENT_ORIGIN`; keep frontend and API same-site
 for SameSite=Lax cookies. This task does not implement deployment or TLS termination.
 
+For the isolated fresh-v2 hosted rehearsal, use the reviewed
+[deployment rehearsal plan](docs/deployment-rehearsal-plan.md). It specifies a
+protected single-origin `/api` rewrite, separate setup/runtime credentials, explicit
+operator-approved empty-database provisioning, and encrypted backup/restore checks.
+Leave `VITE_API_URL` unset for that topology. The example routing configuration is
+inactive; cloud setup and hosted execution require separate operator authorization.
+
 ## Authentication API
 
 TallyNest is the product display name. The health-check response documented above,

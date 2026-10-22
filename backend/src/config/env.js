@@ -21,6 +21,8 @@ const envSchema = z
       .regex(/^mongodb(?:\+srv)?:\/\/\S+$/),
     JWT_SECRET: jwtSecretSchema,
     JWT_TTL_SECONDS: jwtTtlSchema,
+    PROXY_SHARED_SECRET: jwtSecretSchema.optional(),
+    TRUST_PROXY_HOPS: z.enum(['0', '2']).default('0'),
     CLIENT_ORIGIN: z
       .string()
       .url()
@@ -37,6 +39,14 @@ const envSchema = z
         );
       })
       .transform((value) => new URL(value).origin),
+  })
+  .refine((value) => (value.TRUST_PROXY_HOPS === '2') === !!value.PROXY_SHARED_SECRET, {
+    path: ['TRUST_PROXY_HOPS'],
+    message: 'Proxy trust requires the protected two-hop ingress',
+  })
+  .refine((value) => !value.PROXY_SHARED_SECRET || value.PROXY_SHARED_SECRET !== value.JWT_SECRET, {
+    path: ['PROXY_SHARED_SECRET'],
+    message: 'Ingress and signing secrets must differ',
   })
   .refine(
     (value) => value.NODE_ENV !== 'production' || value.CLIENT_ORIGIN.startsWith('https://'),
@@ -59,6 +69,8 @@ export function parseEnv(source) {
     clientOrigin: result.data.CLIENT_ORIGIN,
     jwtSecret: result.data.JWT_SECRET,
     jwtTtlSeconds: result.data.JWT_TTL_SECONDS,
+    proxySharedSecret: result.data.PROXY_SHARED_SECRET,
+    trustProxyHops: Number(result.data.TRUST_PROXY_HOPS),
   });
 }
 

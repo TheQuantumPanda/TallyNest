@@ -18,6 +18,8 @@ test('environment parsing validates and normalizes configuration', () => {
     clientOrigin: validEnv.CLIENT_ORIGIN,
     jwtSecret: validEnv.JWT_SECRET,
     jwtTtlSeconds: 900,
+    proxySharedSecret: undefined,
+    trustProxyHops: 0,
   });
   assert.equal(
     parseEnv({ ...validEnv, CLIENT_ORIGIN: 'http://localhost:5173/' }).clientOrigin,
@@ -72,4 +74,22 @@ test('invalid environment settings are rejected without exposing input values', 
       },
     );
   }
+});
+
+test('proxy trust is bounded and requires a separate strong ingress secret', () => {
+  for (const config of [
+    { TRUST_PROXY_HOPS: 'true' },
+    { TRUST_PROXY_HOPS: '1' },
+    { TRUST_PROXY_HOPS: '2' },
+    { PROXY_SHARED_SECRET: validEnv.JWT_SECRET },
+    { TRUST_PROXY_HOPS: '2', PROXY_SHARED_SECRET: 'placeholder' },
+  ])
+    assert.throws(() => parseEnv({ ...validEnv, ...config }), /configuration/);
+  const config = parseEnv({
+    ...validEnv,
+    TRUST_PROXY_HOPS: '2',
+    PROXY_SHARED_SECRET: 'abcdef0123456789'.repeat(4),
+  });
+  assert.equal(config.trustProxyHops, 2);
+  assert.equal(config.proxySharedSecret, 'abcdef0123456789'.repeat(4));
 });
