@@ -1,4 +1,4 @@
-# Dependencies
+ Dependencies
 node_modules/
 
 # Environment variables
@@ -28,3 +28,11 @@ temp/
 # Local browser verification artifacts (may contain session information)
 .playwright-cli/
 output/playwright/
+
+# Historical development reports — local only
+docs/phase-*.md
+docs/phase-5-audit.md
+docs/phase-5-ui-polish-round-1.md
+docs/branding-finalization.md
+docs/final-predeployment-verification.md
+docs/reports/phase-5-step-3e-reconciliation.json

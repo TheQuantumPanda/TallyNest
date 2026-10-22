@@ -1,6 +1,6 @@
 # TallyNest deployment rehearsal plan
 
-Prepared 2026-10-20. Scope: isolated **generated accounts and financial records only**. No cloud resources, hosted databases, deployments, migrations, commits or pushes were created or performed during preparation. Provider documentation was reviewed; provider behavior has not been tested.
+Operational procedure retained and reviewed 2026-10-22. Historical preparation notes below do not certify the current hosted deployment. Scope: isolated **generated accounts and financial records only**. No cloud resources, hosted databases, deployments, migrations, commits or pushes were created or performed during preparation. Provider documentation was reviewed; provider behavior has not been tested.
 
 ## Decision and scope
 
@@ -18,13 +18,13 @@ Browser: https://<rehearsal-project>.vercel.app
 
 Use one canonical browser origin, one backend instance and no custom domain requirement. Do not enable preview-origin wildcards or connect previews to the rehearsal database. Automatic deployments remain disabled until explicitly authorized. Vercel serves the normal React entry; Render runs the normal server, never the staged test composition.
 
-This change adds a disabled-by-default protected ingress, operator-only provisioning and read-only backup audit tools, tests, and an example Vercel configuration. It does not change the financial write/recovery protocol, schema profile or UI.
+The repository provides protected ingress, operator-only provisioning, read-only backup audit tools, and an example Vercel configuration. See [Architecture](ARCHITECTURE.md) and [Security & Verification](SECURITY_AND_VERIFICATION.md) for the current implementation and local verification scope.
 
 ## Routing, cookies and proxy trust
 
 For temporary, authenticated IP-chain verification and mandatory removal, follow the [proxy IP-chain diagnostic procedure](proxy-ip-chain-diagnostic.md). It is disabled by default and has not been executed on hosted services.
 
-[vercel.json](../vercel.json) is the locally reviewed, uncommitted configuration targeting `https://tallynest-api-rehearsal.onrender.com`. [deployment/vercel.rehearsal.example.json](../deployment/vercel.rehearsal.example.json) remains an inactive reusable template; only the hostname differs. Neither file contains a secret value. Both platforms need the repository root because `shared/` is outside the backend/frontend directories. No deployment is authorized by this file's presence.
+[vercel.json](../vercel.json) is the checked-in routing configuration targeting `https://tallynest-api-rehearsal.onrender.com`. [deployment/vercel.rehearsal.example.json](../deployment/vercel.rehearsal.example.json) remains an inactive reusable template; only the hostname differs. Neither file contains a secret value. Both platforms need the repository root because `shared/` is outside the backend/frontend directories. No deployment is authorized by this file's presence.
 
 Routing order is deliberate: `/api` and `/api/*` go to Express first, including failures; existing build files are served next; other GET/HEAD paths fall back to `/index.html`. Thus `/app/groups/...` reloads reach React, while an unknown API path remains an Express JSON 404. Unsafe non-API requests do not receive the SPA fallback. Verify actual path captures, methods and query strings on Vercel before acceptance.
 
@@ -59,15 +59,13 @@ Local regression checks run with `npm test`: routing precedence/boundaries, all-
 
 Exact next steps, after review and separate deployment authorization:
 
-1. Review the uncommitted diff and include the root `vercel.json` with the tested changes. Keep both provider roots at the repository root, Node 24 and the existing build/start commands. Keep automatic deployments disabled until authorized.
+1. Review the exact revision and root `vercel.json` against the tested routing contract. Keep both provider roots at the repository root, Node 24 and the existing build/start commands. Keep automatic deployments disabled until authorized.
 2. Privately confirm the exact canonical Vercel origin, intended deployment environment, matching strong ingress secret and Render `CLIENT_ORIGIN`/protected two-hop setting. Do not print or paste secrets into repository files or command arguments. Do not change Atlas data or credentials as part of routing setup.
 3. Deploy only under that later authorization. First use safe health and unauthenticated probes: through Vercel, `/api/auth/me` must return 401 both without a client secret header and with a deliberately wrong one; direct Render must return 403 for that path, including forged Origin/XFF. Health alone cannot prove secret resolution. Compare absent, lowercase/mixed-case and duplicate client ingress headers without ever sending the real secret from a browser.
 4. Prove the actual IP chain before allowing financial writes. Then execute the hosted checklist below with separately approved generated records. Check query strings, all mutation methods, idempotency and conditional headers, host-only cookies, ETags, JSON API errors and no-cache behavior. Inspect repeated responses across accounts and denied/conflict/parser/server-error statuses; no private response may be a CDN HIT. Vercel-specific cache headers may be consumed by the platform, so inspect both effective cache behavior and browser-visible headers.
 5. Verify browser assets, DevTools responses and private platform logs contain no ingress secret. Record sanitized evidence. Render sleep, finite proxy/client timeouts and ambiguous financial responses remain risks; retry the original intent/key and inspect authoritative state.
 
 Do not use the existing disposable MongoDB/browser integration commands against Atlas. This routing review does not authorize database writes, deployment, commits, pushes or hosted settings changes.
-
-Local review results (2026-10-22): `npm run verify:fast` passed: **329 backend tests**, **267 frontend tests**, backend/frontend/shared lint, formatting, production build and **33 public files** passing the synthetic-secret scan. Both production dependency audits reported **0 vulnerabilities**. Log: [deployment-routing-verify.log](../output/deployment-routing-verify.log). All properties used in both JSON configurations passed validation against the live official schema's relevant property definitions. Full remote schema meta-validation was not established: its draft-04 declaration includes unrelated newer-dialect constructs rejected by the available validator. No Vercel compiler or edge execution was run. No live MongoDB, hosted browser, deploy or hosted settings checks were performed; the tests use local isolated dependencies.
 
 ## Build, start and environment
 
@@ -250,36 +248,11 @@ Run only after separate approval, against generated accounts/records. Retain pri
 - [ ] For multiple accounts and paths/statuses, confirm no-store headers and no CDN cache HIT/shared private body, including ETag/conflict/authorization/error responses and Set-Cookie forwarding. Avoid recording credentials in evidence.
 - [ ] Inspect application, platform access/build and error logs after success, failure and recovery. No JWTs, cookies, passwords, invitation tokens, connection strings or financial bodies. Confirm quotas/allowlists do not require unapproved exposure or payment.
 
-## Local verification evidence
+## Local evidence and its limits
 
-Results are recorded below after the required local runs. These prove local behavior only; every hosted checkbox above remains unexecuted.
+Current local test results and runnable verification commands are maintained in [Security & Verification](SECURITY_AND_VERIFICATION.md). The normal-server executable browser reference is [normal-cycle.e2e.js](../frontend/e2e/normal-cycle.e2e.js); staged fixture results must remain separate from normal-server results. Ignored local logs are not public evidence links.
 
-| Check                                    | Result                                                                                                                                                                                                                                                       |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `npm run verify:clean`                   | **PASS**: clean backend/frontend installs, 321 backend tests, 267 frontend tests (23 files), lint, formatting, production build, production audits and 274 MongoDB tests across 18 serial files; zero failures/skips.                                        |
-| Focused setup/backup rerun               | **PASS**, 4 tests after adding the generated-target collision guard; all 14 owned DBs removed; FD headroom returned to 10 open files.                                                                                                                        |
-| `npm run verify:browser`                 | **PASS**, 5 Chromium tests: 3 existing disposable/staged UI regressions plus 2 **normal server/normal React entry** tests. Normal multi-user workflow checks exact API balances, authorization, retries and recovery. Both browser DB cleanup checks passed. |
-| `npm run lint` / `npm run format:check`  | **PASS**, including new backend tools/tests, plan and inactive routing example.                                                                                                                                                                              |
-| `npm run build` (standalone repeat)      | **PASS**. Normal `CycleWorkspace` production chunk present; 23 public JS files checked, no backend secret-variable names or known disposable-entry markers found. This does not prove future hosted environment configuration.                               |
-| `npm run audit:prod` (standalone repeat) | **PASS**, backend and frontend each report zero vulnerabilities.                                                                                                                                                                                             |
-| Vercel example static validation         | **PASS** against the relevant published JSON-schema properties used by this file. No Vercel build/deploy or hosted routing validation executed.                                                                                                              |
-| `git diff --check`                       | **PASS**. Changes remain uncommitted.                                                                                                                                                                                                                        |
-
-New coverage proves exact-plan approval before database access, URI identity/TLS restrictions, offline CLI review and approval refusal, ingress bypass denial, unchanged Origin/CSRF checks, bounded proxy IP buckets, ownership-bound checkpoint resume, ambiguous-ownership refusal, and unchanged rejection of legacy/unknown/data-bearing/drifted targets. The authenticated MongoDB test now uses named-collection setup/runtime roles, with manifest-write, unrelated-write, index, validator and drop denials, while preserving original authorized financial recovery.
-
-The fresh backup test creates two cycles using production services, including a confirmed settlement and expense tombstone; closed-cycle balances reconcile to zero and active balances retain exact minor units. An isolated **native collection copy** produces identical full-data/schema/financial proofs; corrupting only that generated copy's closed-cycle expense makes reconciliation fail. This is not an encrypted fresh-v2 Database Tools roundtrip or Atlas restore claim. Hosted SRV transport, role creation/propagation and the operator CLI's complete Atlas execution remain untested.
-
-The recorded offline schema fingerprint is `35f23db2e3138a6c2d352d180fcac13fcfbfdcd126f1976d37141f41589ec9d7`. Recompute and review it for the actual approved revision. The full provider JSON schema has mixed-draft constructs incompatible with the existing Ajv 6 validator; validation was limited to all properties used by the example. It is not a substitute for provider acceptance.
-
-Local evidence logs: [clean verification](../output/rehearsal-prep-verify-clean.log), [focused MongoDB](../output/rehearsal-prep-targeted-mongo.log), [Chromium](../output/rehearsal-prep-browser.log), [lint](../output/rehearsal-prep-lint.log), [formatting](../output/rehearsal-prep-format.log), [build](../output/rehearsal-prep-build.log), [audits](../output/rehearsal-prep-audits.log), [routing-schema properties](../output/rehearsal-prep-vercel-schema.log). These generated logs/artifacts are local and ignored by Git.
-
-Browser captures were regenerated and reviewed: [normal multi-user zero balances](../output/playwright/ui-polish/normal-multiuser-zero-balances.png), [390px dialog](../output/playwright/ui-polish/mobile-dialog.png), and [native 200% zoom form](../output/playwright/ui-polish/native-200-percent-transaction.png). The existing gate also covers 320px layouts, focus trapping/restoration, validation/drafts, long email handling and reduced motion. The normal-server log assertion passed: generated test credentials, tokens and financial payload markers were absent.
-
-No financial integrity defect was identified and no financial protocol change was made. Development-time lint/format findings were corrected before the final successful runs. Hosted security/recovery limitations above remain blockers to claiming deployment readiness.
-
-Local tests use only generated, owned MongoDB databases. The new provisioning suite asserts removal of each of its owned targets; the existing integration FD guard serializes files and waits for MongoDB's natural descriptor cleanup without raising limits or restarting the shared container. Browser runners own and clean their own processes/databases. No persistent financial records are changed.
-
-A final read-only inventory checked the 43 generated database names observed in these run logs: **zero remained**. This check performed no database deletion.
+Local legacy migration tests exercise encrypted backup/restore and SIGKILL recovery. Fresh-v2 audit tests compare a native collection copy, schema/data hashes and multi-cycle balances. That copy is not an encrypted fresh-v2 Database Tools roundtrip or a hosted restore. Neither test establishes independent archive/key custody, Atlas role propagation or hosted recovery. Recompute the fresh schema fingerprint for the exact approved revision; do not reuse an old fingerprint as approval.
 
 ## Remaining blockers and approval boundaries
 

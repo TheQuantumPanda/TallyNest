@@ -1,0 +1,529 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 960 620"
+  width="100%"
+  height="100%"
+  style="
+    background: #0b0d14;
+    font-family:
+      &quot;Manrope&quot;,
+      -apple-system,
+      BlinkMacSystemFont,
+      &quot;Segoe UI&quot;,
+      Roboto,
+      sans-serif;
+  "
+>
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#111422" />
+      <stop offset="100%" stop-color="#080a10" />
+    </linearGradient>
+
+    <linearGradient id="mintGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#83e5d5" />
+      <stop offset="100%" stop-color="#38b2ac" />
+    </linearGradient>
+
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#181c2b" />
+      <stop offset="100%" stop-color="#121520" />
+    </linearGradient>
+
+    <linearGradient id="accentBoxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b2330" />
+      <stop offset="100%" stop-color="#131a24" />
+    </linearGradient>
+
+    <!-- Filter for soft shadows -->
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow
+        dx="0"
+        dy="6"
+        stdDeviation="8"
+        flood-color="#000000"
+        flood-opacity="0.4"
+      />
+    </filter>
+
+    <!-- Marker arrows -->
+    <marker
+      id="arrow"
+      viewBox="0 0 10 10"
+      refX="6"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#83e5d5" />
+    </marker>
+    <marker
+      id="arrowMuted"
+      viewBox="0 0 10 10"
+      refX="6"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />
+    </marker>
+  </defs>
+
+  <!-- Canvas Card Border -->
+  <rect
+    x="10"
+    y="10"
+    width="940"
+    height="600"
+    rx="14"
+    fill="url(#bgGrad)"
+    stroke="#1e2436"
+    stroke-width="1.5"
+  />
+
+  <!-- Background Grid -->
+  <g opacity="0.04" stroke="#83e5d5" stroke-width="1">
+    <path
+      d="M 10 80 H 950 M 10 160 H 950 M 10 240 H 950 M 10 320 H 950 M 10 400 H 950 M 10 480 H 950 M 10 560 H 950"
+    />
+    <path
+      d="M 160 10 V 610 M 320 10 V 610 M 480 10 V 610 M 640 10 V 610 M 800 10 V 610"
+    />
+  </g>
+
+  <!-- Header -->
+  <g transform="translate(36, 40)">
+    <!-- Tally Logo Mark -->
+    <g
+      stroke="#83e5d5"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M 10 8 v 5 M 15 5 v 11 M 20 8 v 5" />
+      <path d="m 6 15 9 5 9 -5 M 6 19 15 24 24 19" />
+    </g>
+    <text
+      x="36"
+      y="18"
+      fill="#ffffff"
+      font-size="20"
+      font-weight="800"
+      letter-spacing="-0.5"
+    >
+      TallyNest
+    </text>
+    <text
+      x="135"
+      y="18"
+      fill="#83e5d5"
+      font-size="11"
+      font-weight="700"
+      letter-spacing="1"
+    >
+      SYSTEM ARCHITECTURE
+    </text>
+    <text x="36" y="34" fill="#94a3b8" font-size="11.5" font-weight="500">
+      End-to-End Topology, Layered Backend Pipeline &amp; Invariant-Enforced
+      Domain Model
+    </text>
+  </g>
+
+  <!-- 3 Main Columns / Containers -->
+
+  <!-- LAYER 1: CLIENT & EDGE ROUTING -->
+  <g transform="translate(36, 95)">
+    <rect
+      width="250"
+      height="485"
+      rx="10"
+      fill="url(#boxGrad)"
+      stroke="#232a3e"
+      stroke-width="1"
+      filter="url(#softShadow)"
+    />
+    <rect x="0" y="0" width="250" height="34" rx="10" fill="#1b2131" />
+    <rect x="0" y="24" width="250" height="10" fill="#1b2131" />
+    <circle cx="18" cy="17" r="4" fill="#83e5d5" />
+    <text
+      x="30"
+      y="21"
+      fill="#f0f1f5"
+      font-size="12"
+      font-weight="750"
+      letter-spacing="0.5"
+    >
+      CLIENT &amp; EDGE INGRESS
+    </text>
+
+    <!-- Sub-block 1: Browser SPA -->
+    <g transform="translate(16, 50)">
+      <rect
+        width="218"
+        height="185"
+        rx="8"
+        fill="#111420"
+        stroke="#262f44"
+        stroke-width="1"
+      />
+      <text x="14" y="22" fill="#83e5d5" font-size="12" font-weight="700">
+        React 19 SPA (Vite)
+      </text>
+      <text x="14" y="38" fill="#94a3b8" font-size="10">
+        Tailwind CSS v4 • Manrope Variable
+      </text>
+
+      <line
+        x1="14"
+        y1="48"
+        x2="204"
+        y2="48"
+        stroke="#1f2535"
+        stroke-width="1"
+      />
+
+      <g
+        transform="translate(14, 62)"
+        fill="#cbd5e1"
+        font-size="10.5"
+        font-weight="500"
+      >
+        <text y="0">• Personal Ledger &amp; Dashboard</text>
+        <text y="18">• Category Budgets &amp; Analytics</text>
+        <text y="36">• Recurring Transactions Engine</text>
+        <text y="54">• Multi-User Group Collaborative</text>
+        <text y="72">• Cycle Workspace &amp; Balances</text>
+        <text y="90">• Top-Layer Centered Dialogs</text>
+        <text y="108">• Idempotent Retries &amp; Recovery</text>
+      </g>
+    </g>
+
+    <!-- Sub-block 2: Vercel Edge -->
+    <g transform="translate(16, 252)">
+      <rect
+        width="218"
+        height="120"
+        rx="8"
+        fill="#111420"
+        stroke="#262f44"
+        stroke-width="1"
+      />
+      <text x="14" y="22" fill="#f0f1f5" font-size="12" font-weight="700">
+        Vercel Edge Platform
+      </text>
+      <text x="14" y="38" fill="#94a3b8" font-size="10">
+        Static SPA Hosting &amp; Rewrites
+      </text>
+
+      <line
+        x1="14"
+        y1="48"
+        x2="204"
+        y2="48"
+        stroke="#1f2535"
+        stroke-width="1"
+      />
+
+      <g
+        transform="translate(14, 64)"
+        fill="#cbd5e1"
+        font-size="10"
+        font-weight="500"
+      >
+        <text y="0">• Same-Origin Routing: /api/*</text>
+        <text y="16">• Cookie Propagation: host-only</text>
+        <text y="32">• Custom Protected Ingress Token</text>
+        <text y="48">• HTTPS Hosting &amp; External API Rewrite</text>
+      </g>
+    </g>
+
+    <!-- Sub-block 3: Client Security Invariants -->
+    <g transform="translate(16, 388)">
+      <rect
+        width="218"
+        height="82"
+        rx="8"
+        fill="#141926"
+        stroke="#232c40"
+        stroke-width="1"
+      />
+      <text x="14" y="20" fill="#83e5d5" font-size="10.5" font-weight="700">
+        SECURITY &amp; STORAGE
+      </text>
+      <g transform="translate(14, 38)" fill="#94a3b8" font-size="9.5">
+        <text y="0">• Zero JWT exposure in localStorage</text>
+        <text y="14">• HttpOnly, SameSite=Lax Cookie</text>
+        <text y="28">• Custom CSRF: X-CSRF-Protection</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- LAYER 2: BACKEND APPLICATION PIPELINE -->
+  <g transform="translate(310, 95)">
+    <rect
+      width="365"
+      height="485"
+      rx="10"
+      fill="url(#boxGrad)"
+      stroke="#232a3e"
+      stroke-width="1"
+      filter="url(#softShadow)"
+    />
+    <rect x="0" y="0" width="365" height="34" rx="10" fill="#1b2131" />
+    <rect x="0" y="24" width="365" height="10" fill="#1b2131" />
+    <circle cx="18" cy="17" r="4" fill="#83e5d5" />
+    <text
+      x="30"
+      y="21"
+      fill="#f0f1f5"
+      font-size="12"
+      font-weight="750"
+      letter-spacing="0.5"
+    >
+      BACKEND CORE (NODE.JS 24 / EXPRESS)
+    </text>
+
+    <!-- Layer 2.1: Protected Middleware Gateway -->
+    <g transform="translate(16, 48)">
+      <rect
+        width="333"
+        height="66"
+        rx="7"
+        fill="#121624"
+        stroke="#263047"
+        stroke-width="1"
+      />
+      <text x="12" y="18" fill="#83e5d5" font-size="11" font-weight="700">
+        1. Security &amp; Middleware Pipeline
+      </text>
+      <g transform="translate(12, 34)" fill="#94a3b8" font-size="9.5">
+        <text y="0">
+          Helmet • Strict CORS (CLIENT_ORIGIN) • Rate Limiting (Per-User)
+        </text>
+        <text y="14">
+          Protected Ingress Check • Host Cookie Verification • CSRF Guard
+        </text>
+      </g>
+    </g>
+
+    <!-- Layer 2.2: Controllers -->
+    <g transform="translate(16, 124)">
+      <rect
+        width="333"
+        height="74"
+        rx="7"
+        fill="#121624"
+        stroke="#263047"
+        stroke-width="1"
+      />
+      <text x="12" y="18" fill="#f0f1f5" font-size="11" font-weight="700">
+        2. HTTP Controllers (Input &amp; Wiring)
+      </text>
+      <g transform="translate(12, 34)" fill="#cbd5e1" font-size="9.5">
+        <rect x="0" y="0" width="70" height="20" rx="4" fill="#1b2234" />
+        <text x="8" y="14" fill="#83e5d5">AuthCtrl</text>
+        <rect x="76" y="0" width="80" height="20" rx="4" fill="#1b2234" />
+        <text x="84" y="14" fill="#83e5d5">TxnCtrl</text>
+        <rect x="162" y="0" width="76" height="20" rx="4" fill="#1b2234" />
+        <text x="170" y="14" fill="#83e5d5">BudgetCtrl</text>
+        <rect x="244" y="0" width="80" height="20" rx="4" fill="#1b2234" />
+        <text x="252" y="14" fill="#83e5d5">RecurCtrl</text>
+
+        <rect x="0" y="24" width="70" height="20" rx="4" fill="#1b2234" />
+        <text x="8" y="38" fill="#83e5d5">GroupCtrl</text>
+        <rect x="76" y="24" width="80" height="20" rx="4" fill="#1b2234" />
+        <text x="84" y="38" fill="#83e5d5">ExpenseCtrl</text>
+        <rect x="162" y="24" width="76" height="20" rx="4" fill="#1b2234" />
+        <text x="170" y="38" fill="#83e5d5">SettleCtrl</text>
+        <rect x="244" y="24" width="80" height="20" rx="4" fill="#1b2234" />
+        <text x="252" y="38" fill="#83e5d5">CycleCtrl</text>
+      </g>
+    </g>
+
+    <!-- Layer 2.3: Application Services & Financial Engine -->
+    <g transform="translate(16, 208)">
+      <rect
+        width="333"
+        height="110"
+        rx="7"
+        fill="url(#accentBoxGrad)"
+        stroke="#2b3b4f"
+        stroke-width="1"
+      />
+      <text x="12" y="18" fill="#83e5d5" font-size="11" font-weight="700">
+        3. Application Services &amp; Financial Engine
+      </text>
+      <g transform="translate(12, 34)" fill="#cbd5e1" font-size="9.5">
+        <text y="0">
+          • Zod Schema Input Validation (strict typing &amp; bounds)
+        </text>
+        <text y="16">• Exact Minor Currency Unit (Paise) Arithmetic</text>
+        <text y="32">
+          • Split Engines: Equal, Exact &amp; Percentage (Largest Remainder + ID
+          Ties)
+        </text>
+        <text y="48">
+          • Debt Simplification &amp; Settlement Reconciliation Graph
+        </text>
+        <text y="64">
+          • Zero-Balance Cycle Closure &amp; Settlement Coordination
+        </text>
+      </g>
+    </g>
+
+    <!-- Layer 2.4: Repositories & Write Coordinator -->
+    <g transform="translate(16, 328)">
+      <rect
+        width="333"
+        height="142"
+        rx="7"
+        fill="#121624"
+        stroke="#263047"
+        stroke-width="1"
+      />
+      <text x="12" y="18" fill="#f0f1f5" font-size="11" font-weight="700">
+        4. Repositories &amp; Write Coordinator
+      </text>
+      <g transform="translate(12, 34)" fill="#94a3b8" font-size="9.5">
+        <text y="0">
+          • Cycle Financial-Write Coordinator (Serialized Operations)
+        </text>
+        <text y="16">
+          • Operation Reservations: checking → applying → verified release
+        </text>
+        <text y="32">
+          • Optimistic Version Guard (__v) &amp; Stale ETag Rejection (412)
+        </text>
+        <text y="48">
+          • Idempotent Operation Replay Protection (Client UUIDs)
+        </text>
+        <text y="64">
+          • Immutable Historical Snapshot Retention on Closed Cycles
+        </text>
+        <text y="80">
+          • Authorized Failure Recovery Flow for Stuck Reservations
+        </text>
+        <text y="96">• Read-only Fresh Schema Readiness Gate at Startup</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- LAYER 3: DATA PERSISTENCE & INVARIANTS -->
+  <g transform="translate(695, 95)">
+    <rect
+      width="230"
+      height="485"
+      rx="10"
+      fill="url(#boxGrad)"
+      stroke="#232a3e"
+      stroke-width="1"
+      filter="url(#softShadow)"
+    />
+    <rect x="0" y="0" width="230" height="34" rx="10" fill="#1b2131" />
+    <rect x="0" y="24" width="230" height="10" fill="#1b2131" />
+    <circle cx="18" cy="17" r="4" fill="#83e5d5" />
+    <text
+      x="30"
+      y="21"
+      fill="#f0f1f5"
+      font-size="12"
+      font-weight="750"
+      letter-spacing="0.5"
+    >
+      MONGODB 8.0 / DATA
+    </text>
+
+    <!-- Collections -->
+    <g transform="translate(16, 50)">
+      <rect
+        width="198"
+        height="205"
+        rx="8"
+        fill="#111420"
+        stroke="#262f44"
+        stroke-width="1"
+      />
+      <text x="12" y="20" fill="#83e5d5" font-size="11" font-weight="700">
+        Collections &amp; Schema
+      </text>
+      <g transform="translate(12, 38)" fill="#cbd5e1" font-size="10">
+        <text y="0">• users</text>
+        <text y="18">• transactions</text>
+        <text y="36">• budgets</text>
+        <text y="54">• recurringschedules</text>
+        <text y="72">• groups</text>
+        <text y="90">• groupexpenses</text>
+        <text y="108">• groupinvitations</text>
+        <text y="126">• settlements</text>
+        <text y="144">• financialcycles</text>
+      </g>
+    </g>
+
+    <!-- Enforced Invariants -->
+    <g transform="translate(16, 268)">
+      <rect
+        width="198"
+        height="202"
+        rx="8"
+        fill="#131926"
+        stroke="#253247"
+        stroke-width="1"
+      />
+      <text x="12" y="20" fill="#83e5d5" font-size="10.5" font-weight="700">
+        ENFORCED INVARIANTS
+      </text>
+      <g transform="translate(12, 38)" fill="#94a3b8" font-size="9.5">
+        <text y="0">• Strict JSON Schema</text>
+        <text y="14">Collection Validators</text>
+        <text y="32">• Filtered Unique Indexes:</text>
+        <text y="46">- 1 Active Cycle per Group</text>
+        <text y="60">- 1 Budget per Category/Mo</text>
+        <text y="74">- 1 Operation Reservation</text>
+        <text y="92">• Minor Currency Integers</text>
+        <text y="106">No float / double money</text>
+        <text y="124">• Immutable History</text>
+        <text y="138">Closed cycles are locked</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Connection Arrows -->
+  <!-- Client to Backend -->
+  <path
+    d="M 286 200 H 310"
+    stroke="#83e5d5"
+    stroke-width="2"
+    marker-end="url(#arrow)"
+  />
+  <text
+    x="290"
+    y="190"
+    fill="#83e5d5"
+    font-size="8"
+    font-weight="700"
+    text-anchor="middle"
+  >
+    HTTPS
+  </text>
+
+  <!-- Backend to MongoDB -->
+  <path
+    d="M 675 340 H 695"
+    stroke="#83e5d5"
+    stroke-width="2"
+    marker-end="url(#arrow)"
+  />
+  <text
+    x="685"
+    y="330"
+    fill="#83e5d5"
+    font-size="8"
+    font-weight="700"
+    text-anchor="middle"
+  >
+    Mongoose
+  </text>
+</svg>
