@@ -22,7 +22,7 @@ This change adds a disabled-by-default protected ingress, operator-only provisio
 
 ## Routing, cookies and proxy trust
 
-[deployment/vercel.rehearsal.example.json](../deployment/vercel.rehearsal.example.json) is an **inactive example**, not an installed root `vercel.json`. Following authorization, replace its Render hostname and review/copy it to the repository root used by Vercel. Both platforms need the repository root because `shared/` is outside the backend/frontend directories.
+[vercel.json](../vercel.json) is the locally reviewed, uncommitted configuration targeting `https://tallynest-api-rehearsal.onrender.com`. [deployment/vercel.rehearsal.example.json](../deployment/vercel.rehearsal.example.json) remains an inactive reusable template; only the hostname differs. Neither file contains a secret value. Both platforms need the repository root because `shared/` is outside the backend/frontend directories. No deployment is authorized by this file's presence.
 
 Routing order is deliberate: `/api` and `/api/*` go to Express first, including failures; existing build files are served next; other GET/HEAD paths fall back to `/index.html`. Thus `/app/groups/...` reloads reach React, while an unknown API path remains an Express JSON 404. Unsafe non-API requests do not receive the SPA fallback. Verify actual path captures, methods and query strings on Vercel before acceptance.
 
@@ -36,7 +36,36 @@ The proposed protected path uses `TRUST_PROXY_HOPS=2`: socket peer Render ingres
 
 Private API routes already send `Cache-Control: no-store`. The example adds `private, no-store`, `CDN-Cache-Control: no-store`, `Vercel-CDN-Cache-Control: no-store` and `x-vercel-enable-rewrite-caching: 0` to the entire API route, including error responses. Do not enable rewrite cache rules, ISR, service-worker API caching or forced cache overrides. Inspect headers and cache behavior on success, denial, conflict and server-error responses; assert no private response becomes a CDN HIT. Vercel can cache external rewrites when configured/upstream headers allow it. [Vercel cache controls](https://vercel.com/docs/caching/cache-control-headers).
 
+The protected Render ingress now also sets all three no-store cache headers before checking health/secret or parsing bodies. This covers unknown routes and parser failures at the origin as well as ingress denial. Existing route-level no-store headers and ETags remain intact. The Vercel rewrite-cache opt-out stays at the edge.
+
 If secret transforms, cookie forwarding or verified proxy identity are unavailable on the selected free plan, this topology is blocked. The smallest alternative is a **single Render HTTPS origin serving the built Vite app and Express `/api`**, plus Atlas. That requires a separately reviewed static/SPA serving change and verified one-hop trust configuration; it is not implemented here. Do not compensate with wildcard CORS, cross-site cookies or relaxed authentication.
+
+## Vercel configuration review — 2026-10-22
+
+The latest official documentation supports the current static JSON approach:
+
+- [`routes` transforms and environment expansion](https://vercel.com/docs/project-configuration/vercel-json#using-environment-variables-in-routes) document `request.headers`, `op`, `target`, `args` and a transform-local `env` allowlist. `$PROXY_SHARED_SECRET` is resolved from the project's environment at request time. If missing, the reference remains literal; Render rejects that literal because it cannot match a validated 64-hex secret.
+- [Origin restriction](https://vercel.com/docs/routing/rewrites#restricting-your-origin-to-vercel-traffic) explicitly states that `set` replaces a visitor's existing header. This resolves the less precise wording in the generic transform table. No delete/append workaround is needed.
+- [External rewrite caching](https://vercel.com/docs/routing/rewrites#disabling-caching-for-rewrites-to-external-origins) documents the `x-vercel-enable-rewrite-caching: 0` opt-out. Retain it alongside the no-store headers.
+- [`vercel.ts`](https://vercel.com/docs/project-configuration/vercel-ts) provides build-time configuration, but is unnecessary here. Keep one root configuration; do not interpolate a secret with `process.env`, generate a secret-bearing JSON file or add a competing `vercel.ts`.
+
+These configuration docs do not identify this protected rewrite pattern as paid-only. That supports retaining it for a Hobby rehearsal, **not a claim of verified account entitlement or edge execution**. [Hobby](https://vercel.com/docs/plans/hobby) is limited to personal, non-commercial use and quotas; confirm eligibility. If the actual project rejects transforms or environment expansion, stop and use the separately reviewed single-origin alternative above. Do not disable Render ingress protection.
+
+Keep `PROXY_SHARED_SECRET` only in the intended Vercel deployment environment and Render runtime, with identical values and an independent JWT secret. Do not grant previews access to the rehearsal secret or database. Leave `VITE_API_URL` unset. Unprefixed environment variables are available to build processes, so treat build dependencies and configuration as trusted code; never expose secrets via `VITE_*`, Vite `define`, `envPrefix`, HTML, logs or response headers. `.env*` and `.vercel/` are ignored to prevent accidental inclusion of pulled environment files. Ignore rules do not replace review of staged files.
+
+Local regression checks run with `npm test`: routing precedence/boundaries, all-method API routing, fixed origin, narrow secret transformation, cache directives, missing/literal/wrong/combined ingress values, health boundaries, CSRF/Origin, assumed IP buckets, production cookie attributes and ETags. They do **not** execute Vercel's edge. `npm run verify:deployment:bundle` builds with a random synthetic unprefixed secret and scans every generated public file for it and ingress markers; it prints no secret. This is included in `verify:fast`. It checks this build, not every possible future environment/configuration.
+
+Exact next steps, after review and separate deployment authorization:
+
+1. Review the uncommitted diff and include the root `vercel.json` with the tested changes. Keep both provider roots at the repository root, Node 24 and the existing build/start commands. Keep automatic deployments disabled until authorized.
+2. Privately confirm the exact canonical Vercel origin, intended deployment environment, matching strong ingress secret and Render `CLIENT_ORIGIN`/protected two-hop setting. Do not print or paste secrets into repository files or command arguments. Do not change Atlas data or credentials as part of routing setup.
+3. Deploy only under that later authorization. First use safe health and unauthenticated probes: through Vercel, `/api/auth/me` must return 401 both without a client secret header and with a deliberately wrong one; direct Render must return 403 for that path, including forged Origin/XFF. Health alone cannot prove secret resolution. Compare absent, lowercase/mixed-case and duplicate client ingress headers without ever sending the real secret from a browser.
+4. Prove the actual IP chain before allowing financial writes. Then execute the hosted checklist below with separately approved generated records. Check query strings, all mutation methods, idempotency and conditional headers, host-only cookies, ETags, JSON API errors and no-cache behavior. Inspect repeated responses across accounts and denied/conflict/parser/server-error statuses; no private response may be a CDN HIT. Vercel-specific cache headers may be consumed by the platform, so inspect both effective cache behavior and browser-visible headers.
+5. Verify browser assets, DevTools responses and private platform logs contain no ingress secret. Record sanitized evidence. Render sleep, finite proxy/client timeouts and ambiguous financial responses remain risks; retry the original intent/key and inspect authoritative state.
+
+Do not use the existing disposable MongoDB/browser integration commands against Atlas. This routing review does not authorize database writes, deployment, commits, pushes or hosted settings changes.
+
+Local review results (2026-10-22): `npm run verify:fast` passed: **329 backend tests**, **267 frontend tests**, backend/frontend/shared lint, formatting, production build and **33 public files** passing the synthetic-secret scan. Both production dependency audits reported **0 vulnerabilities**. Log: [deployment-routing-verify.log](../output/deployment-routing-verify.log). All properties used in both JSON configurations passed validation against the live official schema's relevant property definitions. Full remote schema meta-validation was not established: its draft-04 declaration includes unrelated newer-dialect constructs rejected by the available validator. No Vercel compiler or edge execution was run. No live MongoDB, hosted browser, deploy or hosted settings checks were performed; the tests use local isolated dependencies.
 
 ## Build, start and environment
 

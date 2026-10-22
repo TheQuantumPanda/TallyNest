@@ -5,10 +5,16 @@ import { timingSafeEqual } from 'node:crypto';
 export function proxyIngress(secret) {
   const expected = Buffer.from(secret);
   return (req, res, next) => {
+    // Cover health, unknown routes and parser failures as well as business routes.
+    // Keep the origin safe even if an edge cache setting changes independently.
+    res.set({
+      'Cache-Control': 'no-store',
+      'CDN-Cache-Control': 'no-store',
+      'Vercel-CDN-Cache-Control': 'no-store',
+    });
     if (['GET', 'HEAD'].includes(req.method) && req.path === '/api/health') return next();
     const supplied = Buffer.from(req.get('x-tallynest-proxy-secret') || '');
     if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
-      res.set('Cache-Control', 'no-store');
       return res.status(403).json({ status: 'error', message: 'Proxy access required' });
     }
     next();
