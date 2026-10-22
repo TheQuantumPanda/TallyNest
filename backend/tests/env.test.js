@@ -20,6 +20,7 @@ test('environment parsing validates and normalizes configuration', () => {
     jwtTtlSeconds: 900,
     proxySharedSecret: undefined,
     trustProxyHops: 0,
+    proxyIpDiagnostic: undefined,
   });
   assert.equal(
     parseEnv({ ...validEnv, CLIENT_ORIGIN: 'http://localhost:5173/' }).clientOrigin,
@@ -92,4 +93,50 @@ test('proxy trust is bounded and requires a separate strong ingress secret', () 
   });
   assert.equal(config.trustProxyHops, 2);
   assert.equal(config.proxySharedSecret, 'abcdef0123456789'.repeat(4));
+});
+
+test('temporary proxy diagnostic requires protected ingress, independent token and a bounded deadline', () => {
+  const protectedEnv = {
+    ...validEnv,
+    TRUST_PROXY_HOPS: '2',
+    PROXY_SHARED_SECRET: 'abcdef0123456789'.repeat(4),
+  };
+  const diagnostic = {
+    PROXY_IP_DIAGNOSTIC_TOKEN: 'fedcba9876543210'.repeat(4),
+    PROXY_IP_DIAGNOSTIC_UNTIL: new Date(Date.now() + 60000).toISOString(),
+  };
+  assert.equal(
+    parseEnv({ ...protectedEnv, ...diagnostic }).proxyIpDiagnostic.token,
+    diagnostic.PROXY_IP_DIAGNOSTIC_TOKEN,
+  );
+  for (const override of [
+    { PROXY_IP_DIAGNOSTIC_TOKEN: undefined },
+    { PROXY_IP_DIAGNOSTIC_UNTIL: undefined },
+    { PROXY_IP_DIAGNOSTIC_TOKEN: validEnv.JWT_SECRET.toUpperCase() },
+    { PROXY_IP_DIAGNOSTIC_TOKEN: protectedEnv.PROXY_SHARED_SECRET },
+    { PROXY_IP_DIAGNOSTIC_UNTIL: new Date(Date.now() + 16 * 60000).toISOString() },
+    { PROXY_IP_DIAGNOSTIC_UNTIL: 'invalid-sensitive-input' },
+    { TRUST_PROXY_HOPS: '0', PROXY_SHARED_SECRET: undefined },
+  ])
+    assert.throws(
+      () => parseEnv({ ...protectedEnv, ...diagnostic, ...override }),
+      (error) => {
+        assert.match(error.message, /PROXY_IP_DIAGNOSTIC_TOKEN|PROXY_IP_DIAGNOSTIC_UNTIL/);
+        assert.equal(error.message.includes(diagnostic.PROXY_IP_DIAGNOSTIC_TOKEN), false);
+        assert.equal(error.message.includes('invalid-sensitive-input'), false);
+        return true;
+      },
+    );
+});
+
+test('expired diagnostic activation remains valid for restart and never extends its deadline', () => {
+  const until = new Date(Date.now() - 60000).toISOString();
+  const config = parseEnv({
+    ...validEnv,
+    TRUST_PROXY_HOPS: '2',
+    PROXY_SHARED_SECRET: 'abcdef0123456789'.repeat(4),
+    PROXY_IP_DIAGNOSTIC_TOKEN: 'fedcba9876543210'.repeat(4),
+    PROXY_IP_DIAGNOSTIC_UNTIL: until,
+  });
+  assert.equal(config.proxyIpDiagnostic.until, until);
 });

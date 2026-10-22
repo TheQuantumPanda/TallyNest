@@ -10,7 +10,7 @@
     "install:ci": "npm ci --prefix backend && npm ci --prefix frontend",
     "test": "npm test --prefix backend && npm test --prefix frontend",
     "lint": "npm run lint --prefix backend && npm run lint --prefix frontend && npm exec --prefix backend -- eslint --config backend/eslint.config.js shared --max-warnings 0",
-    "format:check": "npm run format:check --prefix frontend && npm exec --prefix frontend -- prettier --config frontend/.prettierrc.json --check backend shared README.md docs/phase-5-step-2a.md docs/phase-5-step-2b.md docs/phase-5-step-3l.md .github/workflows/verify.yml package.json docs/deployment-rehearsal-plan.md deployment vercel.json",
+    "format:check": "npm run format:check --prefix frontend && npm exec --prefix frontend -- prettier --config frontend/.prettierrc.json --check backend shared README.md docs/phase-5-step-2a.md docs/phase-5-step-2b.md docs/phase-5-step-3l.md .github/workflows/verify.yml package.json docs/deployment-rehearsal-plan.md deployment vercel.json docs/proxy-ip-chain-diagnostic.md",
     "build": "npm run build --prefix frontend",
     "audit:prod": "npm audit --omit=dev --prefix backend && npm audit --omit=dev --prefix frontend",
     "verify:deployment:bundle": "node backend/scripts/verify-deployment-bundle.js",

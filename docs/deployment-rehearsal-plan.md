@@ -22,6 +22,8 @@ This change adds a disabled-by-default protected ingress, operator-only provisio
 
 ## Routing, cookies and proxy trust
 
+For temporary, authenticated IP-chain verification and mandatory removal, follow the [proxy IP-chain diagnostic procedure](proxy-ip-chain-diagnostic.md). It is disabled by default and has not been executed on hosted services.
+
 [vercel.json](../vercel.json) is the locally reviewed, uncommitted configuration targeting `https://tallynest-api-rehearsal.onrender.com`. [deployment/vercel.rehearsal.example.json](../deployment/vercel.rehearsal.example.json) remains an inactive reusable template; only the hostname differs. Neither file contains a secret value. Both platforms need the repository root because `shared/` is outside the backend/frontend directories. No deployment is authorized by this file's presence.
 
 Routing order is deliberate: `/api` and `/api/*` go to Express first, including failures; existing build files are served next; other GET/HEAD paths fall back to `/index.html`. Thus `/app/groups/...` reloads reach React, while an unknown API path remains an Express JSON 404. Unsafe non-API requests do not receive the SPA fallback. Verify actual path captures, methods and query strings on Vercel before acceptance.

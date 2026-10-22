@@ -1,4 +1,5 @@
 import { proxyIngress } from './src/middleware/proxy-ingress.middleware.js';
+import { proxyIpDiagnostic } from './src/middleware/proxy-ip-diagnostic.middleware.js';
 import { createGroupFinancialService } from './src/services/group-financial.service.js';
 import { createSettlementService } from './src/services/settlement.service.js';
 import { createGroupExpenseService } from './src/services/group-expense.service.js';
@@ -37,6 +38,7 @@ export function createApp(
     jwtTtlSeconds = 900,
     proxySharedSecret,
     trustProxyHops = 0,
+    proxyIpDiagnostic: ipDiagnostic,
   } = {},
   {
     repository,
@@ -57,6 +59,7 @@ export function createApp(
     settlementRepository,
     groupBalanceRepository,
     cycleRoutes,
+    proxyDiagnosticOptions,
   } = {},
 ) {
   const app = express();
@@ -67,6 +70,10 @@ export function createApp(
   app.set('trust proxy', trustProxyHops || false);
   app.use(helmet());
   if (proxySharedSecret) app.use(proxyIngress(proxySharedSecret));
+  if (ipDiagnostic) {
+    if (trustProxyHops !== 2) throw new Error('Diagnostic requires protected two-hop ingress');
+    app.use(proxyIpDiagnostic(ipDiagnostic, clientOrigin, proxyDiagnosticOptions));
+  }
   app.use(
     cors({
       origin: clientOrigin,

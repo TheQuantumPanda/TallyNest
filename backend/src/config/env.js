@@ -23,6 +23,8 @@ const envSchema = z
     JWT_TTL_SECONDS: jwtTtlSchema,
     PROXY_SHARED_SECRET: jwtSecretSchema.optional(),
     TRUST_PROXY_HOPS: z.enum(['0', '2']).default('0'),
+    PROXY_IP_DIAGNOSTIC_TOKEN: jwtSecretSchema.optional(),
+    PROXY_IP_DIAGNOSTIC_UNTIL: z.iso.datetime({ offset: true }).optional(),
     CLIENT_ORIGIN: z
       .string()
       .url()
@@ -49,6 +51,27 @@ const envSchema = z
     message: 'Ingress and signing secrets must differ',
   })
   .refine(
+    (value) => {
+      const token = value.PROXY_IP_DIAGNOSTIC_TOKEN;
+      const until = value.PROXY_IP_DIAGNOSTIC_UNTIL;
+      if (!token && !until) return true;
+      const remaining = Date.parse(until) - Date.now();
+      return (
+        !!token &&
+        !!until &&
+        value.TRUST_PROXY_HOPS === '2' &&
+        token.toLowerCase() !== value.JWT_SECRET.toLowerCase() &&
+        token.toLowerCase() !== value.PROXY_SHARED_SECRET?.toLowerCase() &&
+        Number.isFinite(remaining) &&
+        remaining <= 15 * 60 * 1000
+      );
+    },
+    {
+      path: ['PROXY_IP_DIAGNOSTIC_TOKEN'],
+      message: 'Diagnostic requires separate credentials, protected ingress and a bounded deadline',
+    },
+  )
+  .refine(
     (value) => value.NODE_ENV !== 'production' || value.CLIENT_ORIGIN.startsWith('https://'),
     { path: ['CLIENT_ORIGIN'], message: 'Production requires HTTPS' },
   );
@@ -71,6 +94,12 @@ export function parseEnv(source) {
     jwtTtlSeconds: result.data.JWT_TTL_SECONDS,
     proxySharedSecret: result.data.PROXY_SHARED_SECRET,
     trustProxyHops: Number(result.data.TRUST_PROXY_HOPS),
+    proxyIpDiagnostic: result.data.PROXY_IP_DIAGNOSTIC_TOKEN
+      ? {
+          token: result.data.PROXY_IP_DIAGNOSTIC_TOKEN,
+          until: result.data.PROXY_IP_DIAGNOSTIC_UNTIL,
+        }
+      : undefined,
   });
 }
 
